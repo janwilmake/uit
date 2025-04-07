@@ -1,0 +1,268 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Zip Object Tree API",
+    "description": "API for fetching and processing zip file contents as tree structures",
+    "version": "1.0.0",
+    "contact": {
+      "name": "tree.zipobject.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://tree.zipobject.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/tree/{zipUrl}": {
+      "get": {
+        "summary": "Get zip file contents as tree structure",
+        "description": "Fetch and process a zip file's contents, returning a hierarchical tree structure or a flat list of files with sizes. The service can calculate token estimates for text files.",
+        "parameters": [
+          {
+            "name": "zipUrl",
+            "in": "path",
+            "description": "URL-encoded path to a zip file",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "https://example.com/archive.zip"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Output type format (token-tree, token-list, or file size by default)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["token-tree", "token-list", "tree", "crc32"]
+            }
+          },
+          {
+            "name": "basePath",
+            "in": "query",
+            "description": "Base path filter within the zip file to process only specific directories",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "omitFirstSegment",
+            "in": "query",
+            "description": "If true, omits first segment",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "accept",
+            "in": "query",
+            "description": "Response format (application/json or text/yaml)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["application/json", "text/yaml"],
+              "default": "application/json"
+            }
+          },
+          {
+            "name": "max-age",
+            "in": "query",
+            "description": "Cache control max-age in seconds (default: 86400 - 24 hours)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 86400
+            }
+          },
+          {
+            "name": "secret",
+            "in": "query",
+            "description": "Secret token for authentication (required, can also be provided via Authorization header)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer token for authentication (alternative to secret query parameter)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Bearer your_secret_here"
+          },
+          {
+            "name": "accept",
+            "in": "header",
+            "description": "Accept header for response format (application/json or text/yaml)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["application/json", "text/yaml"],
+              "default": "application/json"
+            }
+          },
+          {
+            "name": "Cache-Control",
+            "in": "header",
+            "description": "Cache-Control header to override default caching behavior",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "max-age=3600"
+          },
+          {
+            "name": "x-zip-api-key",
+            "in": "header",
+            "description": "API key for zip service (alternative to apiKey query parameter)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully processed zip file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "description": "Flat file list with crc32",
+                      "additionalProperties": {
+                        "type": "string",
+                        "description": "crc32 indicating file integrity. good for file comparison without looking at difference"
+                      },
+                      "example": {
+                        "/file1.txt": "e09e6d3c",
+                        "/dir/file2.txt": "066ad16b"
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "Flat file list with sizes",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "description": "File size or token estimate"
+                      },
+                      "example": {
+                        "/file1.txt": 1000,
+                        "/dir/file2.txt": 2000
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "Hierarchical tree with sizes",
+                      "properties": {
+                        "__size": {
+                          "type": "integer",
+                          "description": "Total size of all files in this directory"
+                        }
+                      },
+                      "additionalProperties": {
+                        "oneOf": [{ "type": "integer" }, { "type": "object" }]
+                      },
+                      "example": {
+                        "__size": 3000,
+                        "file1.txt": 1000,
+                        "dir": {
+                          "__size": 2000,
+                          "file2.txt": 2000
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "text/yaml": {
+                "schema": {
+                  "type": "string",
+                  "description": "YAML representation of the tree or list"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Secret invalid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Zip file not found or invalid path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Zip not found https://example.com/archive.zip"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 404
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Internal server error"
+                    },
+                    "details": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "secretAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "secretAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Secret token as a Bearer token in the Authorization header or as a query parameter"
+      }
+    }
+  }
+}

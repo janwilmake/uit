@@ -1,0 +1,12 @@
+{
+  "$schema": "https://cli.xymake.com/xymake.schema.json",
+  "posts": {
+    "url-convention": {
+      "url": "https://x.com/janwilmake/status/1908066262514848040"
+    },
+
+    "cloudflare-cpu-time-increase": {
+      "url": "https://x.com/ritakozlov_/status/1904562949542338843"
+    }
+  }
+}

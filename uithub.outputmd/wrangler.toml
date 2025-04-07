@@ -1,0 +1,8 @@
+name = "uithub_outputmd"
+main = "main.ts"
+compatibility_date = "2025-04-01"
+dev.port = 3000
+routes = [
+  { pattern = "outputmd.uithub.com", custom_domain = true }
+]
+limits.cpu_ms = 300000

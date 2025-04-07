@@ -1,0 +1,268 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "UIThub Search API",
+    "description": "API for filtering and searching repository content from external sources",
+    "version": "1.0.0",
+    "contact": {
+      "name": "UIThub Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://search.uithub.com",
+      "description": "Production server"
+    }
+  ],
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ],
+  "paths": {
+    "/{url}": {
+      "get": {
+        "summary": "Search and filter repository content",
+        "description": "Streams in FormData from an external URL, applies filters, and returns the filtered content",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "path",
+            "description": "URL that responds with a FormData stream. May include username:password credentials",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Basic authentication credentials",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+          },
+          {
+            "name": "omitFirstSegment",
+            "in": "query",
+            "description": "Whether to omit the first segment of the path",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "rawUrlPrefix",
+            "in": "query",
+            "description": "Prefix to add to raw URLs",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "basePath",
+            "in": "query",
+            "description": "One or more base paths to filter on (after first segment got omitted if needed)",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "pathPatterns",
+            "in": "query",
+            "description": "Glob pattern for files to include. Uses `minimatch` to turn glob pattern into regex",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "excludePathPatterns",
+            "in": "query",
+            "description": "Glob pattern for files to exclude. Applied after `pathPatterns` if both are present",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "enableFuzzyMatching",
+            "in": "query",
+            "description": "Boolean to enable fuzzy matching for pathPatterns (like VS Code's Cmd+P)",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "disableGenignore",
+            "in": "query",
+            "description": "Disables adhering to `.genignore` from repo or default `.genignore`",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "maxFileSize",
+            "in": "query",
+            "description": "Maximum file size to include (in bytes)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "A text/pattern to search for in the file content. Must be base64 encoded and urlEncoded (e.g. \"encodeURIComponent(btoa(your_regex))\")",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isRegex",
+            "in": "query",
+            "description": "Boolean to enable 'search' using regex",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "isCaseSensitive",
+            "in": "query",
+            "description": "Boolean to enable/disable case sensitivity for 'search'",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "isMatchWholeWord",
+            "in": "query",
+            "description": "Boolean to match complete words only for 'search'",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "isFirstHitOnly",
+            "in": "query",
+            "description": "If given, will stop streaming after a first hit is found",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "maxTokens",
+            "in": "query",
+            "description": "Maximum number of tokens allowed in the response. Parse will stop including files after this number of tokens. Tokens is calculated as `contentString.length/5`",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully processed and filtered the content",
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Missing required parameters or invalid input",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Basic realm=\"Archive Access\""
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error while processing the request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication credentials in format username:password"
+      }
+    }
+  }
+}

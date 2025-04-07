@@ -1,0 +1,213 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ZIP Archive Processor API",
+    "description": "An API that fetches and processes ZIP archives, returning the contents as multipart form data with various processing options.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/{zipUrl}": {
+      "get": {
+        "summary": "Process a ZIP archive",
+        "description": "Fetches a ZIP archive from the specified URL, processes its contents, and returns the files as multipart form data. Authentication is required.",
+        "parameters": [
+          {
+            "name": "zipUrl",
+            "in": "path",
+            "required": true,
+            "description": "URL path to the ZIP archive that should be processed",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "omitFirstSegment",
+            "in": "query",
+            "description": "When true, removes the first segment from file paths in the ZIP archive",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "rawUrlPrefix",
+            "in": "query",
+            "description": "URL prefix to use for referencing binary files instead of including them directly in the response",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Basic authentication credentials (base64 encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+          },
+          {
+            "name": "x-archive-authorization",
+            "in": "header",
+            "description": "Alternative way to provide authentication credentials, also passed to the ZIP archive source if present",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully processed ZIP archive",
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZipContents"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ZipContents"
+                },
+                "description": "For browser requests, content is returned as text/plain with the same boundary format"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - No ZIP URL provided",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "No ZIP URL provided"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string",
+                  "example": "Basic realm=\"Archive Access\""
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Authentication required"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Error processing ZIP: [error message]"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ZipContents": {
+        "type": "object",
+        "description": "The contents of the ZIP archive represented as a multipart form data object",
+        "properties": {
+          "files": {
+            "type": "array",
+            "description": "Array of file entries extracted from the ZIP archive",
+            "items": {
+              "$ref": "#/components/schemas/FileEntry"
+            }
+          }
+        }
+      },
+      "FileEntry": {
+        "type": "object",
+        "description": "A file entry extracted from the ZIP archive",
+        "required": [
+          "name",
+          "content",
+          "contentType",
+          "contentTransferEncoding",
+          "fileHash"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Path and name of the file within the ZIP archive, potentially modified by omitFirstSegment",
+            "example": "/path/to/file.txt"
+          },
+          "filename": {
+            "type": "string",
+            "description": "Same as name, representing the file's original path and name",
+            "example": "/path/to/file.txt"
+          },
+          "content": {
+            "type": "string",
+            "format": "binary",
+            "description": "The binary content of the file (may be omitted if rawUrlPrefix is provided for binary files)"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "MIME type of the file content, determined by the file extension",
+            "example": "text/plain"
+          },
+          "contentLength": {
+            "type": "integer",
+            "description": "Length of the uncompressed file in bytes",
+            "example": 12345
+          },
+          "contentTransferEncoding": {
+            "type": "string",
+            "description": "Encoding used for the content (binary or 8bit)",
+            "enum": ["binary", "8bit"],
+            "example": "8bit"
+          },
+          "fileHash": {
+            "type": "string",
+            "description": "SHA-256 hash of the file content",
+            "example": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL for accessing the file directly (only present if rawUrlPrefix is provided and the file is binary)",
+            "example": "https://cdn.example.com/path/to/file.jpg"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication credentials required for API access"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ]
+}

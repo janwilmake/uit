@@ -1,0 +1,275 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "OutputZIP API",
+    "description": "A service that converts FormData streams to ZIP files",
+    "version": "1.0.0",
+    "contact": {
+      "name": "UIThub",
+      "url": "https://uithub.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://outputzip.uithub.com",
+      "description": "OutputZIP service"
+    }
+  ],
+  "paths": {
+    "/{url}": {
+      "get": {
+        "summary": "Convert FormData from URL to ZIP",
+        "description": "Fetches FormData from the provided URL and converts it to a ZIP file",
+        "operationId": "getFormDataAsZip",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "path",
+            "description": "URL that returns a FormData stream to be converted to ZIP",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "example": "https://ingestzip.uithub.com/https://github.com/janwilmake/fetch-each/archive/refs/heads/main.zip?omitFirstSegment=true"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Basic authorization credentials",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully converted FormData to ZIP",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename",
+                "example": "attachment; filename=\"formdata.zip\""
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - No URL provided or invalid multipart request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "No URL provided"
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or invalid credentials",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authentication challenge",
+                "example": "Basic realm=\"FormData to ZIP Converter\""
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Authentication required"
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Method not allowed"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error processing data: Failed to create ZIP"
+              }
+            }
+          },
+          "502": {
+            "description": "Bad gateway - Failed to fetch data from source URL",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Failed to fetch data: 404 Not Found"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "post": {
+        "summary": "Convert FormData to ZIP",
+        "description": "Converts a multipart/form-data request body to a ZIP file",
+        "operationId": "postFormDataAsZip",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Basic authorization credentials",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+          }
+        ],
+        "requestBody": {
+          "description": "Multipart form data to be converted to ZIP",
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Files to include in the ZIP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully converted FormData to ZIP",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Attachment filename",
+                "example": "attachment; filename=\"formdata.zip\""
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid multipart request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Invalid multipart request body"
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or invalid credentials",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authentication challenge",
+                "example": "Basic realm=\"FormData to ZIP Converter\""
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Authentication required"
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Method not allowed"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Error processing data: Failed to create ZIP"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication with credentials stored in environment variable"
+      }
+    }
+  },
+  "security": [
+    {
+      "basicAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "ZIP Conversion",
+      "description": "Operations for converting FormData to ZIP files"
+    }
+  ],
+  "externalDocs": {
+    "description": "UIThub Documentation",
+    "url": "https://uithub.com"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250406.0"
+  }
+}

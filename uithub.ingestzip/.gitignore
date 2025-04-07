@@ -1,0 +1,4 @@
+node_modules
+.wrangler
+package-lock.json
+.dev.vars

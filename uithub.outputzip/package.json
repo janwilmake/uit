@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@zip.js/zip.js": "^2.7.60",
+    "multipart-formdata-stream-js": "^0.0.9"
+  }
+}

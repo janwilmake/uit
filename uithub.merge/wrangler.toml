@@ -1,0 +1,10 @@
+name = "uithub_search"
+main = "main.ts"
+compatibility_date = "2025-04-01"
+dev.port = 3000
+routes = [
+  { pattern = "search.uithub.com", custom_domain = true }
+]
+[[services]]
+binding = "API"
+service = "uithub_zipstream"
