@@ -7,6 +7,26 @@ const DEFAULT_MAX_TOKENS = 50000;
 const DEFAULT_MAX_FILE_SIZE = 25 * 1024; // ±5k tokens
 const TOKEN_ESTIMATION_FACTOR = 5;
 
+const withLeadingSpace = (lineNumber: number, totalLines: number) => {
+  const totalCharacters = String(totalLines).length;
+  const spacesNeeded = totalCharacters - String(lineNumber).length;
+  return " ".repeat(spacesNeeded) + String(lineNumber);
+};
+
+// TODO: maybe bring this back?
+const addLineNumbers = (content: string, shouldAddLineNumbers: boolean) => {
+  if (!shouldAddLineNumbers) {
+    return content;
+  }
+  const lines = content.split("\n");
+
+  return lines
+    .map(
+      (line, index) => `${withLeadingSpace(index + 1, lines.length)} | ${line}`,
+    )
+    .join("\n");
+};
+
 /**
  * Token counter that approximates the number of tokens in a string
  * @param {string} text - The text to count tokens for
@@ -148,6 +168,7 @@ async function processPartsToMarkdown(
       await writer.write(encoder.encode(text));
     };
 
+    const INDENTATION_PER_LEVEL = 3;
     // Iterate through parts
     for await (const part of iterateMultipart(body, boundary)) {
       if (!part.name) continue;
@@ -165,6 +186,8 @@ async function processPartsToMarkdown(
       const pathParts = filename.split("/").filter((p) => p.trim() !== "");
       const currentFilename = pathParts.pop();
 
+      let isLastEntry = false;
+
       // Update tree structure
       let commonPrefixLength = 0;
       while (
@@ -181,15 +204,20 @@ async function processPartsToMarkdown(
 
       // Open new directories
       for (let i = commonPrefixLength; i < pathParts.length; i++) {
-        treeStructure += `${" ".repeat(depth * 2)}└── ${pathParts[i]}/\n`;
+        const treeString = isLastEntry ? "└── " : "├── ";
+        treeStructure += `${" ".repeat(
+          depth * INDENTATION_PER_LEVEL,
+        )}${treeString}${pathParts[i]}/\n`;
         depth++;
       }
 
       // Add file to tree
+      const treeString = isLastEntry ? "└── " : "├── ";
+
       const tooLargeText = isFileTooLarge ? ` (omited due to size)` : "";
       treeStructure += `${" ".repeat(
-        depth * 2,
-      )}└── ${currentFilename}${tooLargeText}\n`;
+        depth * INDENTATION_PER_LEVEL,
+      )}${treeString}${currentFilename}${tooLargeText}\n`;
 
       // Update last path
       lastPath = [...pathParts];
@@ -231,14 +259,21 @@ async function processPartsToMarkdown(
     treeStructure += "```\n\n";
 
     // Write the complete markdown to the stream
+
     await writeText(treeStructure);
     await writeText(fileContents);
 
     if (isCapped) {
       await writeText(
-        `\nThe content has been capped at ${maxTokens} tokens. Please apply other filters to refine your result.`,
+        `\n\nThe content has been capped at ${maxTokens} tokens, and files over ${maxFileSize} bytes have been omitted. The user could consider applying other filters to refine the result. `,
       );
+    } else {
+      await writeText(`\n\n`);
     }
+
+    await writeText(
+      `The better and more specific the context, the better the LLM can follow instructions. If the context seems verbose, the user can refine the filter using uithub. Thank you for using https://uithub.com - Perfect LLM context for any GitHub repo.`,
+    );
 
     // Close the writer
     await writer.close();
