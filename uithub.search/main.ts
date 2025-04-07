@@ -104,6 +104,11 @@ export default {
         headers["Authorization"] = authHeader;
       }
 
+      const sourceAuthorization = request.headers.get("x-source-authorization");
+      if (sourceAuthorization) {
+        headers["x-source-authorization"] = sourceAuthorization;
+      }
+
       // Token tracking
       let totalTokens = 0;
       let hitFound = false;

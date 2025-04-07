@@ -52,10 +52,7 @@ export default {
         );
       }
 
-      sourceUrls = urls.map((url) => ({
-        url,
-        Authorization: authHeader,
-      }));
+      sourceUrls = urls.map((url) => ({ url }));
     } else if (request.method === "POST") {
       try {
         const body = (await request.json()) as RequestBody[];
@@ -103,9 +100,9 @@ export default {
             sourceUrls.map(async (source) => {
               try {
                 const response = await fetch(source.url, {
-                  headers: {
-                    Authorization: source.Authorization || authHeader || "",
-                  },
+                  headers: source.Authorization
+                    ? { Authorization: source.Authorization }
+                    : undefined,
                 });
 
                 if (!response.ok || !response.body) {

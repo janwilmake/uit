@@ -59,8 +59,7 @@ export default {
         });
       }
 
-      const apiKey =
-        url.searchParams.get("apiKey") || request.headers.get("x-zip-api-key");
+      const sourceAuthorization = request.headers.get("x-source-authorization");
       const zipUrl = decodeURIComponent(url.pathname.slice("/tree/".length));
       const type = url.searchParams.get("type");
       const basePath = url.searchParams.get("basePath");
@@ -80,7 +79,7 @@ export default {
         basePath,
         omitFirstSegment,
         accept,
-        apiKey,
+        sourceAuthorization,
       );
     } catch (error) {
       console.error("Error processing request:", error);
@@ -204,7 +203,7 @@ function getCacheControl(request, url, apiKey) {
  * @param {string|null} basePath
  * @param {boolean} omitFirstSegment
  * @param {*} accept
- * @param {string|null} apiKey
+ * @param {string|null} sourceAuthorization
  * @returns {Promise<Response>} Processed tree data response
  */
 async function fetchTree(
@@ -216,9 +215,9 @@ async function fetchTree(
   basePath,
   omitFirstSegment,
   accept,
-  apiKey,
+  sourceAuthorization,
 ) {
-  const cacheKey = `v3.ziptree:${zipUrl}/apiKey=${apiKey}`;
+  const cacheKey = `v3.ziptree:${zipUrl}/apiKey=${sourceAuthorization}`;
 
   /**
    * @type *
@@ -229,7 +228,7 @@ async function fetchTree(
   const { cacheControl, maxAge, staleWhileRevalidate } = getCacheControl(
     request,
     url,
-    apiKey,
+    sourceAuthorization,
   );
 
   if (already && already.createdAt > Date.now() - staleWhileRevalidate * 1000) {
@@ -247,7 +246,7 @@ async function fetchTree(
           basePath,
           omitFirstSegment,
           accept,
-          apiKey,
+          sourceAuthorization,
           cacheKey,
         ),
       );
@@ -274,7 +273,7 @@ async function fetchTree(
     basePath,
     omitFirstSegment,
     accept,
-    apiKey,
+    sourceAuthorization,
     cacheKey,
   );
 }

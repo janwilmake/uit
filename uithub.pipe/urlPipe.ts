@@ -42,6 +42,8 @@ function processUrls(urls: string[]): string {
 
 export async function urlPipe(
   paths: string[],
+  sourceAuthorization: string | null,
+  env: any,
 ): Promise<{ response: Response; errors: any[] }> {
   const errors: any[] = [];
 
@@ -53,12 +55,16 @@ export async function urlPipe(
   }
 
   const fullUrl = processUrls(paths);
-  console.log({ fullUrl });
+
   try {
+    const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
+
+    if (sourceAuthorization) {
+      headers["x-source-authorization"] = sourceAuthorization;
+    }
+
     // Make a single request to the nested URL
-    const response = await fetch(fullUrl, {
-      headers: { Authorization: `Basic ${btoa("jan:secret")}` },
-    });
+    const response = await fetch(fullUrl, { headers });
 
     if (!response.ok) {
       throw new Error(`Request failed with status: ${response.status}`);
@@ -82,6 +88,7 @@ export default {
     const [ownerOrDomain, id, pageAndExt, branch, ...pathParts] = url.pathname
       .split("/")
       .slice(1);
+    const sourceAuthorization = request.headers.get("x-source-authorization");
 
     const [page, ext] = (pageAndExt || "").split(".");
 
@@ -148,7 +155,7 @@ export default {
       .map((x) => x!);
 
     // Example usage of urlPipe
-    const { response, errors } = await urlPipe(urls);
+    const { response, errors } = await urlPipe(urls, sourceAuthorization, env);
 
     // Log errors if any
     if (errors.length > 0) {

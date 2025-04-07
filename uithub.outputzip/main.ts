@@ -66,12 +66,14 @@ export default {
         return new Response("No URL provided", { status: 400 });
       }
 
+      const headers = { Authorization: authHeader };
+      const sourceAuthorization = request.headers.get("x-source-authorization");
+      if (sourceAuthorization) {
+        headers["x-source-authorization"] = sourceAuthorization;
+      }
+
       try {
-        const response = await fetch(fullUrl, {
-          headers: {
-            Authorization: authHeader,
-          },
-        });
+        const response = await fetch(fullUrl, { headers });
 
         if (!response.ok) {
           return new Response(

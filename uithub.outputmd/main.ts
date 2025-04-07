@@ -40,9 +40,10 @@ function isTextFile(filename) {
 /**
  * Processes a ZIP archive and returns its contents as markdown
  * @param {Request} request - The incoming request
+ * @param {*} env -
  * @returns {Response} - The response with markdown content
  */
-async function processZipArchive(request) {
+async function processZipArchive(request, env) {
   const url = new URL(request.url);
   const formDataUrl = url.pathname.substring(1) + url.search; // Remove leading slash
 
@@ -58,10 +59,14 @@ async function processZipArchive(request) {
     DEFAULT_MAX_FILE_SIZE;
 
   try {
+    const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
+
+    const sourceAuthorization = request.headers.get("x-source-authorization");
+    if (sourceAuthorization) {
+      headers["x-source-authorization"] = sourceAuthorization;
+    }
     // Fetch the form data
-    const response = await fetch(formDataUrl, {
-      headers: { Authorization: `Basic ${btoa("jan:secret")}` },
-    });
+    const response = await fetch(formDataUrl, { headers });
     if (!response.ok) {
       return new Response(
         `Failed to fetch form data: ${response.status} ${response.statusText}`,
@@ -242,6 +247,6 @@ async function processPartsToMarkdown(
 
 export default {
   async fetch(request, env, ctx) {
-    return processZipArchive(request);
+    return processZipArchive(request, env);
   },
 };
