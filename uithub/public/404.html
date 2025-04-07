@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uithub - Repository Not Found</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+</head>
+
+<body class="bg-black min-h-screen">
+    <nav id="navbar" class="fixed top-0 w-full bg-black/80 backdrop-blur-sm z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="/"
+                    class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+                    uithub
+                </a>
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="text-white hover:text-purple-400 transition-colors">Home</a>
+                    <a href="/openapi.html" class="text-white hover:text-purple-400 transition-colors">Docs</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 pt-24 pb-12">
+        <div class="mb-12 text-center">
+            <h1
+                class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-4">
+                Repository Not Found
+            </h1>
+            <p class="text-gray-400 text-lg">
+                The repository you're looking for could not be found
+            </p>
+        </div>
+
+        <div class="max-w-2xl mx-auto">
+            <!-- User Card (if data is available) -->
+            <div id="user-card" class="bg-gray-800 rounded-lg p-6 mb-8 hidden">
+                <div class="flex items-center space-x-4">
+                    <img id="user-avatar" src="" alt="User avatar" class="w-16 h-16 rounded-full">
+                    <div>
+                        <h2 id="user-login" class="text-xl font-semibold text-purple-400"></h2>
+                        <p id="permission-status" class="text-gray-400"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Display -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-8">
+                <h3 class="text-xl font-semibold text-red-400 mb-4">Error Details</h3>
+                <pre id="error-details"
+                    class="text-gray-300 bg-gray-900 p-4 rounded whitespace-pre-wrap overflow-y-auto max-h-96 w-full"></pre>
+            </div>
+
+            <!-- Login CTA -->
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <h3 id="login-heading" class="text-xl font-semibold text-purple-400 mb-4">Login with GitHub</h3>
+                <a id="login-button" href="/login?scope=user:email%20repo&redirect_uri="
+                    class="inline-block bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity">
+                    Login with GitHub
+                </a>
+                <p class="text-gray-400 mt-4 text-sm">
+                    By logging in you agree with the <a href="/tos.html"
+                        class="text-purple-400 hover:underline">terms</a> and
+                    <a href="/privacy.html" class="text-purple-400 hover:underline">privacy policy</a>.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const data = window.data;
+            // Get current URL for redirect
+            const currentUrl = encodeURIComponent(window.location.origin + window.location.pathname + window.location.search);
+            const loginButton = document.getElementById('login-button');
+            loginButton.href = `/login?scope=user:email%20repo&redirect_uri=${currentUrl}`;
+
+            // Check if data is available
+            if (data?.owner_login) {
+                // Show user card
+                const userCard = document.getElementById('user-card');
+                userCard.classList.remove('hidden');
+
+                // Set user details
+                document.getElementById('user-login').textContent = data.owner_login || 'Unknown User';
+                document.getElementById('user-avatar').src = data.avatar_url || '';
+
+                // Update login text based on permissions
+                const loginHeading = document.getElementById('login-heading');
+                const loginButton = document.getElementById('login-button');
+
+                if (data.scope && data.scope.includes('repo')) {
+                    document.getElementById('permission-status').textContent = 'You have private repository access';
+                    loginHeading.textContent = 'Login with another account';
+                    loginButton.textContent = 'Login with another account';
+                } else if (data.scope) {
+                    document.getElementById('permission-status').textContent = 'You don\'t have private repository access';
+                    loginHeading.textContent = 'Login with private repo permission';
+                    loginButton.textContent = 'Login with private repo permission';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -51,7 +51,9 @@ export async function urlPipe(
 
   const fullUrl = processUrls(paths);
 
-  const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
+  const headers: { [key: string]: string } = {
+    Authorization: `Basic ${btoa(env.CREDENTIALS)}`,
+  };
 
   if (sourceAuthorization) {
     headers["x-source-authorization"] = sourceAuthorization;
@@ -73,7 +75,7 @@ export async function urlPipe(
 }
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request: Request, env: any) {
     const url = new URL(request.url);
     const [ownerOrDomain, id, pageAndExt, branch, ...pathParts] = url.pathname
       .split("/")

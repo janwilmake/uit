@@ -1,4 +1,4 @@
-# Universal Information Terminal
+# Universal Information Terminal Hub
 
 U.I.T. is a library for **performant, modular, low-memory** file processing at scale, in the Cloud. It works by offering a 4-step process to gather a file hierarchy from any desired modalty, apply filters and transformations, and output it in any desired modality.
 
@@ -79,3 +79,12 @@ UIT aims to be a convention to streaming, filtering, and transforming binary and
 - https://github.com/janwilmake/uithub.typedoc - Parses Typescript Code into markdown spec docs
 
 Please open a discussion, issue, pull request, or [reach out](https://x.com/janwilmake) if you want a new module to be added to this list or have any unmet requirements. UIT is also looking for sponsors.
+
+# Links
+
+- [TODO.md](TODO.md)
+- [BACKLOG.md](BACKLOG.md)
+- [CHANGELOG.md](CHANGELOG.md)
+- [ADR.md](ADR.md)
+
+~ Being made with ❤️ by [janwilmake](https://x.com/janwilmake)

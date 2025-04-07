@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- to prevent xss -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' https://cdnjs.cloudflare.com; 
+      script-src 'self' 'unsafe-inline' https://vercel.live/_next-live/ https://cdn.tailwindcss.com/; 
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      font-src 'self';
+      connect-src 'self';
+    ">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repository View</title>
+    <meta name="description" content="View repository contents with advanced filtering" />
+    <meta name="keywords" content="GitHub, LLM, context, code, developer tools" />
+    <meta name="author" content="Code From Anywhere" />
+    <meta name="robots" content="index, follow" />
+
+    <style>
+        :root {
+            --bg-color: white;
+            --text-color: black;
+            --sidebar-bg: #f0f0f0;
+            --sidebar-hover: #e0e0e0;
+            --sidebar-active: #d0d0d0;
+            --sidebar-border: #ccc;
+            --content-bg: white;
+            --button-bg: #f0f0f0;
+            --button-hover: #e0e0e0;
+            --button-active: #d0d0d0;
+            --button-border: #ccc;
+            --warning-bg: #fff3cd;
+            --warning-text: #856404;
+            --warning-border: #ffeeba;
+            --input-bg: white;
+            --input-border: #ccc;
+            --folder-icon: #d8a03b;
+            --file-icon: #8a8a8a;
+            --checkbox-bg: white;
+            --checkbox-border: #ccc;
+            --checkbox-check: #333;
+            --search-bg: white;
+            --border-color: #ddd;
+            --tree-indent: #e5e5e5;
+            --token-count-bg: #eaeaea;
+            --action-button-bg: #f5f5f5;
+            --action-button-text: #333;
+            --action-button-hover: #e0e0e0;
+            --section-header-bg: #f7f7f7;
+            --search-type-active: #4a86e8;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #f0f0f0;
+                --sidebar-bg: #252526;
+                --sidebar-hover: #2d2d2d;
+                --sidebar-active: #37373d;
+                --sidebar-border: #444;
+                --content-bg: #1e1e1e;
+                --button-bg: #3a3a3a;
+                --button-hover: #454545;
+                --button-active: #555555;
+                --button-border: #555;
+                --warning-bg: #382d1a;
+                --warning-text: #ffecb5;
+                --warning-border: #544321;
+                --input-bg: #3c3c3c;
+                --input-border: #555;
+                --folder-icon: #e2c08d;
+                --file-icon: #c2c2c2;
+                --checkbox-bg: #3c3c3c;
+                --checkbox-border: #555;
+                --checkbox-check: #fff;
+                --search-bg: #3c3c3c;
+                --border-color: #444;
+                --tree-indent: #444;
+                --token-count-bg: #2d2d2d;
+                --action-button-bg: #333;
+                --action-button-text: #eee;
+                --action-button-hover: #444;
+                --section-header-bg: #2d2d2d;
+                --search-type-active: #5f9eff;
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .layout-container {
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: var(--content-bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+
+            .layout-container {
+                flex-direction: column;
+                height: auto;
+                overflow: visible;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: none;
+                border-right: none;
+                border-bottom: 1px solid var(--sidebar-border);
+            }
+
+            .main-content {
+                height: auto;
+            }
+        }
+
+        .token-count-bar {
+            background-color: var(--token-count-bg);
+            padding: 8px 15px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .token-counts {
+            display: flex;
+            gap: 15px;
+        }
+
+        .content-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            padding: 15px;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .sidebar-section {
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px;
+        }
+
+        .sidebar-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            user-select: none;
+        }
+
+        .sidebar-section h3::before {
+            content: '▼';
+            display: inline-block;
+            margin-right: 5px;
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .sidebar-section.collapsed h3::before {
+            transform: rotate(-90deg);
+        }
+
+        .sidebar-section.collapsed .section-content {
+            display: none;
+        }
+
+        .sidebar-section .section-content {
+            margin-top: 8px;
+        }
+
+        .search-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .search-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 6px 30px 6px 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 3px;
+            background-color: var(--search-bg);
+            color: var(--text-color);
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 8px;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .search-icon:hover {
+            opacity: 1;
+        }
+
+        .search-types {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .search-type {
+            flex: 1;
+            min-width: 40px;
+            padding: 6px 8px;
+            border: 1px solid var(--button-border);
+            border-radius: 3px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+
+        .search-type:hover {
+            background-color: var(--button-hover);
+        }
+
+        .search-type.active {
+            background-color: var(--search-type-active);
+            color: white;
+            font-weight: bold;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            user-select: none;
+            margin-right: 8px;
+        }
+
+        .checkbox-input {
+            margin-right: 4px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--checkbox-border);
+            border-radius: 2px;
+            background-color: var(--checkbox-bg);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .checkbox-input:checked::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--checkbox-check);
+            border-radius: 1px;
+        }
+
+        .file-input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 3px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 13px;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+        }
+
+        .folder-tree {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .folder-tree li {
+            margin: 2px 0;
+        }
+
+        .folder-item {
+            display: flex;
+            align-items: center;
+            padding: 3px 5px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .folder-item:hover {
+            background-color: var(--sidebar-hover);
+        }
+
+        .folder-item.active {
+            background-color: var(--sidebar-active);
+        }
+
+        .folder-icon {
+            margin-right: 5px;
+            font-size: 14px;
+            color: var(--folder-icon);
+        }
+
+        .format-select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 3px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .config-option {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        .config-option label {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .config-input {
+            padding: 6px 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 3px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 13px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 15px 10px;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 3px;
+            background-color: var(--action-button-bg);
+            color: var(--action-button-text);
+            border: 1px solid var(--button-border);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .action-button:hover {
+            background-color: var(--action-button-hover);
+        }
+
+        .action-button svg {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+        }
+
+        .warning-banner {
+            background-color: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 10px 15px;
+            font-size: 13px;
+            position: relative;
+            display: none;
+        }
+
+        .warning-close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--warning-text);
+        }
+
+        .section-header {
+            background-color: var(--section-header-bg);
+            padding: 8px 10px;
+            font-weight: 600;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div class="layout-container">
+        <div class="sidebar">
+            <div class="section-header">Repository Explorer</div>
+
+            <div class="sidebar-section">
+                <h3>Search</h3>
+                <div class="section-content">
+                    <div class="search-box">
+                        <div class="search-input-container">
+                            <input type="text" id="searchInput" class="search-input" placeholder="Search in files..." />
+                            <svg id="searchButton" class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </div>
+                        <div class="search-types">
+                            <div id="regularSearch" class="search-type active" data-type="regular">Regular</div>
+                            <div id="regexSearch" class="search-type" data-type="regex">Regex</div>
+                            <div id="fuzzySearch" class="search-type" data-type="fuzzy">Fuzzy</div>
+                            <div id="llmSearch" class="search-type" data-type="llm">LLM</div>
+                        </div>
+                        <div class="checkbox-options">
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="checkbox-input" id="caseSensitive" />
+                                Case sensitive
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="checkbox-input" id="matchWholeWord" />
+                                Whole word
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Path Filters</h3>
+                <div class="section-content">
+                    <input type="text" id="includeFiles" class="file-input"
+                        placeholder="Files to include (glob patterns)" />
+                    <input type="text" id="excludeFiles" class="file-input"
+                        placeholder="Files to exclude (glob patterns)" />
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Folders</h3>
+                <div class="section-content">
+                    <select id="formatSelect" class="format-select">
+                        <option value="text/html">Format: HTML</option>
+                        <option value="application/json">Format: JSON</option>
+                        <option value="text/yaml">Format: YAML</option>
+                        <option value="text/plain">Format: Text</option>
+                        <option value="text/markdown">Format: Markdown</option>
+                    </select>
+                    <ul class="folder-tree" id="folderTree">
+                        <!-- Dynamic folder tree goes here -->
+                    </ul>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>Extra Configuration</h3>
+                <div class="section-content">
+                    <div class="config-option">
+                        <label for="maxFileSize">Max file size (bytes)</label>
+                        <input type="number" id="maxFileSize" class="config-input" min="0" />
+                    </div>
+                    <div class="config-option">
+                        <label for="maxTokens">Max tokens</label>
+                        <input type="number" id="maxTokens" class="config-input" min="0" value="50000" />
+                    </div>
+                    <div class="config-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="checkbox-input" id="disableGenignore" />
+                            Disable .genignore
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="copyButton" class="action-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy (0 tokens)
+                </button>
+                <button id="talkToAI" class="action-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Talk to AI
+                </button>
+                <a href="#" id="viewOnGitHub" class="action-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                        </path>
+                    </svg>
+                    View on GitHub
+                </a>
+                <a href="/openapi.html" class="action-button" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Try the API
+                </a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="token-count-bar">
+                <div class="token-counts">
+                    <span id="tokenCount">±0 tokens</span>
+                    <span id="totalTokens">Total: 0 tokens in repo</span>
+                </div>
+                <span id="fileInfo"></span>
+            </div>
+            <div id="warningBanner" class="warning-banner">
+                The response has been limited. You can remove this limitation by adjusting the max tokens filter.
+                <span class="warning-close"
+                    onclick="document.getElementById('warningBanner').style.display='none'">×</span>
+            </div>
+            <div class="content-container">
+                <pre id="textContent"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dummy data (would be replaced by server-side data)
+        window.data = {
+            tokens: 12345,
+            totalTokens: 56789,
+            totalLines: 9876,
+            isTokensCapped: true,
+            fileString: "This is the file content that would be displayed in the pre element.\nIt can span multiple lines and would be properly displayed.\n\nThe actual content would be much larger and would contain the repository files.",
+            tree: {
+                src: {
+                    components: {},
+                    utils: {},
+                },
+                public: {
+                    images: {}
+                },
+                docs: {},
+                tests: {}
+            },
+            url: {
+                origin: "https://uithub.com",
+                pathname: "/owner/repo/tree/main"
+            },
+            owner: "owner",
+            repo: "repo",
+            branch: "main"
+        };
+
+        // On page load
+        document.addEventListener('DOMContentLoaded', function () {
+            // Update token count
+            updateTokenCount();
+
+            // Populate folder tree
+            populateFolderTree();
+
+            // Set up event listeners
+            setupEventListeners();
+
+
+            // Show warning if needed
+            if (window.data.isTokensCapped) {
+                document.getElementById('warningBanner').style.display = 'block';
+            }
+
+            // Initialize from URL parameters
+            initializeFromUrl();
+        });
+
+        // Update token count display
+        function updateTokenCount() {
+            const tokenCount = document.getElementById('tokenCount');
+            tokenCount.textContent = `±${window.data.tokens} tokens`;
+
+            const totalTokens = document.getElementById('totalTokens');
+            totalTokens.textContent = `Total: ${window.data.totalTokens} tokens in repo`;
+
+            // Update copy button text
+            const copyButton = document.getElementById('copyButton');
+            copyButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copy (${window.data.tokens} tokens)
+            `;
+        }
+
+        // Populate folder tree from tree data
+        function populateFolderTree() {
+            const folderTree = document.getElementById('folderTree');
+            folderTree.innerHTML = '';
+
+            function buildTree(tree, parent, pathPrefix = '') {
+                for (const [key, value] of Object.entries(tree)) {
+                    // Skip files (null values)
+                    if (value === null) continue;
+
+                    const li = document.createElement('li');
+                    const item = document.createElement('div');
+                    item.className = 'folder-item';
+
+                    const folderPath = pathPrefix ? `${pathPrefix}/${key}` : key;
+
+                    // It's a folder
+                    item.innerHTML = `<span class="folder-icon">📁</span> ${key}`;
+                    item.dataset.path = folderPath;
+                    item.addEventListener('click', function () {
+                        navigateToFolder(folderPath);
+                    });
+
+                    li.appendChild(item);
+                    parent.appendChild(li);
+
+                    // Only create nested elements if there are folders inside
+                    if (Object.keys(value).length > 0) {
+                        const nestedUl = document.createElement('ul');
+                        nestedUl.className = 'folder-tree';
+                        buildTree(value, nestedUl, folderPath);
+                        li.appendChild(nestedUl);
+                    }
+                }
+            }
+
+            buildTree(window.data.tree, folderTree);
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Toggle sections
+            const sections = document.querySelectorAll('.sidebar-section h3');
+            sections.forEach(section => {
+                section.addEventListener('click', function () {
+                    this.parentElement.classList.toggle('collapsed');
+                });
+            });
+
+            // Copy button
+            document.getElementById('copyButton').addEventListener('click', function () {
+                const text = document.getElementById('textContent').textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    this.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                        Copied!
+                    `;
+                    setTimeout(() => {
+                        updateTokenCount();
+                    }, 2000);
+                });
+            });
+
+            // Talk to AI button
+            document.getElementById('talkToAI').addEventListener('click', function () {
+                const url = new URL(window.data.url.origin.replace('u', 'g') + window.data.url.pathname);
+                // Add all current query parameters
+                window.location.href = url.toString();
+            });
+
+            // View on GitHub button
+            document.getElementById('viewOnGitHub').addEventListener('click', function () {
+                const url = new URL(window.data.url.origin.replace('u', 'g') + window.data.url.pathname);
+                window.open(url.toString(), '_blank');
+            });
+
+            // Format select
+            document.getElementById('formatSelect').addEventListener('change', updateQueryParams);
+
+            // Search type selection
+            document.querySelectorAll('.search-type').forEach(typeButton => {
+                typeButton.addEventListener('click', function () {
+                    // Remove active class from all search types
+                    document.querySelectorAll('.search-type').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+
+                    // Add active class to clicked search type
+                    this.classList.add('active');
+
+                    // Update URL without navigating
+                    updateQueryParams();
+                });
+            });
+
+            // Search button click (icon)
+            document.getElementById('searchButton').addEventListener('click', function () {
+                executeSearch();
+            });
+
+            // Enter key in search input
+            document.getElementById('searchInput').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    executeSearch();
+                }
+            });
+
+            // Search options
+            document.getElementById('caseSensitive').addEventListener('change', updateQueryParams);
+            document.getElementById('matchWholeWord').addEventListener('change', updateQueryParams);
+
+            // File filters
+            document.getElementById('includeFiles').addEventListener('input', updateQueryParams);
+            document.getElementById('excludeFiles').addEventListener('input', updateQueryParams);
+
+            // Extra config
+            document.getElementById('maxFileSize').addEventListener('input', updateQueryParams);
+            document.getElementById('maxTokens').addEventListener('input', updateQueryParams);
+            document.getElementById('disableGenignore').addEventListener('change', updateQueryParams);
+        }
+
+
+
+
+        // Execute search based on currently selected search type
+        function executeSearch() {
+            const searchText = document.getElementById('searchInput').value.trim();
+            if (!searchText) return;
+
+            // Determine which search type is currently active
+            const activeType = document.querySelector('.search-type.active').dataset.type;
+
+            // Build the URL for navigation
+            const url = new URL(window.location.href);
+
+            // Clear any existing search params
+            url.searchParams.delete('search');
+            url.searchParams.delete('regex');
+            url.searchParams.delete('enableFuzzyMatching');
+            url.searchParams.delete('llmSearch');
+
+            // Set the appropriate search param based on active type
+            switch (activeType) {
+                case 'regular':
+                    url.searchParams.set('search', searchText);
+                    break;
+                case 'regex':
+                    url.searchParams.set('regex', encodeURIComponent(btoa(searchText)));
+                    break;
+                case 'fuzzy':
+                    url.searchParams.set('search', searchText);
+                    url.searchParams.set('enableFuzzyMatching', 'true');
+                    break;
+                case 'llm':
+                    url.searchParams.set('llmSearch', searchText);
+                    break;
+            }
+
+            // Add search options
+            if (document.getElementById('caseSensitive').checked) {
+                url.searchParams.set('searchCaseSensitive', 'true');
+            } else {
+                url.searchParams.delete('searchCaseSensitive');
+            }
+
+            if (document.getElementById('matchWholeWord').checked) {
+                url.searchParams.set('searchMatchWholeWord', 'true');
+            } else {
+                url.searchParams.delete('searchMatchWholeWord');
+            }
+
+            // Navigate to the search results
+            window.location.href = url.toString();
+        }
+
+        // Update query parameters without navigating
+        function updateQueryParams() {
+            // This function is used for non-search parameters and updating the URL without navigation
+            const url = new URL(window.location.href);
+
+            // Format
+            const format = document.getElementById('formatSelect').value;
+            url.searchParams.set('accept', format);
+
+            // File patterns
+            const includePattern = document.getElementById('includeFiles').value.trim();
+            if (includePattern) {
+                url.searchParams.set('pathPatterns', includePattern);
+            } else {
+                url.searchParams.delete('pathPatterns');
+            }
+
+            const excludePattern = document.getElementById('excludeFiles').value.trim();
+            if (excludePattern) {
+                url.searchParams.set('excludePathPatterns', excludePattern);
+            } else {
+                url.searchParams.delete('excludePathPatterns');
+            }
+
+            // Extra config
+            const maxFileSize = document.getElementById('maxFileSize').value;
+            if (maxFileSize) {
+                url.searchParams.set('maxFileSize', maxFileSize);
+            } else {
+                url.searchParams.delete('maxFileSize');
+            }
+
+            const maxTokens = document.getElementById('maxTokens').value;
+            if (maxTokens) {
+                url.searchParams.set('maxTokens', maxTokens);
+            } else {
+                url.searchParams.delete('maxTokens');
+            }
+
+            if (document.getElementById('disableGenignore').checked) {
+                url.searchParams.set('disableGenignore', 'true');
+            } else {
+                url.searchParams.delete('disableGenignore');
+            }
+
+            // Apply the changes (without triggering page reload)
+            history.replaceState(null, '', url.toString());
+        }
+
+        // Navigate to a folder
+        function navigateToFolder(path) {
+            const url = new URL(window.location.href);
+            const [_, owner, repo, page, branch] = url.pathname.split("/");
+
+            // Create the new path
+            const newPath = `//${url.host}/${owner}/${repo}/tree/${branch || 'main'}/${path}`;
+
+            // Navigate to the folder
+            window.location.href = newPath + url.search;
+        }
+
+        // Initialize form values from URL parameters
+        function initializeFromUrl() {
+            const url = new URL(window.location.href);
+
+            // Format
+            document.getElementById('formatSelect').value = url.searchParams.get('accept') || 'text/html';
+
+            // Search (determine which type is active)
+            let activeSearchType = 'regular';
+            let searchValue = '';
+
+            if (url.searchParams.has('llmSearch')) {
+                activeSearchType = 'llm';
+                searchValue = url.searchParams.get('llmSearch');
+            } else if (url.searchParams.has('regex')) {
+                activeSearchType = 'regex';
+                try {
+                    searchValue = atob(decodeURIComponent(url.searchParams.get('regex')));
+                } catch (e) {
+                    console.error('Failed to decode regex:', e);
+                    searchValue = url.searchParams.get('regex');
+                }
+            } else if (url.searchParams.has('search')) {
+                if (url.searchParams.get('enableFuzzyMatching') === 'true') {
+                    activeSearchType = 'fuzzy';
+                } else {
+                    activeSearchType = 'regular';
+                }
+                searchValue = url.searchParams.get('search');
+            }
+
+            // Set the search input
+            document.getElementById('searchInput').value = searchValue;
+
+            // Highlight the active search type
+            document.querySelectorAll('.search-type').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            if (searchValue || !activeSearchType) {
+                document.getElementById(activeSearchType + 'Search').classList.add('active');
+            }
+
+            // Search options
+            document.getElementById('caseSensitive').checked = url.searchParams.get('searchCaseSensitive') === 'true';
+            document.getElementById('matchWholeWord').checked = url.searchParams.get('searchMatchWholeWord') === 'true';
+
+            // File patterns
+            document.getElementById('includeFiles').value = url.searchParams.get('pathPatterns') || '';
+            document.getElementById('excludeFiles').value = url.searchParams.get('excludePathPatterns') || '';
+
+            // Extra config
+            document.getElementById('maxFileSize').value = url.searchParams.get('maxFileSize') || '';
+            document.getElementById('maxTokens').value = url.searchParams.get('maxTokens') || '50000';
+            document.getElementById('disableGenignore').checked = url.searchParams.get('disableGenignore') === 'true';
+        }
+
+        // Helper to escape HTML
+        function escapeHTML(str) {
+            if (typeof str !== "string") {
+                return "";
+            }
+
+            return str
+                .replace(
+                    /[&<>'"]/g,
+                    (tag) =>
+                    ({
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        "'": "&#39;",
+                        '"': "&quot;",
+                    }[tag] || tag),
+                )
+                .replace(/\u0000/g, "\uFFFD") // Replace null bytes
+                .replace(/\u2028/g, "\\u2028") // Line separator
+                .replace(/\u2029/g, "\\u2029"); // Paragraph separator
+        }
+
+        // Handle resize events to adjust UI for different screen sizes
+        window.addEventListener('resize', function () {
+            // Any responsive adjustments can go here
+        });
+
+        // Apply initial UI state
+        // Highlight current path in folder tree if applicable
+        function highlightCurrentPath() {
+            const url = new URL(window.location.href);
+            const [_, owner, repo, page, branch, ...pathParts] = url.pathname.split("/");
+            const currentPath = pathParts.join("/");
+
+            if (currentPath) {
+                const folderItems = document.querySelectorAll('.folder-item');
+                folderItems.forEach(item => {
+                    if (item.dataset.path === currentPath) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        // Call this function after folder tree is populated
+        highlightCurrentPath();
+    </script>
+</body>
+
+</html>

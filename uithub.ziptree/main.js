@@ -18,16 +18,6 @@ const roundTokens = (count) => {
   }
   return Math.round(count / 1000) * 1000;
 };
-/**
-Responsibility:
-
-- Authentication
-- Public/private caching
-- Determine output-type
-
-Not:
-- finding zip url based on arbitrary URLs of websites such as github
-*/
 
 // Configuration
 const DEFAULT_MAX_AGE = 86400; // 24 hours

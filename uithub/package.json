@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "dependencies": {
+    "sponsorflare": "^0.2.5",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250405.0"
+  }
+}

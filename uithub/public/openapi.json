@@ -1,0 +1,561 @@
+{
+  "$schema": "https://ref.actionschema.com/openapi.json",
+  "x-actionschema": "0.0.1",
+
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Context API",
+    "version": "1.1.0",
+    "description": "API for fetching repository contents and related information from GitHub"
+  },
+  "servers": [
+    { "url": "https://context.forgithub.com" },
+    { "url": "https://uithub.com", "description": "Will be redirected" }
+  ],
+  "security": [{}, { "bearerAuth": [] }],
+  "paths": {
+    "/{owner}/{repo}/tree/{branch}/{path}": {
+      "get": {
+        "operationId": "getRepositoryContents",
+        "summary": "Get repository contents",
+        "description": "Fetch contents of a GitHub repository, with various filtering options. \n\nExample usage:\n- Max 10.000 LLM tokens in response: https://uithub.com/janwilmake/openapi-search?maxTokens=10000\n- Only markdown: https://uithub.com/janwilmake/openapi-search?ext=md\n- Only JS/TS: https://uithub.com/janwilmake/openapi-search?ext=js,jsx,ts,tsx\n- Respond in YAML: https://uithub.com/janwilmake/openapi-search?accept=text/yaml\n- Max 10kb per file: https://uithub.com/janwilmake/openapi-search?maxFileSize=10000\n\nKnown limitations: \n\n- Doesn't work well with large repos over 50mb\n- For now the API is free to use for fair use, but a ratelimit will be added in the future.\n- There is an hourly cap for githubs ratelimit, you can get up to 5000 requests per hour by using your own apiKey.\n\nRead below for more the entire spec, or try it out in the widget and get some code.\n\nReach out [here](https://news.ycombinator.com/item?id=41797578) for feedback or feature requests.",
+        "parameters": [
+          { "$ref": "#/components/parameters/owner" },
+          { "$ref": "#/components/parameters/repo" },
+          { "$ref": "#/components/parameters/branch" },
+          { "$ref": "#/components/parameters/path" },
+          { "$ref": "#/components/parameters/apiKey" },
+          { "$ref": "#/components/parameters/ext" },
+          { "$ref": "#/components/parameters/accept" },
+          { "$ref": "#/components/parameters/acceptQuery" },
+          { "$ref": "#/components/parameters/dir" },
+          { "$ref": "#/components/parameters/lines" },
+          { "$ref": "#/components/parameters/excludeExt" },
+          { "$ref": "#/components/parameters/excludeDir" },
+          { "$ref": "#/components/parameters/disableGenignore" },
+          { "$ref": "#/components/parameters/maxFileSize" },
+          { "$ref": "#/components/parameters/maxTokens" },
+          { "$ref": "#/components/parameters/yamlString" },
+          { "$ref": "#/components/parameters/omitFiles" },
+          { "$ref": "#/components/parameters/omitTree" }
+        ],
+        "responses": {
+          "200": {
+            "description": "A directory tree and all (filtered) files requested in the required format (html, json, text, or yaml).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://ref.actionschema.com/file-object.json"
+                }
+              },
+              "text/yaml": {
+                "schema": {
+                  "$ref": "https://ref.actionschema.com/file-object.json"
+                }
+              },
+              "text/markdown": { "schema": { "type": "string" } },
+              "text/html": { "schema": { "type": "string" } }
+            }
+          },
+          "404": {
+            "description": "Repository or file not found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/{owner}/{repo}/{threadType}/{number}": {
+      "get": {
+        "operationId": "getRelevantContents",
+        "summary": "Get contents relevant for an issue or discussion",
+        "description": "Fetch contents of a GitHub repository, with various filtering options. \n\nExample usage:\n- Max 10.000 LLM tokens in response: https://uithub.com/janwilmake/openapi-search?maxTokens=10000\n- Only markdown: https://uithub.com/janwilmake/openapi-search?ext=md\n- Only JS/TS: https://uithub.com/janwilmake/openapi-search?ext=js,jsx,ts,tsx\n- Respond in YAML: https://uithub.com/janwilmake/openapi-search?accept=text/yaml\n- Max 10kb per file: https://uithub.com/janwilmake/openapi-search?maxFileSize=10000\n\nKnown limitations: \n\n- Doesn't work well with large repos over 50mb\n- For now the API is free to use for fair use, but a ratelimit will be added in the future.\n- There is an hourly cap for githubs ratelimit, you can get up to 5000 requests per hour by using your own apiKey.\n\nRead below for more the entire spec, or try it out in the widget and get some code.\n\nReach out [here](https://news.ycombinator.com/item?id=41797578) for feedback or feature requests.",
+        "parameters": [
+          { "$ref": "#/components/parameters/owner" },
+          { "$ref": "#/components/parameters/repo" },
+          { "$ref": "#/components/parameters/number" },
+          { "$ref": "#/components/parameters/threadType" },
+          { "$ref": "#/components/parameters/apiKey" },
+          { "$ref": "#/components/parameters/ext" },
+          { "$ref": "#/components/parameters/accept" },
+          { "$ref": "#/components/parameters/acceptQuery" },
+          { "$ref": "#/components/parameters/dir" },
+          { "$ref": "#/components/parameters/lines" },
+          { "$ref": "#/components/parameters/excludeExt" },
+          { "$ref": "#/components/parameters/excludeDir" },
+          { "$ref": "#/components/parameters/disableGenignore" },
+          { "$ref": "#/components/parameters/maxFileSize" },
+          { "$ref": "#/components/parameters/maxTokens" },
+          { "$ref": "#/components/parameters/yamlString" },
+          { "$ref": "#/components/parameters/omitFiles" },
+          { "$ref": "#/components/parameters/omitTree" }
+        ],
+        "responses": {
+          "200": {
+            "description": "A directory tree and all (filtered) files requested in the required format (html, json, text, or yaml).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://ref.actionschema.com/file-object.json"
+                }
+              },
+              "text/yaml": {
+                "schema": {
+                  "$ref": "https://ref.actionschema.com/file-object.json"
+                }
+              },
+              "text/markdown": { "schema": { "type": "string" } },
+              "text/html": { "schema": { "type": "string" } }
+            }
+          },
+          "404": {
+            "description": "Repository or file not found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/{owner}/{repo}/{itemType}": {
+      "get": {
+        "summary": "List all prs/issues/discussions",
+
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Repository owner"
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Repository name"
+          },
+          {
+            "name": "itemType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["issues", "pulls", "discussions"]
+            },
+            "description": "Type of items to fetch"
+          },
+
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "Accept",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": ["application/json", "text/yaml", "text/html"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ThreadItem"
+                      }
+                    },
+                    "totalCount": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "text/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Author": {
+        "type": "object",
+        "properties": {
+          "login": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": ["login"]
+      },
+
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ThreadItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["open", "closed"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["issue", "pull", "discussion"]
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reactions": {
+            "type": "object",
+            "properties": {
+              "totalCount": {
+                "type": "integer"
+              },
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "owner": {
+        "name": "owner",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "GitHub repository owner"
+      },
+      "threadType": {
+        "name": "threadType",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "enum": ["issues", "discussions"] }
+      },
+      "number": {
+        "name": "number",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Issue or discussion id"
+      },
+      "yamlString": {
+        "name": "yamlString",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "An URL Encoded string of a yaml of a subset of the file hierarchy of files you want to include"
+      },
+      "omitFiles": {
+        "name": "omitFiles",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "boolean"
+        },
+        "description": "If set to 'true' the response will not include the files"
+      },
+      "omitTree": {
+        "name": "omitTree",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "boolean"
+        },
+        "description": "If set to 'true' the response will not include the tree. Only available when requesting result as data (json or yaml)"
+      },
+      "repo": {
+        "name": "repo",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "GitHub repository name"
+      },
+      "branch": {
+        "name": "branch",
+        "in": "path",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Branch name (defaults to main if not provided)"
+      },
+      "path": {
+        "name": "path",
+        "in": "path",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "File or directory path within the repository"
+      },
+      "apiKey": {
+        "name": "apiKey",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "GitHub API key for private repositories. Make a token [here](https://github.com/settings/tokens/new)"
+      },
+      "ext": {
+        "name": "ext",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Comma-separated list of file extensions to include"
+      },
+      "dir": {
+        "name": "dir",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Comma-separated list of directories to include"
+      },
+      "excludeExt": {
+        "name": "exclude-ext",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Comma-separated list of file extensions to exclude"
+      },
+      "excludeDir": {
+        "name": "exclude-dir",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Comma-separated list of directories to exclude"
+      },
+      "disableGenignore": {
+        "name": "disableGenignore",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "boolean",
+          "default": false
+        },
+        "description": "`.genignore` works like `.gitignore` and the repo owner can place this file in the repo to automatically filter out these files from uithub.\n\nTo disable this automatic filter you can set this to true."
+      },
+      "maxFileSize": {
+        "name": "maxFileSize",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer"
+        },
+        "description": "Maximum file size to include (in bytes)"
+      },
+      "lines": {
+        "name": "lines",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": ["false"]
+        },
+        "description": "Can be set to false to disable the line numbers before every line. Only needed for HTML or markdown responses."
+      },
+      "maxTokens": {
+        "name": "maxTokens",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "integer" },
+        "description": "Useful for working with LLMs; Will remove big files from response to get under a certain token count. Will still include the file in the tree.\nNB: as of now, this does not count the directory tree tokens, so actual tokens may be higher.\n\nFor HTML or Markdown requests this value defaults to 50000, otherwise infinite."
+      },
+      "accept": {
+        "name": "accept",
+        "in": "header",
+        "description": "Defaults to text/markdown. To receive JSON back, please use application/json",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "application/json",
+            "text/yaml",
+            "text/markdown",
+            "text/html"
+          ]
+        }
+      },
+      "acceptQuery": {
+        "name": "accept",
+        "in": "query",
+        "description": "Defaults to text/markdown. To receive JSON back, please use application/json",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "application/json",
+            "text/yaml",
+            "text/markdown",
+            "text/html"
+          ]
+        }
+      }
+    }
+  }
+}

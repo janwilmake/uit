@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Get current path from window.location
+        const currentPath = window.location.pathname;
+        const searchParams = new URLSearchParams(window.location.search);
+
+
+        function updateTheme() {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        updateTheme();
+    </script>
+    <style>
+        /* Clean, snappy styles with no animations */
+        .nav-panel {
+            width: 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .nav-panel.open {
+            width: 250px;
+            display: block;
+        }
+
+        .nav-icon.active {
+            border-left: 2px solid;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .files-content,
+        .search-content,
+        .filter-content,
+        .profile-content {
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+
+        .content-container {
+            overflow-y: auto;
+            height: 100%;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .content-container pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-x: auto;
+            overflow-y: auto;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+            }
+        }
+
+        /* Notification for copy */
+        #copyNotification {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            padding: 8px 16px;
+            background-color: #8b5cf6;
+            color: white;
+            border-radius: 4px;
+            display: none;
+        }
+
+        /* Format selector styling */
+        .format-selector {
+            display: flex;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            border: 1px solid #d1d5db;
+        }
+
+        .format-selector button {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            background-color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .format-selector button.active {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .dark .format-selector {
+            border-color: #4b5563;
+        }
+
+        .dark .format-selector button {
+            background-color: #1f2937;
+            color: #d1d5db;
+        }
+
+        .dark .format-selector button.active {
+            background-color: #8b5cf6;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="h-screen w-screen flex overflow-hidden dark:bg-gray-900 dark:text-gray-100 font-sans text-sm">
+    <!-- Left sidebar with icons - square design -->
+    <div
+        class="flex-none w-12 bg-gray-100 dark:bg-gray-800 flex flex-col items-center py-1 z-10 border-r border-gray-200 dark:border-gray-700">
+        <button id="files-btn"
+            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-gray-700 dark:text-gray-400">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+        </button>
+
+        <button id="search-btn"
+            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-gray-700 dark:text-gray-400">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </button>
+
+        <!-- New Filter Button -->
+        <!-- <button id="filter-btn"
+            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-gray-700 dark:text-gray-400">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+        </button> -->
+
+        <!-- Spacer to push user and github to bottom -->
+        <div class="flex-grow"></div>
+
+        <!-- User icon at the bottom - now a button that opens profile panel -->
+        <button id="profile-btn"
+            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-gray-700 dark:text-gray-400">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </button>
+
+        <!-- GitHub icon at the bottom -->
+        <a href="https://github.com/janwilmake/uithub"
+            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="text-gray-700 dark:text-gray-400">
+                <path
+                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                </path>
+            </svg>
+        </a>
+    </div>
+
+    <!-- Files navigation panel - more square design -->
+    <div id="files-panel"
+        class="nav-panel open bg-gray-100 dark:bg-gray-800 flex-none h-full border-r border-gray-200 dark:border-gray-700">
+        <div id="files-content" class="files-content p-2">
+            <!-- Content will be loaded from explore.js -->
+        </div>
+    </div>
+
+    <!-- Search panel - more square design -->
+    <div id="search-panel"
+        class="nav-panel bg-gray-100 dark:bg-gray-800 flex-none h-full border-r border-gray-200 dark:border-gray-700">
+        <div id="search-content" class="search-content p-2">
+            <!-- Content will be loaded from search.js -->
+        </div>
+    </div>
+
+    <!-- New Filter panel -->
+    <div id="filter-panel"
+        class="nav-panel bg-gray-100 dark:bg-gray-800 flex-none h-full border-r border-gray-200 dark:border-gray-700">
+        <div id="filter-content" class="filter-content p-2">
+            <!-- Content will be loaded from filter.js -->
+        </div>
+    </div>
+
+    <!-- New Profile panel -->
+    <div id="profile-panel"
+        class="nav-panel bg-gray-100 dark:bg-gray-800 flex-none h-full border-r border-gray-200 dark:border-gray-700">
+        <div id="profile-content" class="profile-content p-2">
+            <!-- Content will be loaded from profile.js -->
+        </div>
+    </div>
+
+    <!-- Main content area with header -->
+    <div class="flex-1 bg-white dark:bg-gray-800 flex flex-col min-w-0 w-[100%]">
+        <!-- Header with formatting options and tools - more padding and rounded corners -->
+        <div
+            class="border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 py-2 px-3 flex flex-wrap items-center gap-2">
+            <!-- Format selector - NEW IMPLEMENTATION -->
+            <div class="flex items-center">
+                <div id="formatSelector" class="format-selector">
+                    <button id="mdFormat" class="active">MD</button>
+                    <button id="jsonFormat">JSON</button>
+                    <button id="yamlFormat">YAML</button>
+                </div>
+            </div>
+
+            <!-- Tokens -->
+            <div class="flex items-center ml-4">
+                <label class="text-xs text-gray-500 dark:text-gray-400 mr-1">Max tokens:</label>
+                <input value="50000"
+                    class="text-xs w-16 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 px-1 py-0 focus:outline-none">
+            </div>
+
+
+
+            <!-- Spacer -->
+            <div class="flex-grow"></div>
+
+            <!-- Action buttons - improved with more padding and rounded corners -->
+            <button id="copyBtn"
+                class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copy <span class="pl-1.5 text-[10px] text-gray-400">{{currentTokens}} tokens</span>
+            </button>
+
+            <a href="{{chatLink}}"
+                class="text-xs bg-[#8b5cf6] text-white px-3 py-1.5 rounded-md flex items-center hover:bg-purple-600 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Chat with LLM
+            </a>
+
+            <a href="{{baseLink}}"
+                class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+                <svg id="baseIcon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="mr-1">
+                    <path
+                        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                    </path>
+                </svg>
+                {{baseName}} <span class="pl-1.5 text-[10px] text-gray-400">{{baseTokens}} tokens</span>
+            </a>
+
+            <a href="{{moreToolsLink}}"
+                class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="19" cy="12" r="1"></circle>
+                    <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+                More Tools
+            </a>
+        </div>
+
+        <!-- Main content - independently scrollable with horizontal scroll only -->
+        <div class="p-4 flex-1 content-container">
+            <pre id="textToCopy">{{contextString}}</pre>
+        </div>
+    </div>
+
+    <!-- Copy notification -->
+    <div id="copyNotification" class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Copied!
+    </div>
+
+    <script src="/explore.js"></script>
+    <script src="/search.js"></script>
+    <script src="/filter.js"></script>
+    <script src="/profile.js"></script>
+
+    <script>
+        // Variables to track active panel
+        let activePanel = null;
+
+        // Get DOM elements
+        const filesBtn = document.getElementById('files-btn');
+        const searchBtn = document.getElementById('search-btn');
+        const filterBtn = document.getElementById('filter-btn');
+        const profileBtn = document.getElementById('profile-btn');
+        const filesPanel = document.getElementById('files-panel');
+        const searchPanel = document.getElementById('search-panel');
+        const filterPanel = document.getElementById('filter-panel');
+        const profilePanel = document.getElementById('profile-panel');
+        const copyBtn = document.getElementById('copyBtn');
+        const textToCopy = document.getElementById('textToCopy');
+        const copyNotification = document.getElementById('copyNotification');
+
+        // Format selector elements
+        const mdFormatBtn = document.getElementById('mdFormat');
+        const jsonFormatBtn = document.getElementById('jsonFormat');
+        const yamlFormatBtn = document.getElementById('yamlFormat');
+
+
+        // Simplified toggle function with no animations
+        function togglePanel(button, panel) {
+            const isCurrentlyActive = button.classList.contains('active');
+
+            // Reset all
+            filesBtn.classList.remove('active');
+            searchBtn.classList.remove('active');
+            filterBtn.classList.remove('active');
+            profileBtn.classList.remove('active');
+            filesPanel.classList.remove('open');
+            searchPanel.classList.remove('open');
+            filterPanel.classList.remove('open');
+            profilePanel.classList.remove('open');
+
+            // Toggle only if not already active
+            if (!isCurrentlyActive) {
+                button.classList.add('active');
+                panel.classList.add('open');
+            }
+        }
+
+        // Format selector handling
+        function initFormatSelector() {
+            // Check URL for accept parameter
+            const accept = searchParams.get('accept') || 'text/markdown';
+
+            // Reset all format buttons
+            mdFormatBtn.classList.remove('active');
+            jsonFormatBtn.classList.remove('active');
+            yamlFormatBtn.classList.remove('active');
+
+            // Set active button based on accept parameter
+            if (accept === 'application/json') {
+                jsonFormatBtn.classList.add('active');
+            } else if (accept === 'text/yaml') {
+                yamlFormatBtn.classList.add('active');
+            } else {
+                mdFormatBtn.classList.add('active');
+            }
+
+            // Add click handlers to format buttons
+            mdFormatBtn.addEventListener('click', () => {
+                navigateWithAccept('text/markdown');
+            });
+
+            jsonFormatBtn.addEventListener('click', () => {
+                navigateWithAccept('application/json');
+            });
+
+            yamlFormatBtn.addEventListener('click', () => {
+                navigateWithAccept('text/yaml');
+            });
+        }
+
+        function navigateWithAccept(format) {
+            const newParams = new URLSearchParams(window.location.search);
+            newParams.set('accept', format);
+            window.location.href = `${window.location.pathname}?${newParams.toString()}`;
+        }
+
+        // Copy function for the main content
+        copyBtn.addEventListener('click', () => {
+            // Select the text
+            const range = document.createRange();
+            range.selectNode(textToCopy);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+
+            // Copy the text
+            document.execCommand('copy');
+
+            // Deselect
+            window.getSelection().removeAllRanges();
+
+            // Show notification
+            copyNotification.style.display = 'flex';
+
+            // Hide notification after 1 second
+            setTimeout(() => {
+                copyNotification.style.display = 'none';
+            }, 2000);
+        });
+
+        // Add event listeners
+        filesBtn.addEventListener('click', () => togglePanel(filesBtn, filesPanel));
+        searchBtn.addEventListener('click', () => togglePanel(searchBtn, searchPanel));
+        filterBtn.addEventListener('click', () => togglePanel(filterBtn, filterPanel));
+        profileBtn.addEventListener('click', () => togglePanel(profileBtn, profilePanel));
+
+        // // Simple dark mode detection without transitions
+
+
+        // Listen for changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+
+
+
+        // Generate Lorem Ipsum content dynamically
+        function generateLoremIpsum() {
+            const loremParagraph =
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam ullamcorper erat et enim vulputate, non feugiat purus imperdiet. Donec volutpat felis non nisi maximus, id scelerisque orci tempus."
+
+
+            let content = textToCopy.innerHTML;
+
+            // Add 1000 words of Lorem Ipsum (approximately 125 repetitions of the 8 paragraphs above)
+            for (let i = 0; i < 120; i++) {
+                content += "\n\n";
+                content += loremParagraph + " ";
+
+            }
+
+            textToCopy.innerHTML = content;
+        }
+
+
+        // Check pathname and URL parameters to determine initial state
+        function setInitialPanelState() {
+            const pathSegments = currentPath.split('/').filter(segment => segment !== '');
+
+            if (searchParams.has('search')) {
+                // Open search panel if URL contains ?search
+                togglePanel(searchBtn, searchPanel);
+            } else if (searchParams.has('filter')) {
+                // Open filter panel if URL contains ?filter
+                togglePanel(filterBtn, filterPanel);
+            } else if (searchParams.has('profile')) {
+                // Open profile panel if URL contains ?profile
+                togglePanel(profileBtn, profilePanel);
+            } else {
+                // Open explore/files panel if there are more than 4 segments
+                togglePanel(filesBtn, filesPanel);
+            }
+            // Otherwise, no sidebar is open by default
+        }
+
+        // Run on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initFormatSelector();
+            setInitialPanelState();
+            // generateLoremIpsum();
+        });
+    </script>
+</body>
+
+</html>

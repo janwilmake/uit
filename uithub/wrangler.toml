@@ -1,0 +1,38 @@
+name = "janwilmake_uithub"
+main = "main.ts"
+compatibility_date = "2024-12-05"
+assets = { directory= "./public" }
+dev.port = 3000
+
+routes = [
+  { pattern = "new.uithub.com", custom_domain = true }
+]
+
+[vars]
+GITHUB_REDIRECT_URI = "https://new.uithub.com/callback"
+LOGIN_REDIRECT_URI = "/"
+COOKIE_DOMAIN_SHARING = "true"
+
+[[durable_objects.bindings]]
+name = "SPONSOR_DO"
+class_name = "SponsorDO"
+# This allows to use the same DO even though it's defined in another worker!
+script_name = "sponsorflare2"
+
+[[durable_objects.bindings]]
+name = "RATELIMIT_DO"
+class_name = "RatelimitDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RatelimitDO"]
+
+
+## Can be commented out to use the remote servers
+[[services]]
+binding = "UITHUB_PIPE"
+service = "uithub_pipe"
+
+# [[services]]
+# binding = "UITHUB_ZIPTREE"
+# service = "uithub_ziptree"

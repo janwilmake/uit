@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N3P2LMM6DM"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-N3P2LMM6DM');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easily Ask Your LLM Coding Questions</title>
+    <meta name="description"
+        content="Change just one letter and get github repo context to use as context for your LLM." />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="https://uithub.com" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Easily Ask Your LLM Coding Questions" />
+    <meta property="og:description"
+        content="Change just one letter and get github repo context to use as context for your LLM." />
+    <meta property="og:image" content="https://quickog.com/screenshot/uithub.com" />
+    <meta property="og:image:alt"
+        content="Change just one letter and get github repo context to use as context for your LLM." />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:domain" content="uithub.com" />
+    <meta property="twitter:url" content="https://uithub.com" />
+    <meta name="twitter:title" content="Easily Ask Your LLM Coding Questions" />
+    <meta name="twitter:description"
+        content="Change just one letter and get github repo context to use as context for your LLM." />
+    <meta name="twitter:image" content="https://quickog.com/screenshot/uithub.com" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <style>
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes fadeGtoU {
+
+            0%,
+            45% {
+                content: 'g';
+                opacity: 1;
+            }
+
+            50% {
+                content: 'g';
+                opacity: 0;
+            }
+
+            55%,
+            100% {
+                content: 'u';
+                opacity: 1;
+                color: purple;
+            }
+        }
+
+        .fade-g-to-u::before {
+            content: 'g';
+            animation: fadeGtoU 2s linear forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-black min-h-screen flex flex-col items-center justify-center">
+    <!-- <a href="https://dashboard.forgithub.com"
+        class="block w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center py-2 text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all duration-300">
+        New product coming up: <span class="font-bold">Agent-Powered GitHub Dashboard For 1000X Devs</span> →
+    </a> -->
+    <nav id="navbar"
+        class="fixed top-0 w-full bg-black/80 backdrop-blur-sm transform -translate-y-full transition-transform duration-300 z-50">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="/"
+                    class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+                    uithub
+                </a>
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="text-white hover:text-purple-400 transition-colors">Home</a>
+                    <a href="/openapi.html" class="text-white hover:text-purple-400 transition-colors">Docs</a>
+
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div id="content"
+        class="opacity-0 transform translate-y-20 transition-all duration-1000 ease-out mt-20 min-h-[100vh]">
+        <h1
+            class="text-8xl md:text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8 text-center float-animation">
+            <span><span class="fade-g-to-u"></span>ithub</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-300 mb-8 text-center max-w-2xl">
+            Easily Ask Your LLM Coding Questions
+        </p>
+        <form id="username-form" class="text-center">
+            <input autofocus id="ghuser" type="text" spellcheck="false" placeholder="GitHub Username or URL"
+                class="bg-gray-800 text-white rounded-full py-3 px-6 mb-4 w-64 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <button type="submit"
+                class="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-6 rounded-full text-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 animate-pulse">
+                Get Context
+            </button>
+        </form>
+
+
+        <div class="flex flex-col items-center mt-8 mb-12">
+            <p class="text-lg text-gray-400 mb-3 text-center">
+                Browse popular repos:
+            </p>
+            <div class="flex flex-wrap justify-center gap-2 max-w-2xl">
+                <a href="/stackblitz"
+                    class="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300 hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    stackblitz
+                </a>
+                <a href="/getcursor"
+                    class="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300 hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    getcursor
+                </a>
+                <a href="/lovablelabs"
+                    class="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300 hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    lovablelabs
+                </a>
+                <a href="/upstash"
+                    class="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300 hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    upstash
+                </a>
+
+                <a href="/cloudflare"
+                    class="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300 hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    cloudflare
+                </a>
+
+                <a href="/denoland"
+                    class="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300 hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    denoland
+                </a>
+
+                <a href="/Aider-AI"
+                    class="px-3 py-1.5 bg-gray-800 rounded-full text-sm text-gray-300 hover:bg-purple-600 hover:text-white transition-all duration-300">
+                    Aider-AI
+                </a>
+            </div>
+        </div>
+
+        <p class="text-xl md:text-2xl text-gray-300 mb-8 text-center max-w-2xl">
+            Or just change the URL one letter!
+        </p>
+
+        <video src="uithub2.mov" autoplay muted loop controls class="w-full max-w-2xl"
+            style="min-height: 150px;"></video>
+
+    </div>
+
+    <section class="tweet-section bg-gray-100 w-full py-12 px-4">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-8">What People Are Saying</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                <div class="tweet-embed">
+                    <blockquote class="twitter-tweet" data-dnt="true">
+                        <p lang="en" dir="ltr">i pass github repo links to
+                            cursor a lot when I need help setting something up, but it only reads the readme file
+
+                            until i found this tool: http://uithub.com
+
+                            just change the g to a u in the url and you have a full repo context:
+
+                            https://uithub.com/ralphjsmit/laravel-seo</p>&mdash; Ian Nuttall (@iannuttall) <a
+                            href="https://twitter.com/iannuttall/status/1841487260237058118?ref_src=twsrc%5Etfw">October
+                            2nd, 2024</a>
+                    </blockquote>
+                </div>
+                <div class="tweet-embed">
+                    <blockquote class="twitter-tweet" data-dnt="true">
+                        <p lang="en" dir="ltr">changing github . com to uithub . com gives you the whole code repo and
+                            structure so you can pass to an LLM</p>&mdash; Ben Tossell (@bentossell)
+                        <a href="https://twitter.com/bentossell/status/1899796091266080828?ref_src=twsrc%5Etfw">March
+                            12th, 2025</a>
+                    </blockquote>
+                </div>
+                <div class="tweet-embed">
+                    <blockquote class="twitter-tweet" data-dnt="true">
+                        <p lang="en" dir="ltr">My new favorite thing is GitHub
+                            but replace the G with a U, uithub
+
+                            Instant 1 shot copy paste a repo to LLm</p>&mdash; Nick Dobos @NickADobos <a
+                            href="https://twitter.com/NickADobos/status/1842054113124876473?ref_src=twsrc%5Etfw">October
+                            4th, 2024
+                        </a>
+                    </blockquote>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="example-section" class="w-full py-12 px-4 bg-gray-900">
+
+        <div class="mt-12 text-center flex flex-col items-center">
+            <h2 class="text-2xl text-white font-semibold mb-4">Unlock the Power of AI-Driven Development</h2>
+            <p class="text-lg mb-6 text-white max-w-2xl self-center text-center">With uithub API, you can easily get LLM
+                context in your daily
+                work,
+                perform AI
+                repo analysis at scale, and power the next generation of development tools and applications.</p>
+
+
+        </div>
+
+        <div class="container mx-auto flex flex-col items-center">
+            <h2 class="text-3xl font-bold text-center mb-8 text-white">Example Queries</h2>
+            <div id="example-list" class="space-y-8">
+                <!-- Examples will be dynamically inserted here -->
+            </div>
+
+
+            <p class="text-2xl md:text-2xl text-gray-300 my-20 text-center max-w-2xl">
+                For more advanced features, see <a href="openapi.html" class="underline">the docs</a>
+            </p>
+        </div>
+    </section>
+
+
+    <section class="bg-gray-100 w-full">
+        <div class="container mx-auto px-4 py-8 flex flex-col items-center">
+            <h1 class="text-4xl font-bold text-center">Innovative Ideas with uithub's API</h1>
+
+            <p class="max-w-3xl text-center py-10">With uithub, we want to foster innovation in AI coding by allowing
+                individuals to create systems that analyse and manipulate code at scale. Here are some ideas to get the
+                gears turning..</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-check-double text-3xl text-purple-600 mb-4"></i>
+                    <h2 class="text-xl font-semibold mb-2">Code Verification at Scale</h2>
+                    <p>Test repositories, deploy APIs, generate OpenAPI, and use LLM to verify functionality.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-tree text-3xl text-green-600 mb-4"></i>
+                    <h2 class="text-xl font-semibold mb-2">ESM Readiness Checker</h2>
+                    <p>Analyze and improve ESM compatibility and tree-shaking health of codebases.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-search text-3xl text-blue-600 mb-4"></i>
+                    <h2 class="text-xl font-semibold mb-2">Enhanced Code Search</h2>
+                    <p>Generate file and folder summaries, vectorize content for improved code search capabilities.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-history text-3xl text-red-600 mb-4"></i>
+                    <h2 class="text-xl font-semibold mb-2">Changelog API</h2>
+                    <p>Track and summarize changes across changelogs, issues, PRs, and direct commits using LLM.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-exchange-alt text-3xl text-yellow-600 mb-4"></i>
+                    <h2 class="text-xl font-semibold mb-2">Cross-Framework/Language Porting</h2>
+                    <p>Automate and verify the process of porting repositories to different frameworks or languages.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-language text-3xl text-indigo-600 mb-4"></i>
+                    <h2 class="text-xl font-semibold mb-2">Codebase Translator</h2>
+                    <p>Translate repositories or comments to other languages while maintaining code integrity.</p>
+                </div>
+            </div>
+
+            <div class="mt-12 text-center">
+                <p class="text-xl md:text-2xl my-20 text-center">
+                    Explore <a href="openapi.html" class="underline">the docs here</a>. For specific needs, <a
+                        href="https://cal.com/wilmake" class="underline" target="_blank">get in touch</a>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <div id="urlux" class="pt-20"></div>
+    <script src="urlux.js"></script>
+
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    <div id="github-attribution"
+        class="mt-8 mb-20 opacity-0 transform translate-y-20 transition-all duration-1000 ease-out delay-500">
+        <div class="flex items-center justify-center text-gray-400 hover:text-gray-200 transition-colors duration-300">
+            <span>uithub.com - Powered by GitHub (but not affiliated)</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            setTimeout(() => {
+                document.getElementById('content').classList.remove('opacity-0', 'translate-y-20');
+                document.getElementById('github-attribution').classList.remove('opacity-0', 'translate-y-20');
+            }, 100);
+
+            const form = document.getElementById('username-form');
+            const input = document.getElementById('ghuser');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const inputValue = input.value.trim();
+                if (inputValue) {
+                    if (isValidGitHubUrl(inputValue)) {
+                        const redirectUrl = inputValue.replace('github.com', 'uithub.com');
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = '/' + inputValue;
+                    }
+                }
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+
+            function isValidGitHubUrl(url) {
+                return /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?.*$/.test(url);
+            }
+
+        });
+    </script>
+
+    <script>
+        const exampleData = [
+            {
+                "idea": "Get the entire repo",
+                "curl": "curl -X GET 'https://uithub.com/OAI/OpenAPI-Specification'",
+                "url": "https://uithub.com/OAI/OpenAPI-Specification",
+                "highlight": "u"
+            },
+            {
+                "idea": "Get a specific branch and subfolder",
+                "curl": "curl -X GET 'https://uithub.com/OAI/OpenAPI-Specification/tree/main/public'",
+                "url": "https://uithub.com/OAI/OpenAPI-Specification/tree/main/public",
+                "highlight": "/tree/main/public"
+            },
+
+            {
+                "idea": "Limit response to 10,000 LLM tokens",
+                "curl": "curl -X GET 'https://uithub.com/OAI/OpenAPI-Specification?maxTokens=10000'",
+                "url": "https://uithub.com/OAI/OpenAPI-Specification?maxTokens=10000",
+                "highlight": "maxTokens=10000"
+            },
+            {
+                "idea": "Fetch only markdown files",
+                "curl": "curl -X GET 'https://uithub.com/OAI/OpenAPI-Specification?ext=md'",
+                "url": "https://uithub.com/OAI/OpenAPI-Specification?ext=md",
+                "highlight": "ext=md"
+            },
+            {
+                "idea": "Retrieve only JavaScript and TypeScript files",
+                "curl": "curl -X GET 'https://uithub.com/OAI/OpenAPI-Specification?ext=js,jsx,ts,tsx'",
+                "url": "https://uithub.com/OAI/OpenAPI-Specification?ext=js,jsx,ts,tsx",
+                "highlight": "ext=js,jsx,ts,tsx"
+            },
+            {
+                "idea": "Get response in another format",
+                "curl": "curl -X GET 'https://uithub.com/OAI/OpenAPI-Specification?accept=application/json'",
+                "url": "https://uithub.com/OAI/OpenAPI-Specification?accept=application/json",
+                "highlight": "accept=application/json"
+            },
+            {
+                "idea": "Omit files bigger than 10kb",
+                "curl": "curl -X GET 'https://uithub.com/OAI/OpenAPI-Specification?maxFileSize=10000'",
+                "url": "https://uithub.com/OAI/OpenAPI-Specification?maxFileSize=10000",
+                "highlight": "maxFileSize=10000"
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+
+
+            const form = document.getElementById('username-form');
+            const input = document.getElementById('ghuser');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const inputValue = input.value.trim();
+                if (inputValue) {
+                    if (isValidGitHubUrl(inputValue)) {
+                        const redirectUrl = inputValue.replace('github.com', 'uithub.com');
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = '/' + inputValue;
+                    }
+                }
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+
+            function isValidGitHubUrl(url) {
+                return /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?.*$/.test(url);
+            }
+
+            function isValidOwnerRepo(input) {
+                return /^[\w-]+\/[\w.-]+$/.test(input);
+            }
+
+            // Render example items
+            // Render example items
+            const exampleList = document.getElementById('example-list');
+            exampleData.forEach((item, index) => {
+                const exampleItem = document.createElement('div');
+                exampleItem.className = 'bg-gray-800 rounded-lg p-6 shadow-lg';
+
+                // Highlight the relevant part of the URL
+                const highlightedUrl = item.url.replace(item.highlight, `<span class="text-blue-500 font-bold hover:text-blue-600">${item.highlight}</span>`);
+
+                exampleItem.innerHTML = `
+            <h3 class="text-xl font-semibold mb-4 text-purple-400">${item.idea}</h3>
+            <span class="break-words curl-command pr-4 rounded-lg mb-4 text-white text-sm">${highlightedUrl}</span>
+            <span class="break-words hidden curl-command pr-4 rounded-lg mb-4 text-green-400 text-sm">${item.curl}</span>
+            <div class="flex space-x-4 mt-4">
+                <button class="copy-curl bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    <i class="fas fa-copy mr-2"></i>Copy cURL
+                </button>
+                <a href="${item.url}" target="_blank" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    <i class="fas fa-external-link-alt mr-2"></i>Open URL
+                </a>
+            </div>
+        `;
+
+                const copyButton = exampleItem.querySelector('.copy-curl');
+                copyButton.addEventListener('click', () => {
+                    navigator.clipboard.writeText(item.curl).then(() => {
+                        copyButton.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyButton.innerHTML = '<i class="fas fa-copy mr-2"></i>Copy cURL';
+                        }, 2000);
+                    });
+                });
+
+                exampleList.appendChild(exampleItem);
+            });
+        });
+    </script>
+    <script>
+        let lastScroll = 0;
+        const navbar = document.getElementById('navbar');
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+
+            // Show navbar when scrolled down more than 200px
+            if (currentScroll > 200) {
+                navbar.classList.remove('-translate-y-full');
+                navbar.classList.add('translate-y-0');
+            } else {
+                navbar.classList.remove('translate-y-0');
+                navbar.classList.add('-translate-y-full');
+            }
+
+            lastScroll = currentScroll;
+        });
+    </script>
+</body>
+
+</html>

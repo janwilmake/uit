@@ -1,0 +1,6 @@
+{
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "https://uithub.com/push-file-operation.json"
+  }
+}

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f2f5;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        .container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 50px auto;
+        }
+
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+
+        .robot {
+            position: absolute;
+            left: 0px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 48px;
+            color: #666;
+            z-index: 1;
+        }
+
+        .orbit {
+            position: absolute;
+            top: 80%;
+            left: 80%;
+            width: 300px;
+            height: 300px;
+            transform: translate(-50%, -50%);
+        }
+
+        .step {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: orbit 10s linear infinite;
+            transform-origin: 150px 150px;
+            top: -40px;
+            left: -40px;
+        }
+
+        .step:hover {
+            transform: scale(1.1) !important;
+            background: #f8f9fa;
+            z-index: 2;
+        }
+
+        .step i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .step span {
+            font-size: 12px;
+            color: #2c3e50;
+            text-align: center;
+            padding: 0 5px;
+        }
+
+        #explanation {
+            width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            min-height: 80px;
+            text-align: center;
+        }
+
+        @keyframes orbit {
+            from {
+                transform: rotate(360deg) translate(150px) rotate(-360deg);
+            }
+
+            to {
+                transform: rotate(0deg) translate(150px) rotate(0deg);
+            }
+        }
+
+        /* Color coding and animation delays */
+        .step:nth-child(1) {
+            animation-delay: -0s;
+            color: #e74c3c;
+        }
+
+        .step:nth-child(2) {
+            animation-delay: -2s;
+            color: #2ecc71;
+        }
+
+        .step:nth-child(3) {
+            animation-delay: -4s;
+            color: #3498db;
+        }
+
+        .step:nth-child(4) {
+            animation-delay: -6s;
+            color: #9b59b6;
+        }
+
+        .step:nth-child(5) {
+            animation-delay: -8s;
+            color: #f1c40f;
+        }
+
+        .step:nth-child(1) i {
+            color: inherit;
+        }
+
+        .step:nth-child(2) i {
+            color: inherit;
+        }
+
+        .step:nth-child(3) i {
+            color: inherit;
+        }
+
+        .step:nth-child(4) i {
+            color: inherit;
+        }
+
+        .step:nth-child(5) i {
+            color: inherit;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="robot">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="center-circle">SWE<br>Agent Cycle</div>
+
+        <div class="orbit">
+
+
+
+            <div class="step" data-step="test">
+                <i class="fas fa-bug"></i>
+                <span>Test</span>
+            </div>
+
+            <div class="step" data-step="deploy">
+                <i class="fas fa-rocket"></i>
+                <span>Deploy</span>
+            </div>
+
+            <div class="step" data-step="develop">
+                <i class="fas fa-code"></i>
+                <span>Develop</span>
+            </div>
+
+            <div class="step" data-step="plan">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Plan</span>
+            </div>
+
+            <div class="step" data-step="reflect">
+                <i class="fas fa-search"></i>
+                <span>Reflect</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="explanation"></div>
+
+    <script>
+        const explanations = {
+            reflect: "Read, search code, and match code with requirements",
+            plan: "Create specifications of changes in natural language",
+            develop: "Transform specifications to runtime-ready code",
+            deploy: "Serverless deployment with automatic OpenAPI, auth, and monetization",
+            test: "Quality assurance through agentic API use and issue creation"
+        };
+
+        const steps = document.querySelectorAll('.step');
+        const explanationBox = document.getElementById('explanation');
+
+        steps.forEach(step => {
+            step.addEventListener('mouseenter', (e) => {
+                steps.forEach(s => s.style.animationPlayState = 'paused');
+                const stepName = e.target.closest('.step').dataset.step;
+                explanationBox.textContent = explanations[stepName];
+                explanationBox.style.opacity = '1';
+            });
+
+            step.addEventListener('mouseleave', () => {
+                steps.forEach(s => s.style.animationPlayState = 'running');
+                explanationBox.style.opacity = '0';
+            });
+        });
+    </script>
+</body>
+
+</html>

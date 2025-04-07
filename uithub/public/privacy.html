@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - uithub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <!-- Google Analytics Tag -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N3P2LMM6DM"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-N3P2LMM6DM');
+    </script>
+</head>
+
+<body class="bg-black min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-900 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/"
+                class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+                uithub
+            </a>
+            <div class="space-x-4">
+                <a href="/" class="text-gray-300 hover:text-white">Home</a>
+                <a href="/openapi.html" class="text-gray-300 hover:text-white">Docs</a>
+                <a href="/pricing.html" class="text-gray-300 hover:text-white">Pricing</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-16 max-w-4xl">
+        <div class="bg-gray-900 rounded-lg p-8 shadow-xl">
+            <h1
+                class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8">
+                Privacy Policy
+            </h1>
+            <p class="text-gray-400 mb-8 text-sm">Last updated: November 22, 2024</p>
+
+            <div class="space-y-8 text-gray-300">
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Introduction</h2>
+                    <p>Welcome to uithub ("we," "our," or "us"). We respect your privacy and are committed to protecting
+                        your personal information. This Privacy Policy explains how we collect, use, disclose, and
+                        safeguard your information when you use our service at uithub.com.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Information We Collect</h2>
+
+                    <h3 class="text-xl font-semibold text-white mb-2">Information You Provide</h3>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>GitHub Personal Access Tokens (PATs)</li>
+                        <li>LLM API keys and configuration</li>
+                        <li>GitHub username and associated public information</li>
+                        <li>Email address (if provided)</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold text-white mb-2">Information Automatically Collected</h3>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>IP addresses</li>
+                        <li>Browser type and settings</li>
+                        <li>Device information</li>
+                        <li>Usage data and analytics</li>
+                        <li>Repository access patterns</li>
+                        <li>Request counts and token usage</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold text-white mb-2">Cookies</h3>
+                    <p class="mb-2">We use cookies to:</p>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>Store authentication tokens</li>
+                        <li>Remember your preferences</li>
+                        <li>Track usage patterns</li>
+                        <li>Maintain session information</li>
+                        <li>Store LLM configuration</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Data Storage and Security</h2>
+
+                    <h3 class="text-xl font-semibold text-white mb-2">Storage</h3>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>GitHub PATs and LLM API keys are stored only as cookies in your browser</li>
+                        <li>Analytics data is stored in Upstash KV stores</li>
+                        <li>We maintain minimal server-side storage and operate primarily as a stateless service</li>
+                        <li>Request counts are tracked in time-based windows for rate limiting purposes</li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold text-white mb-2">Security Measures</h3>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>We implement industry-standard security measures</li>
+                        <li>All data is transmitted over secure HTTPS connections</li>
+                        <li>We do not store your GitHub PAT or LLM API keys on our servers</li>
+                        <li>Cookie-based authentication is used to enhance security</li>
+                        <li>Automatic redirection removes API keys from URLs to prevent accidental sharing</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Rate Limits and Usage</h2>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>Free tier: 100 credits per 8-hour window (approximately 5 AI requests and 100 regular
+                            requests)</li>
+                        <li>Premium tier: 10,000 credits (approximately 10 million tokens and 10,000 regular requests)
+                        </li>
+                        <li>Additional credits can be purchased by premium users</li>
+                        <li>Credits expire after one year</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Data Sharing and Disclosure</h2>
+                    <p>We do not sell your personal information. We may share your information in the following
+                        circumstances:</p>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>With your consent</li>
+                        <li>To comply with legal obligations</li>
+                        <li>To protect our rights, privacy, safety, or property</li>
+                        <li>In connection with a business transfer or merger</li>
+                        <li>With service providers who assist in our operations</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Third-Party Services</h2>
+                    <p>Our service integrates with:</p>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>GitHub (for repository access)</li>
+                        <li>Various LLM providers (as configured by users)</li>
+                        <li>Upstash (for analytics storage)</li>
+                        <li>Vercel and Cloudflare (for hosting)</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Your Rights and Choices</h2>
+                    <p>You have the right to:</p>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>Access your personal information</li>
+                        <li>Correct inaccurate data</li>
+                        <li>Request deletion of your data</li>
+                        <li>Opt-out of certain data collection</li>
+                        <li>Remove your cookies and local storage data</li>
+                        <li>Cancel your subscription and associated data</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Children's Privacy</h2>
+                    <p>Our service is not intended for users under 13 years of age. We do not knowingly collect
+                        information from children under 13.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Changes to This Privacy Policy</h2>
+                    <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting
+                        the new Privacy Policy on this page and updating the "Last updated" date.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Contact Us</h2>
+                    <p>If you have questions about this Privacy Policy, please contact us:</p>
+                    <ul class="list-disc list-inside mb-4 ml-4">
+                        <li>Schedule a call: <a href="https://cal.com/wilmake"
+                                class="text-purple-400 hover:text-purple-300">https://cal.com/wilmake</a></li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-purple-400 mb-4">Acceptance of Terms</h2>
+                    <p>By using our service, you acknowledge that you have read and understand this Privacy Policy and
+                        agree to its terms. If you do not agree with this policy, please do not use our service.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 mt-16 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-400">uithub.com - Powered by GitHub (but not affiliated)</p>
+        </div>
+    </footer>
+</body>
+
+</html>

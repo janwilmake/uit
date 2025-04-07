@@ -1,4 +1,4 @@
 node_modules
+.DS_Store
 .wrangler
-package-lock.json
 .dev.vars
