@@ -289,7 +289,7 @@ async function fetchTree(
  * @param {string|null} basePath
  * @param {boolean} omitFirstSegment
  * @param {*} accept
- * @param {string|null} apiKey
+ * @param {string|null} sourceAuthorization
  * @param {string} cacheKey
  * @returns {Promise<Response>} Processed tree data response
  */
@@ -302,17 +302,17 @@ const streamTree = async (
   basePath,
   omitFirstSegment,
   accept,
-  apiKey,
+  sourceAuthorization,
   cacheKey,
 ) => {
   const url = new URL(request.url);
   const { cacheControl, maxAge, staleWhileRevalidate } = getCacheControl(
     request,
     url,
-    apiKey,
+    sourceAuthorization,
   );
 
-  const response = await streamZipFile(zipUrl, apiKey);
+  const response = await streamZipFile(zipUrl, sourceAuthorization);
 
   if (!response.ok || !response.body) {
     return new Response(

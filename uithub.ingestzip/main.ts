@@ -26,14 +26,23 @@ export default {
     const rawUrlPrefix = url.searchParams.get("rawUrlPrefix");
 
     try {
-      // Fetch the ZIP file as a stream
-      const archiveResponse = await fetchZipWithAuth(request, zipUrl);
+      const headers = new Headers();
+      const authHeader = request.headers.get("x-source-authorization");
+
+      if (authHeader) {
+        headers.set("Authorization", authHeader);
+      }
+
+      const archiveResponse = await fetch(zipUrl, { headers });
+
       if (!archiveResponse.ok || !archiveResponse.body) {
         return new Response(
-          `Failed to fetch ZIP: ${archiveResponse.statusText}`,
-          {
-            status: archiveResponse.status,
-          },
+          `----\nIngestzip: Failed to fetch ZIP: URL=${zipUrl}\n\n${
+            archiveResponse.status
+          } ${
+            archiveResponse.statusText
+          }\n\n${await archiveResponse.text()}\n\n-----`,
+          { status: archiveResponse.status },
         );
       }
 
@@ -84,21 +93,6 @@ function isAuthenticated(request: Request, credentials: string): boolean {
   }
 
   return false;
-}
-
-// Fetch ZIP with authorization if header is present
-async function fetchZipWithAuth(
-  request: Request,
-  zipUrl: string,
-): Promise<Response> {
-  const headers = new Headers();
-  const authHeader = request.headers.get("x-archive-authorization");
-
-  if (authHeader) {
-    headers.set("Authorization", authHeader);
-  }
-
-  return fetch(zipUrl, { headers });
 }
 
 // Check if request is from a browser

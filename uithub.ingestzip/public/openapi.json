@@ -57,7 +57,7 @@
             "example": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
           },
           {
-            "name": "x-archive-authorization",
+            "name": "x-source-authorization",
             "in": "header",
             "description": "Alternative way to provide authentication credentials, also passed to the ZIP archive source if present",
             "schema": {

@@ -44,42 +44,32 @@ export async function urlPipe(
   paths: string[],
   sourceAuthorization: string | null,
   env: any,
-): Promise<{ response: Response; errors: any[] }> {
-  const errors: any[] = [];
-
+): Promise<Response> {
   if (!paths || paths.length === 0) {
-    return {
-      response: new Response("No base paths provided", { status: 400 }),
-      errors: [new Error("No base paths provided")],
-    };
+    return new Response("No base paths provided", { status: 400 });
   }
 
   const fullUrl = processUrls(paths);
 
-  try {
-    const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
+  const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
 
-    if (sourceAuthorization) {
-      headers["x-source-authorization"] = sourceAuthorization;
-    }
-
-    // Make a single request to the nested URL
-    const response = await fetch(fullUrl, { headers });
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status: ${response.status}`);
-    }
-
-    return { response, errors };
-  } catch (error) {
-    errors.push(error);
-    return {
-      response: new Response(`URL pipe error: ${error.message}`, {
-        status: 500,
-      }),
-      errors,
-    };
+  if (sourceAuthorization) {
+    headers["x-source-authorization"] = sourceAuthorization;
   }
+
+  // Make a single request to the nested URL
+  const response = await fetch(fullUrl, { headers });
+
+  if (!response.ok) {
+    return new Response(
+      `URL Pipe request failed with status: ${
+        response.status
+      }\n\n${await response.text()}`,
+      { status: response.status },
+    );
+  }
+
+  return response;
 }
 
 export default {
@@ -155,12 +145,7 @@ export default {
       .map((x) => x!);
 
     // Example usage of urlPipe
-    const { response, errors } = await urlPipe(urls, sourceAuthorization, env);
-
-    // Log errors if any
-    if (errors.length > 0) {
-      console.error("Errors occurred during URL piping:", errors);
-    }
+    const response = await urlPipe(urls, sourceAuthorization, env);
 
     // Return the final response to the client
     return response;

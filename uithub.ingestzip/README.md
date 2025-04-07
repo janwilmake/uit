@@ -16,7 +16,7 @@ Input:
 
 - `export default { fetch }` typescript worker. type ctx as any since it's not available by default
 - Authentication: confirm the authorization basic header is present and provided encoded credentials match `env.CREDENTIALS`. If not, return 401 with www-authenticate header.
-- method GET: Takes a zip URL as pathname, and an optional `x-archive-authorization` header.
+- method GET: Takes a zip URL as pathname, and an optional `x-source-authorization` header.
 - method POST: request body should contain a zip stream.
 
 Process:

@@ -69,7 +69,9 @@ async function processZipArchive(request, env) {
     const response = await fetch(formDataUrl, { headers });
     if (!response.ok) {
       return new Response(
-        `Failed to fetch form data: ${response.status} ${response.statusText}`,
+        `outputmd - Failed to fetch form data: ${response.status} ${
+          response.statusText
+        }\n${await response.text()}`,
         { status: 500 },
       );
     }

@@ -1,3 +1,4 @@
+//@ts-check
 /**
  * ZIP Directory Extractor Worker
  *
@@ -9,7 +10,7 @@
  *
  * Optional Authorization header will be passed to the source.
  */
-export async function streamZipFile(zipUrl, apiKey) {
+export async function streamZipFile(zipUrl, sourceAuthorization) {
   try {
     // Parse URL from pathname - it should be URL encoded
 
@@ -20,8 +21,8 @@ export async function streamZipFile(zipUrl, apiKey) {
       );
     }
 
-    const fetchOptions = apiKey
-      ? { headers: { Authorization: `Bearer ${apiKey}` } }
+    const fetchOptions = sourceAuthorization
+      ? { headers: { Authorization: sourceAuthorization } }
       : undefined;
 
     // Create streaming response

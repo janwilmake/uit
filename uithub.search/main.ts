@@ -125,14 +125,14 @@ export default {
           return new Response("No ZIP URL provided", { status: 400 });
         }
         console.log({ apiUrl });
-        const apiResponse = await env.API.fetch(apiUrl, { headers });
+        const apiResponse = await fetch(apiUrl, { headers });
 
         if (!apiResponse.ok || !apiResponse.body) {
           return new Response(
-            `API Error: ${apiResponse.status} ${apiResponse.statusText}`,
-            {
-              status: apiResponse.status,
-            },
+            `UITHUB Search API Error: ${apiUrl} - ${apiResponse.status}  ${
+              apiResponse.statusText
+            }\n\n${await apiResponse.text()}`,
+            { status: apiResponse.status },
           );
         }
 
