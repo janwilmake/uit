@@ -23,17 +23,6 @@
         updateTheme();
     </script>
     <style>
-        @media (max-width: 999px) {
-            #mobile-warning {
-                display: flex !important;
-            }
-
-            /* Optional: Hide the main content on mobile */
-            .content-container {
-                display: none;
-            }
-        }
-
         /* Clean, snappy styles with no animations */
         .nav-panel {
             width: 0;
@@ -133,21 +122,6 @@
 </head>
 
 <body class="h-screen w-screen flex overflow-hidden dark:bg-gray-900 dark:text-gray-100 font-sans text-sm">
-    <!-- Mobile warning message - hidden by default -->
-    <div id="mobile-warning"
-        class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex-col items-center justify-center p-6 text-center hidden">
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            class="text-yellow-400 mx-auto mb-4">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-        <h2 class="text-white text-xl font-bold mb-2">Desktop View Required</h2>
-        <p class="text-gray-300 mb-4">This application is designed for desktop screens only. Please view on a device
-            with a width of at least 1000px for the best experience.</p>
-    </div>
-
     <!-- Left sidebar with icons - square design -->
     <div
         class="flex-none w-12 bg-gray-100 dark:bg-gray-800 flex flex-col items-center py-1 z-10 border-r border-gray-200 dark:border-gray-700">
@@ -331,30 +305,6 @@
     <script src="/profile.js"></script>
 
     <script>
-
-        // Mobile warning handling
-        const mobileWarning = document.getElementById('mobile-warning');
-        const dismissWarningBtn = document.getElementById('dismiss-warning');
-
-        // Function to check window width and show/hide warning
-        function checkMobileWarning() {
-            if (window.innerWidth < 1000) {
-                mobileWarning.style.display = 'flex';
-            } else {
-                mobileWarning.style.display = 'none';
-            }
-        }
-
-        // Add dismiss button functionality
-        if (dismissWarningBtn) {
-            dismissWarningBtn.addEventListener('click', () => {
-                mobileWarning.style.display = 'none';
-            });
-        }
-
-        // Check on page load and resize
-        window.addEventListener('DOMContentLoaded', checkMobileWarning);
-        window.addEventListener('resize', checkMobileWarning);
         // Variables to track active panel
         let activePanel = null;
 

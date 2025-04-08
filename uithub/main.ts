@@ -249,7 +249,6 @@ export default {
 
     const pipeUrl = `https://pipe.uithub.com/${owner}/${repo}${branchPart}${url.search}`;
 
-    console.log({ pipeUrl, domain });
     const urlObject = new URL(pipeUrl);
     // Add all parameters as search params
     if (realMaxTokens !== undefined) {
@@ -297,7 +296,6 @@ export default {
     );
     const treeUrl = `https://ziptree.uithub.com/tree/${zipUrl}?type=token-tree&omitFirstSegment=true`;
 
-    console.log({ finalUrl, treeUrl });
     const t3 = Date.now();
 
     const ziptreeFetcher = env.UITHUB_ZIPTREE || {
@@ -331,7 +329,6 @@ export default {
               ? branch || "main"
               : firstSegment?.slice(repo.length + 1);
 
-            console.log({ firstSegment, realBranch });
             return {
               tree: (await res.json()) as { __size: number },
               realBranch,
@@ -424,10 +421,20 @@ export default {
       contextString: escapeHTML(contextString),
     };
 
-    console.log("yayayayayayay", { treeResult: treeResult.realBranch });
+    const pages = {
+      issues: { title: "Issues", isPremium: false },
+      pulls: { title: "Pull Requests", isPremium: false },
+      discussions: { title: "Discussions", isPremium: false },
+      swc: { title: "SWC", isPremium: true },
+      typedoc: { title: "Typedoc", isPremium: true },
+    };
 
     const data = {
+      pages,
+      isPaymentRequired:
+        (balance || 0) <= 0 && !!pages[page as keyof typeof pages]?.isPremium,
       realBranch: treeResult.realBranch,
+      // TODO: set this to show warning
       isTokensCapped: true,
       tree,
       is_authenticated,
@@ -473,7 +480,6 @@ export default {
       `,
       );
 
-    console.log("GONNA RETURN FINAL HITML");
     return new Response(finalHtml, {
       status: 200,
       headers: {
