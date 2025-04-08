@@ -47,6 +47,24 @@ export default {
   fetch: async (request: Request, env: Env, context: any) => {
     const url = new URL(request.url);
 
+    const userAgent = request.headers.get("user-agent") || "";
+
+    // More specific regex that tries to exclude larger tablets
+    const mobileRegex =
+      /Android(?!.*Tablet)|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
+
+    // Specific tablet detection
+    const tabletRegex = /iPad|Android.*Tablet|Tablet|Tab/i;
+
+    const isMobileDevice =
+      mobileRegex.test(userAgent) && !tabletRegex.test(userAgent);
+
+    if (isMobileDevice) {
+      return new Response("Redirecting", {
+        status: 302,
+        headers: { Location: "/mobile-not-supported" },
+      });
+    }
     if (url.pathname === "/public/archive/refs/heads/main.zip") {
       // convention; by exposing the zip of the repo at this path, anyone can find your code at https://uithub.com/{domain}/public, even from a private repo if we pass the PAT!
       return fetch(
@@ -409,7 +427,6 @@ export default {
 
     // keys that will be replaced in html looking for {{varname}}
     const template = {
-      title,
       currentTokens,
       chatLink: `https://githuq.com/${linkPathPart}`,
       baseLink: domain
@@ -427,15 +444,18 @@ export default {
       discussions: { title: "Discussions", isPremium: false },
       swc: { title: "SWC", isPremium: true },
       typedoc: { title: "Typedoc", isPremium: true },
+      x: { title: "X Threads", isPremium: true },
     };
+    // TODO: set this to show warning
+    const isTokensCapped = false;
 
+    const isPaymentRequired =
+      (balance || 0) <= 0 && !!pages[page as keyof typeof pages]?.isPremium;
     const data = {
       pages,
-      isPaymentRequired:
-        (balance || 0) <= 0 && !!pages[page as keyof typeof pages]?.isPremium,
+      isPaymentRequired,
       realBranch: treeResult.realBranch,
-      // TODO: set this to show warning
-      isTokensCapped: true,
+      isTokensCapped,
       tree,
       is_authenticated,
       owner_login,

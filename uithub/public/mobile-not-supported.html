@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop View Required</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .bg-auto {
+                background-color: #1f2937;
+            }
+
+            .text-auto {
+                color: #f3f4f6;
+            }
+
+            .border-auto {
+                border-color: #4b5563;
+            }
+        }
+
+        /* Light mode support */
+        @media (prefers-color-scheme: light) {
+            .bg-auto {
+                background-color: #f9fafb;
+            }
+
+            .text-auto {
+                color: #1f2937;
+            }
+
+            .border-auto {
+                border-color: #d1d5db;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-auto text-auto min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-auto">
+        <div class="p-6">
+            <!-- Warning Icon -->
+            <div class="flex justify-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="text-yellow-500">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                    </path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </div>
+
+            <h1 class="text-xl font-bold text-center mb-4 text-gray-900 dark:text-white">Desktop View Required</h1>
+
+            <p class="text-gray-600 dark:text-gray-300 mb-6 text-center">
+                This application is designed for desktop screens only. Please view on a device with a width of at least
+                1000px for the best experience.
+            </p>
+
+            <div class="flex justify-center mb-6">
+                <div class="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg w-full max-w-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Your screen size:</div>
+                        <div class="font-mono text-sm text-gray-900 dark:text-gray-100" id="current-width">-</div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Required size:</div>
+                        <div class="font-mono text-sm text-gray-900 dark:text-gray-100">1000px</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center gap-4">
+
+                <a href="https://uithub.com"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium text-sm transition-colors">
+                    Visit Homepage
+                </a>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 bg-gray-100 dark:bg-gray-700 border-t border-auto">
+            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
+                For the best experience, please visit this application on a desktop computer with a modern web browser.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Update current width display
+        function updateScreenWidth() {
+            const widthElement = document.getElementById('current-width');
+            if (widthElement) {
+                widthElement.textContent = `${window.innerWidth}px`;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            updateScreenWidth();
+        });
+
+        // Update on resize
+        window.addEventListener('resize', updateScreenWidth);
+    </script>
+</body>
+
+</html>

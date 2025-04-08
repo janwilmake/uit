@@ -665,3 +665,7 @@ THIS IS KEY TO STARTING THE MARKETPLACE
 ✅ Non-'main' default-branch repos should be navigated properly. For this we must somehow retrieve the default branch or head sha without slowing things down. This info is available in the zip as the first folder is always: `[repo]-[branchOrSha]`. Let's get this in a response header from tree.
 
 ✅ This fixes navigation from https://new.uithub.com/brunabaudel/brunabaudel.github.io and any other master default branched repos.
+
+# Mobile warning
+
+✅ On mobile user-agents that aren't found to be tablets, it redirects to `mobile-not-supported.html`. This way stuff remains pretty.
