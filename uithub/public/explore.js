@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return {
         owner: match[1],
         repo: match[2],
-        branch: match[3] || "main",
+        branch: match[3] || window.data.realBranch || "main",
         path: match[4] || "",
         isBlob: path.includes("/blob/"),
       };
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return {
       owner: "",
       repo: "",
-      branch: "main",
+      branch: window.data.realBranch || "main",
       path: "",
       isBlob: false,
     };

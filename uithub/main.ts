@@ -247,11 +247,6 @@ export default {
     //option 1:  https://github.com/janwilmake/fetch-each/archive/refs/heads/main.zip
     //option 2: https://github.com/janwilmake/forgithub/archive/b0f184426de0cc327f469b645a1c153a2c8ba869.zip
 
-    const ref = /^[0-9a-f]{40}$/i.test(branch)
-      ? branch
-      : // for our convention main should always be the default so this is fine.
-        `refs/heads/${branch || "main"}`;
-
     const pipeUrl = `https://pipe.uithub.com/${owner}/${repo}${branchPart}${url.search}`;
 
     console.log({ pipeUrl, domain });
@@ -288,11 +283,16 @@ export default {
 
     const finalUrl = urlObject.toString();
 
+    const ref = /^[0-9a-f]{40}$/i.test(branch)
+      ? branch
+      : // for our convention main should always be the default so this is fine.
+        `refs/heads/${branch || "main"}`;
+
     const zipUrl = encodeURIComponent(
       domain
         ? `https://${domain}/${repo}/archive/refs/heads/${branch || "main"}.zip`
         : `https://github.com/${owner}/${repo}/archive/${
-            branch ? `refs/heads/${branch}` : "HEAD"
+            branch ? ref : "HEAD"
           }.zip`,
     );
     const treeUrl = `https://ziptree.uithub.com/tree/${zipUrl}?type=token-tree&omitFirstSegment=true`;
@@ -316,14 +316,28 @@ export default {
               },
             }),
           )
-          .then(async (res) =>
-            res.ok
-              ? {
-                  tree: (await res.json()) as { __size: number },
-                  status: res.status,
-                }
-              : { status: res.status, error: await res.text() },
-          )
+          .then(async (res) => {
+            if (!res.ok) {
+              return {
+                status: res.status,
+                error: await res.text(),
+                realBranch: undefined,
+              };
+            }
+
+            const firstSegment = res.headers.get("x-first-segment");
+
+            const realBranch = domain
+              ? branch || "main"
+              : firstSegment?.slice(repo.length + 1);
+
+            console.log({ firstSegment, realBranch });
+            return {
+              tree: (await res.json()) as { __size: number },
+              realBranch,
+              status: res.status,
+            };
+          })
       : undefined;
 
     const response = await urlPipe.fetch(
@@ -386,7 +400,6 @@ export default {
 
     const currentTokens = Math.round(contextString.length / 500) * 100;
     const branchTitlePart = branch ? ` at ${branch}` : "";
-    const default_branch = undefined;
     const title = `GitHub ${owner}/${repo} LLM Context`;
     const description = `Easily ask your LLM code questions about "${repo}". /${path}${branchTitlePart} on GitHub contains ${currentTokens} tokens.`;
 
@@ -411,8 +424,10 @@ export default {
       contextString: escapeHTML(contextString),
     };
 
+    console.log("yayayayayayay", { treeResult: treeResult.realBranch });
+
     const data = {
-      default_branch,
+      realBranch: treeResult.realBranch,
       isTokensCapped: true,
       tree,
       is_authenticated,
@@ -458,6 +473,7 @@ export default {
       `,
       );
 
+    console.log("GONNA RETURN FINAL HITML");
     return new Response(finalHtml, {
       status: 200,
       headers: {

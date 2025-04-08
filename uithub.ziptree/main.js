@@ -370,8 +370,13 @@ const finalResponse = (
   const stringifyFn = accept === "text/yaml" ? stringify : JSON.stringify;
 
   const finalResult = {};
+  let firstSegment = "";
 
   Object.entries(result).forEach(([path, entry]) => {
+    if (!firstSegment) {
+      firstSegment = path.split("/")[0];
+    }
+
     // first omit first segment
     let normalizedPath = omitFirstSegment
       ? prependSlash(path.split("/").slice(1).join("/"))
@@ -409,10 +414,12 @@ const finalResponse = (
       ? stringifyFn(createTree(finalResult), undefined, 2)
       : stringifyFn(finalResult, undefined, 2);
 
+  console.log({ firstSegment });
   // Return the final processed data
   return new Response(final, {
     status: 200,
     headers: {
+      "X-First-Segment": firstSegment,
       "Content-Type": accept === "text/yaml" ? "text/yaml" : "application/json",
       "Cache-Control": cacheControl,
     },

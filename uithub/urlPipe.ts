@@ -92,20 +92,22 @@ export default {
 
     console.log({ isDomain, branch, pathParts });
 
+    const ref =
+      branch && /^[0-9a-f]{40}$/i.test(branch)
+        ? branch
+        : // for our convention main should always be the default so this is fine.
+          `refs/heads/${branch || "main"}`;
+
     // TODO: This logic can be better. IDK Yet How to conventionalize.
     const archiveUrl = isDomain
-      ? `https://${ownerOrDomain}/${id}/archive/refs/heads/${
-          branch || "main"
-        }.zip`
+      ? `https://${ownerOrDomain}/${id}/archive/${ref}.zip`
       : `https://github.com/${ownerOrDomain}/${id}/archive/${
-          branch ? `refs/heads/${branch}.zip` : "HEAD.zip"
+          branch ? `${ref}.zip` : "HEAD.zip"
         }`;
 
     console.log({ archiveUrl });
     // TODO: the sha can be found in the zip actually, so this isn't great!
-    const rawUrlPrefix = `https://raw.githubusercontent.com/${ownerOrDomain}/${id}/refs/heads/${
-      branch || "main"
-    }`;
+    const rawUrlPrefix = `https://raw.githubusercontent.com/${ownerOrDomain}/${id}/${ref}`;
     const referToBinary = true;
 
     const rawUrlPrefixPart = referToBinary
