@@ -334,7 +334,7 @@
             // Reset all
             filesBtn.classList.remove('active');
             searchBtn.classList.remove('active');
-            filterBtn.classList.remove('active');
+            //   filterBtn.classList.remove('active');
             profileBtn.classList.remove('active');
             filesPanel.classList.remove('open');
             searchPanel.classList.remove('open');
@@ -413,7 +413,7 @@
         // Add event listeners
         filesBtn.addEventListener('click', () => togglePanel(filesBtn, filesPanel));
         searchBtn.addEventListener('click', () => togglePanel(searchBtn, searchPanel));
-        filterBtn.addEventListener('click', () => togglePanel(filterBtn, filterPanel));
+        // filterBtn.addEventListener('click', () => togglePanel(filterBtn, filterPanel));
         profileBtn.addEventListener('click', () => togglePanel(profileBtn, profilePanel));
 
         // // Simple dark mode detection without transitions
@@ -453,7 +453,7 @@
             } else if (searchParams.has('filter')) {
                 // Open filter panel if URL contains ?filter
                 togglePanel(filterBtn, filterPanel);
-            } else if (searchParams.has('profile')) {
+            } else if (searchParams.has('profile') || window.data.isPaymentRequired) {
                 // Open profile panel if URL contains ?profile
                 togglePanel(profileBtn, profilePanel);
             } else {

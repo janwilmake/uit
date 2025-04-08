@@ -89,6 +89,20 @@ Should be added to uithub data so the UI makes navigation easy!
 
 Should come from Source of truth of a flat JSON file and some should show up "Premium". would still navigate there and show a small preview if deposit isn't good enough! Plugin should choose the requirements (all from the JSON)
 
+Based on what should features be free:
+
+- repos over 1000 stars
+
+Based on what should features require payment
+
+- private repos
+- organisation repos
+- repos under 1000 stars
+
+The premium features should require deposit of $50
+
+Also add button to unlock for entire organisation/owner (contact me)
+
 # Monaco
 
 Maybe looks way cooler than raw text! However, may also be much harder to make that stream in... Let's see.

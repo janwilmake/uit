@@ -236,7 +236,9 @@ export default {
         ? 50000
         : undefined;
 
-    const branchPart = `/${page}.${ext || "md"}${branch ? `/${branch}` : ""}`;
+    const branchPart = `/${page || "tree"}.${ext || "md"}${
+      branch ? `/${branch}` : ""
+    }`;
 
     const domain = owner.includes(".") ? owner : undefined;
 
@@ -391,21 +393,24 @@ export default {
     const title = `GitHub ${owner}/${repo} LLM Context`;
     const description = `Easily ask your LLM code questions about "${repo}". /${path}${branchTitlePart} on GitHub contains ${currentTokens} tokens.`;
 
-    const pathPart = `${owner}/${repo}/${branchPart}${
-      path === "" ? "" : `/${path}`
-    }`;
+    //
+    const linkRest =
+      page && branch
+        ? `/${page}/${branch}${path === "" ? "" : `/${path}`}`
+        : "";
+    const linkPathPart = `${owner}/${repo}${linkRest}`;
 
     // keys that will be replaced in html looking for {{varname}}
     const template = {
       title,
       currentTokens,
-      chatLink: `https://githuq.com/${pathPart}`,
+      chatLink: `https://githuq.com/${linkPathPart}`,
       baseLink: domain
-        ? `https://${pathPart}`
-        : `https://github.com/${pathPart}`,
+        ? `https://${linkPathPart}`
+        : `https://github.com/${linkPathPart}`,
       baseName: repo,
       baseTokens: tree.__size,
-      moreToolsLink: domain ? "#" : `https://forgithub.com/${pathPart}`,
+      moreToolsLink: domain ? "#" : `https://forgithub.com/${linkPathPart}`,
       contextString: escapeHTML(contextString),
     };
 
