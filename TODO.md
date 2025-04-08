@@ -8,39 +8,11 @@
 4. rename all of zipobject to uithub. uithub means 'universal information terminal hub'
 5. make it better, adding lots of new features.
 
-# `search.js`
-
-Get the search spec and remake `search.js`. Can be done using prompt completely.
-
-- ✅ Populate search from and to URL
-- ✅ Changing URL contents should add them to URL history but not refresh page yet
-- ✅ Enter in any field should apply URL
-- ✅ When history has been altered but page not refreshed yet, an 'search' should appear.
-- ✅ When there are search filtered applied. A 'clear' button should be enabled that clears all search filters.
-- ✅ Searchbar always have path filters open.
-
-# Search/pipe backend
-
-- Test glob patterns and ensure exclude is applied after include
-- Test search and isRegex
-
-# UI/UX
-
-vscode.html
-
-- `maxTokens` input should update on submit
-- allow setting `maxFileSize` similarly
-- Add https://www.simpleanalytics.com event if free plan, or add back google analytics (see: https://github.com/janwilmake/uithub.v1)
-
-explore.js
-
-- Navigation path-clicks should keep rest of query
-- Navigation greying out isn't fully correct right now.
-- It gets expanded too much if you're deeply nested, e.g. on https://new.uithub.com/facebook/react/tree/336614679600af371b06371c0fbdd31fd9838231/compiler/packages
-
 # POC before LONDON
 
 - ✅ easy login
 - ✅ https://new.uithub.com/owner/repo has new layout
-- search is the biggest feature missing
+- ✅ search is the biggest feature missing
+- Test `isRegex`
+- Add https://www.simpleanalytics.com event if free plan, or add back google analytics (see: https://github.com/janwilmake/uithub.v1)
 - never hit white screen, 404/429/402 if needed

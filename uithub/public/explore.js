@@ -1,7 +1,7 @@
 // explore.js - Handles the file explorer panel content
 document.addEventListener("DOMContentLoaded", function () {
   const filesContent = document.getElementById("files-content");
-  // Track file visibility state - now using localStorage
+  // Track file visibility state - using localStorage
   let showFiles = localStorage.getItem("showFiles") === "true";
 
   const prettyTokens = (count) => {
@@ -47,16 +47,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Calculate default expansion level based on current path
-  function getDefaultExpansionLevel(path) {
-    const segments = path ? path.split("/").filter(Boolean).length : 0;
-    return Math.max(segments + 1, 2); // Changed from 3 to 2 as requested
+  function getDefaultExpansionLevel() {
+    return 1; // Only expand the first level by default
   }
 
   // Create and populate the explorer content
   function loadExplorerContent() {
     const repoInfo = getRepoPathInfo();
-
-    const defaultExpandLevel = getDefaultExpansionLevel(repoInfo.path);
+    const defaultExpandLevel = getDefaultExpansionLevel();
 
     filesContent.innerHTML = `
         <div class="flex items-center mb-4">
@@ -162,8 +160,13 @@ document.addEventListener("DOMContentLoaded", function () {
         e.stopPropagation();
         const path = this.dataset.path;
         const repoInfo = getRepoPathInfo();
-        const url = `/${repoInfo.owner}/${repoInfo.repo}/tree/${repoInfo.branch}/${path}`;
-        window.location.href = url.replace(/\/+/g, "/").replace(/\/+$/, "");
+
+        // Preserve query parameters when navigating
+        const queryParams = window.location.search;
+        const url = `/${repoInfo.owner}/${repoInfo.repo}/tree/${repoInfo.branch}/${path}${queryParams}`;
+        window.location.href =
+          url.replace(/\/+/g, "/").replace(/\/+$/, "") +
+          (queryParams ? "" : queryParams);
       });
     });
 
@@ -173,8 +176,13 @@ document.addEventListener("DOMContentLoaded", function () {
         e.stopPropagation();
         const path = this.dataset.path;
         const repoInfo = getRepoPathInfo();
-        const url = `/${repoInfo.owner}/${repoInfo.repo}/blob/${repoInfo.branch}/${path}`;
-        window.location.href = url.replace(/\/+/g, "/").replace(/\/+$/, "");
+
+        // Preserve query parameters when navigating
+        const queryParams = window.location.search;
+        const url = `/${repoInfo.owner}/${repoInfo.repo}/blob/${repoInfo.branch}/${path}${queryParams}`;
+        window.location.href =
+          url.replace(/\/+/g, "/").replace(/\/+$/, "") +
+          (queryParams ? "" : queryParams);
       });
     });
   }
@@ -205,16 +213,30 @@ document.addEventListener("DOMContentLoaded", function () {
     return false;
   }
 
-  // Check if a path is the active path or a parent of the active path
-  function isActiveOrParent(itemPath, activePath) {
+  // Check if a path is within the current active path
+  function isInActivePath(itemPath, activePath) {
     if (!itemPath || !activePath) return false;
 
     // For direct match
     if (itemPath === activePath) return true;
 
-    // For parent paths
+    // For parent paths - itemPath is a parent of activePath
     if (activePath.startsWith(itemPath + "/")) return true;
 
+    return false;
+  }
+
+  // Check if path is relevant to the current view
+  function isRelevantPath(itemPath, activePath) {
+    if (!activePath) return true; // Show everything when no active path
+
+    // If itemPath is within the active path, it's relevant
+    if (isInActivePath(itemPath, activePath)) return true;
+
+    // If the active path is within itemPath, it's not relevant
+    if (itemPath.startsWith(activePath + "/")) return true;
+
+    // Otherwise the path is not relevant to current view
     return false;
   }
 
@@ -244,7 +266,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const folderId = `folder-${path.replace(/[^a-zA-Z0-9]/g, "-")}`;
 
     // Determine if this folder should be expanded by default
-    const isInCurrentPath = repoInfo.path.startsWith(path);
+    // Only expand if:
+    // 1. It's a top-level folder (level < defaultExpandLevel) OR
+    // 2. It's in the current path
+    const isInCurrentPath = isInActivePath(path, repoInfo.path);
     const shouldExpandByDefault = level < defaultExpandLevel || isInCurrentPath;
 
     // Get the current expanded state class
@@ -256,9 +281,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const hasOnlyFiles = !hasSubfolders && hasFiles(tree);
     const isExpandable = hasSubfolders || (showFiles && hasOnlyFiles);
 
-    // Determine if this folder is active
-    const isActive = isActiveOrParent(path, repoInfo.path);
+    // Determine if this folder is active or relevant to current path
+    const isActive = isInActivePath(path, repoInfo.path);
+    const isRelevant = isRelevantPath(path, repoInfo.path);
+
+    // Apply styling based on active state
     const activeFolderClass = isActive ? "text-purple-600 font-medium" : "";
+    const inactiveFolderClass = !isRelevant ? "text-gray-500" : "";
+    const folderClass = activeFolderClass || inactiveFolderClass;
 
     // Choose the appropriate icon based on expandability
     let folderIcon;
@@ -280,9 +310,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let html = `
         <div class="mb-2">
-          <div class="flex items-center p-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded ${activeFolderClass}">
+          <div class="flex items-center p-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded ${folderClass}">
             ${folderIcon}
-            <span class="whitespace-nowrap folder-item cursor-pointer ${activeFolderClass}" data-path="${path}">${
+            <span class="whitespace-nowrap folder-item cursor-pointer ${folderClass}" data-path="${path}">${
       name === "project-root" ? repoInfo.repo : name
     }</span>
             ${
@@ -331,14 +361,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
           // Determine if this file is the currently active one
           const isActiveFile = repoInfo.isBlob && repoInfo.path === filePath;
-          const isInactivePath = repoInfo.path
-            ? !isActiveOrParent(path, repoInfo.path)
-            : false;
-          const fileClass = isActiveFile
+          const isRelevantFile = isRelevantPath(filePath, repoInfo.path);
+          const fileActiveClass = isActiveFile
             ? "text-purple-600 font-medium"
-            : isInactivePath
-            ? "text-gray-500"
             : "";
+          const fileInactiveClass = !isRelevantFile ? "text-gray-500" : "";
+          const fileClass = fileActiveClass || fileInactiveClass;
 
           children += `
             <div class="ml-4 mt-1">

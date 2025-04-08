@@ -278,6 +278,8 @@ function createSearchPattern(params: RequestParams): RegExp | null {
 
 const prependSlash = (path: string) =>
   path.startsWith("/") ? path : "/" + path;
+const withoutSlash = (path: string) =>
+  path.startsWith("/") ? path.slice(1) : path;
 /**
  * Filter function for multipart parts
  */
@@ -319,77 +321,86 @@ function filterPart(
     }
   }
 
-  // Apply pathPatterns (inclusion patterns)
+  let included = true;
   // Apply pathPatterns (inclusion patterns)
   if (params.pathPatterns && params.pathPatterns.length > 0) {
     const matchesPattern = params.pathPatterns.some((pattern) => {
+      if (pattern.startsWith("*")) {
+        const basename = filename.split("/").pop() || "";
+        if (minimatch(basename, pattern, { dot: true })) {
+          return true;
+        }
+      }
       // Original pattern matching
-      if (minimatch(filename, pattern, { dot: true })) {
+      if (minimatch(withoutSlash(filename), pattern, { dot: true })) {
         return true;
       }
 
       // VSCode-like behavior: treat patterns without glob characters as directory prefixes
       if (!pattern.includes("*") && !pattern.includes("?")) {
-        // Ensure the pattern has a trailing slash
-        const dirPattern = pattern.endsWith("/") ? pattern : pattern + "/";
+        // Also try with the ** glob
+        return minimatch(withoutSlash(filename), `${pattern}/**`, {
+          dot: true,
+        });
+      }
 
-        // Check if filename starts with the directory pattern
-        if (prependSlash(filename).startsWith(prependSlash(dirPattern))) {
+      return false;
+    });
+
+    // console.log({
+    //   pathPatterns: params.pathPatterns,
+    //   filename,
+    //   matchesPattern,
+    // });
+
+    if (!matchesPattern) {
+      included = false;
+    }
+  }
+
+  let excluded = false;
+  // Apply excludePathPatterns
+  if (params.excludePathPatterns && params.excludePathPatterns.length > 0) {
+    const matchesExcludePattern = params.excludePathPatterns.some((pattern) => {
+      if (pattern.startsWith("*")) {
+        const basename = filename.split("/").pop() || "";
+        if (minimatch(basename, pattern, { dot: true })) {
           return true;
         }
+      }
 
+      // Original pattern matching
+      if (minimatch(withoutSlash(filename), pattern, { dot: true })) {
+        return true;
+      }
+
+      // VSCode-like behavior: treat patterns without glob characters as directory prefixes
+      if (!pattern.includes("*") && !pattern.includes("?")) {
         // Also try with the ** glob
-        return minimatch(filename, `${pattern}/**`, { dot: true });
+        return minimatch(withoutSlash(filename), `${pattern}/**`, {
+          dot: true,
+        });
       }
 
       return false;
     });
 
     console.log({
-      pathPatterns: params.pathPatterns,
+      exclude: params.excludePathPatterns,
       filename,
-      matchesPattern,
+      matchesExcludePattern,
     });
-
-    if (!matchesPattern) {
-      return { ok: false };
-    }
-  }
-
-  // Apply excludePathPatterns
-  if (params.excludePathPatterns && params.excludePathPatterns.length > 0) {
-    const matchesExcludePattern = params.excludePathPatterns.some((pattern) => {
-      // Original pattern matching
-      if (minimatch(filename, pattern, { dot: true })) {
-        return true;
-      }
-
-      // VSCode-like behavior: treat patterns without glob characters as directory prefixes
-      if (!pattern.includes("*") && !pattern.includes("?")) {
-        // Ensure the pattern has a trailing slash
-        const dirPattern = pattern.endsWith("/") ? pattern : pattern + "/";
-
-        // Check if filename starts with the directory pattern
-        if (prependSlash(filename).startsWith(prependSlash(dirPattern))) {
-          return true;
-        }
-
-        // Also try with the ** glob
-        return minimatch(filename, `${pattern}/**`, { dot: true });
-      }
-
-      return false;
-    });
-
     if (matchesExcludePattern) {
-      return { ok: false };
+      excluded = true;
     }
   }
 
-  // Add implementation for .genignore handling here if needed
-  // (omitted for now as it would require parsing .genignore files)
+  if (!included) {
+    return { ok: false };
+  }
 
-  return { ok: true };
+  // if files are included but also excluded, they must be excluded
+  return { ok: !excluded };
 }
 
 /**

@@ -666,6 +666,38 @@ THIS IS KEY TO STARTING THE MARKETPLACE
 
 ✅ This fixes navigation from https://new.uithub.com/brunabaudel/brunabaudel.github.io and any other master default branched repos.
 
-# Mobile warning
+# Mobile warning (2025-04-08)
 
 ✅ On mobile user-agents that aren't found to be tablets, it redirects to `mobile-not-supported.html`. This way stuff remains pretty.
+
+# `search.js` (2025-04-08)
+
+Get the search spec and remake `search.js`. Can be done using prompt completely.
+
+- ✅ Populate search from and to URL
+- ✅ Changing URL contents should add them to URL history but not refresh page yet
+- ✅ Enter in any field should apply URL
+- ✅ When history has been altered but page not refreshed yet, an 'search' should appear.
+- ✅ When there are search filtered applied. A 'clear' button should be enabled that clears all search filters.
+- ✅ Searchbar always have path filters open.
+
+# Search/pipe backend (2025-04-08)
+
+- ✅ Test glob patterns and ensure exclude is applied after include
+- ✅ Test search
+- ✅ Test match Whole word
+- ✅ Test case sensitive
+- ✅ Improve maxFileSize handling
+
+# UI/UX (2025-04-08)
+
+vscode.html
+
+- ✅ `maxTokens` input should update on submit
+- ✅ allow setting `maxFileSize` similarly
+
+explore.js
+
+- ✅ Navigation path-clicks should keep rest of query
+- ✅ Navigation greying out isn't fully correct right now.
+- ✅ It gets expanded too much if you're deeply nested, e.g. on https://new.uithub.com/facebook/react/tree/336614679600af371b06371c0fbdd31fd9838231/compiler/packages

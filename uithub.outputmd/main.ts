@@ -4,7 +4,7 @@
 import { iterateMultipart } from "multipart-formdata-stream-js";
 
 const DEFAULT_MAX_TOKENS = 50000;
-const DEFAULT_MAX_FILE_SIZE = 25 * 1024; // ±5k tokens
+const DEFAULT_MAX_FILE_SIZE = 25000; // ±5k tokens
 const TOKEN_ESTIMATION_FACTOR = 5;
 
 const withLeadingSpace = (lineNumber: number, totalLines: number) => {

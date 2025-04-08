@@ -11,7 +11,6 @@
         const currentPath = window.location.pathname;
         const searchParams = new URLSearchParams(window.location.search);
 
-
         function updateTheme() {
             if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.documentElement.classList.add('dark');
@@ -145,16 +144,6 @@
             </svg>
         </button>
 
-        <!-- New Filter Button -->
-        <!-- <button id="filter-btn"
-            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="text-gray-700 dark:text-gray-400">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-        </button> -->
-
         <!-- Spacer to push user and github to bottom -->
         <div class="flex-grow"></div>
 
@@ -231,11 +220,16 @@
             <!-- Tokens -->
             <div class="flex items-center ml-4">
                 <label class="text-xs text-gray-500 dark:text-gray-400 mr-1">Max tokens:</label>
-                <input value="50000"
+                <input id="maxTokensInput"
                     class="text-xs w-16 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 px-1 py-0 focus:outline-none">
             </div>
 
-
+            <!-- Max File Size -->
+            <div class="flex items-center ml-4">
+                <label class="text-xs text-gray-500 dark:text-gray-400 mr-1">Max file size:</label>
+                <input id="maxFileSizeInput"
+                    class="text-xs w-16 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 px-1 py-0 focus:outline-none">
+            </div>
 
             <!-- Spacer -->
             <div class="flex-grow"></div>
@@ -320,12 +314,52 @@
         const copyBtn = document.getElementById('copyBtn');
         const textToCopy = document.getElementById('textToCopy');
         const copyNotification = document.getElementById('copyNotification');
+        const maxTokensInput = document.getElementById('maxTokensInput');
+        const maxFileSizeInput = document.getElementById('maxFileSizeInput');
 
         // Format selector elements
         const mdFormatBtn = document.getElementById('mdFormat');
         const jsonFormatBtn = document.getElementById('jsonFormat');
         const yamlFormatBtn = document.getElementById('yamlFormat');
 
+        // Get maxTokens and maxFileSize from URL
+        function getURLParams() {
+            const maxTokens = searchParams.get('maxTokens') || '50000';
+            const maxFileSize = searchParams.get('maxFileSize') || '';
+
+            // Set input values
+            maxTokensInput.value = maxTokens;
+            maxFileSizeInput.value = maxFileSize;
+        }
+
+        // Update URL when inputs change
+        function updateURLWithParams() {
+            const newParams = new URLSearchParams(window.location.search);
+            newParams.set('maxTokens', maxTokensInput.value);
+            newParams.set('maxFileSize', maxFileSizeInput.value);
+
+            // Update URL without reloading using History API
+            const newUrl = `${window.location.pathname}?${newParams.toString()}`;
+            history.replaceState({}, '', newUrl);
+        }
+
+        // Handle input change with debounce
+        let debounceTimer;
+        function handleInputChange() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                updateURLWithParams();
+            }, 300); // 300ms debounce
+        }
+
+        // Handle form submission
+        function handleInputSubmit(event) {
+            if (event.key === 'Enter') {
+                updateURLWithParams();
+                // Force reload to apply changes
+                window.location.href = `${window.location.pathname}?${new URLSearchParams(window.location.search).toString()}`;
+            }
+        }
 
         // Simplified toggle function with no animations
         function togglePanel(button, panel) {
@@ -334,7 +368,6 @@
             // Reset all
             filesBtn.classList.remove('active');
             searchBtn.classList.remove('active');
-            //   filterBtn.classList.remove('active');
             profileBtn.classList.remove('active');
             filesPanel.classList.remove('open');
             searchPanel.classList.remove('open');
@@ -413,35 +446,18 @@
         // Add event listeners
         filesBtn.addEventListener('click', () => togglePanel(filesBtn, filesPanel));
         searchBtn.addEventListener('click', () => togglePanel(searchBtn, searchPanel));
-        // filterBtn.addEventListener('click', () => togglePanel(filterBtn, filterPanel));
         profileBtn.addEventListener('click', () => togglePanel(profileBtn, profilePanel));
 
-        // // Simple dark mode detection without transitions
+        // Add event listeners for input changes
+        maxTokensInput.addEventListener('input', handleInputChange);
+        maxFileSizeInput.addEventListener('input', handleInputChange);
 
+        // Add event listeners for Enter key
+        maxTokensInput.addEventListener('keydown', handleInputSubmit);
+        maxFileSizeInput.addEventListener('keydown', handleInputSubmit);
 
-        // Listen for changes
+        // Listen for changes in dark mode
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
-
-
-
-        // Generate Lorem Ipsum content dynamically
-        function generateLoremIpsum() {
-            const loremParagraph =
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam ullamcorper erat et enim vulputate, non feugiat purus imperdiet. Donec volutpat felis non nisi maximus, id scelerisque orci tempus."
-
-
-            let content = textToCopy.innerHTML;
-
-            // Add 1000 words of Lorem Ipsum (approximately 125 repetitions of the 8 paragraphs above)
-            for (let i = 0; i < 120; i++) {
-                content += "\n\n";
-                content += loremParagraph + " ";
-
-            }
-
-            textToCopy.innerHTML = content;
-        }
-
 
         // Check pathname and URL parameters to determine initial state
         function setInitialPanelState() {
@@ -453,22 +469,17 @@
             } else if (searchParams.has('filter')) {
                 // Open filter panel if URL contains ?filter
                 togglePanel(filterBtn, filterPanel);
-            } else if (searchParams.has('profile') || window.data.isPaymentRequired) {
+            } else if (searchParams.has('profile') || window.data && window.data.isPaymentRequired) {
                 // Open profile panel if URL contains ?profile
                 togglePanel(profileBtn, profilePanel);
             }
-
-            // Open explore/files panel if there are more than 4 segments
-            //  togglePanel(filesBtn, filesPanel);
-            // already open by default
-
         }
 
         // Run on page load
         window.addEventListener('DOMContentLoaded', () => {
+            getURLParams();
             initFormatSelector();
             setInitialPanelState();
-            // generateLoremIpsum();
         });
     </script>
 </body>

@@ -153,6 +153,7 @@ export default {
 
     const path = pathParts.join("/");
     const maxTokens = url.searchParams.get("maxTokens") || undefined;
+    const maxFileSize = url.searchParams.get("maxFileSize") || undefined;
     const acceptQuery = url.searchParams.get("accept");
     const acceptHeader = request.headers.get("Accept");
     const accept = acceptQuery || acceptHeader || undefined;
@@ -254,6 +255,13 @@ export default {
         ? 50000
         : undefined;
 
+    const realMaxFileSize =
+      maxFileSize && !isNaN(Number(maxFileSize))
+        ? Number(maxFileSize)
+        : needHtml
+        ? 25000
+        : undefined;
+
     const branchPart = `/${page || "tree"}.${ext || "md"}${
       branch ? `/${branch}` : ""
     }`;
@@ -273,6 +281,12 @@ export default {
       urlObject.searchParams.append("maxTokens", realMaxTokens.toString());
     } else {
       urlObject.searchParams.delete("maxTokens");
+    }
+
+    if (realMaxFileSize !== undefined) {
+      urlObject.searchParams.append("maxFileSize", realMaxFileSize.toString());
+    } else {
+      urlObject.searchParams.delete("maxFileSize");
     }
 
     if (
