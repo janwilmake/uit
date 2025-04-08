@@ -34,13 +34,9 @@ uithubs goal is to support the entire github url structure and make its data acc
 
 # Custom Extensions to URL Structure
 
-| Feature                 | URL Pattern                                                      | Description                                                   | Example                                                  |
-| ----------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------- |
-| Domain as Owner         | uithub.com/{domain.tld}/{id}                                     | Use domain as owner with repository being an ID               | uithub.com/example.com/12345/archive                     |
-| Alternative Page Types  | uithub.com/{owner}/{repository}/{page_type}/{branch_name}/{path} | Page type can be: swc, typedoc, x, etc. beyond standard types | uithub.com/owner/repo/swc/main/src                       |
-| Extended Format         | uithub.com/{owner}/{repository}/{page_type}.{ext}                | Add file extension to page type for different data formats    | uithub.com/owner/repo/tree.json/main                     |
-| Combined Features       | uithub.com/{domain.tld}/{id}/{page_type}.{ext}/{path}            | Combining domain as owner with alternative formats            | uithub.com/example.com/12345/blob.json/main/src/index.js |
-| Inference Navigation    | uithub.com/{owner}/{repository}/inference/{model}/{path}         | Navigate inferences of repository data                        | uithub.com/owner/repo/inference/codeAnalysis/src         |
-| Cross-Domain References | uithub.com/{domain.tld}/{type}/{identifier}                      | Access data from other domains by type                        | uithub.com/npmjs.com/package/react                       |
-| API Access Point        | api.uithub.com/{owner}/{repository}/{resource}                   | Direct API access to repository data                          | api.uithub.com/owner/repo/files                          |
-| LLM Context             | uithub.com/{owner}/{repository}/context/{llm_id}                 | LLM-specific context of repository                            | uithub.com/owner/repo/context/claude-3                   |
+| Feature                | URL Pattern                                                      | Description                                                   |
+| ---------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| Domain as Owner        | uithub.com/{domain.tld}/{id}                                     | Use domain as owner with repository being an ID               |
+| Alternative Page Types | uithub.com/{owner}/{repository}/{page_type}/{branch_name}/{path} | Page type can be: swc, typedoc, x, etc. beyond standard types |
+| Extended Format        | uithub.com/{owner}/{repository}/{page_type}.{ext}                | Add file extension to page type for different data formats    |
+| Combined Features      | uithub.com/{domain.tld}/{id}/{page_type}.{ext}/{path}            | Combining domain as owner with alternative formats            |
