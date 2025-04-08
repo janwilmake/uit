@@ -1,5 +1,17 @@
 # ~~~~BONUS~~~~~
 
+# lists
+
+https://github.com/stars/{username} is the base of the url structure we wanna support
+
+https://uithub.com/stars/janwilmake would provide all starred repos + details + lists + details, and support available filters too
+
+https://uithub.com/stars/janwilmake/lists/{list-id}[/{page}/{branch}[/{repo}/...]] would provide all repos with branch {branch}
+
+Ideally we'd create several parallel pipes for filters, and stream them back into 1 result. This parallelization would keep things super fast.
+
+In the end, this type of search would be ideally be applicable to generated lists as well, not just github lists. This is a very interesting feature that would set uithub apart and create unfair advantage (as repoprompt, gitingest, etc, wouldn't be easily able to do this)
+
 # `explore.js` search examples:
 
 - (If too much code, make this an external HTML page) - Below the search inputs, list a few examples that would change the value of the inputs:

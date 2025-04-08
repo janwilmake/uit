@@ -655,3 +655,13 @@ THIS IS KEY TO STARTING THE MARKETPLACE
 - ✅ When logged in i get `Tree errorFailed to fetch ZIP file: 404 Not Found` for public repo
 - ✅ Pass on auth down the chain.
 - ✅ Confirm going through both public and private repos works.
+
+# Refactor: direct link to pipe (2025-04-08)
+
+✅ To make it all run a bit easier, uithub should directly call the pipechain via `urlPipe`.. Refactor this so it does.
+
+# Provide default branch for github repos (2025-04-08)
+
+✅ Non-'main' default-branch repos should be navigated properly. For this we must somehow retrieve the default branch or head sha without slowing things down. This info is available in the zip as the first folder is always: `[repo]-[branchOrSha]`. Let's get this in a response header from tree.
+
+✅ This fixes navigation from https://new.uithub.com/brunabaudel/brunabaudel.github.io and any other master default branched repos.
