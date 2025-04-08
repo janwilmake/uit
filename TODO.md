@@ -12,22 +12,10 @@
 
 To make it all run a bit easier, uithub should directly call the pipechain via `urlPipe`.. Refactor this so it does.
 
-# Provide default branch for github repos (2025-04-07)
-
-Non-'main' default-branch repos should be navigated properly. For this we must somehow retrieve the default branch or head sha without slowing things down. This info is available in the zip as the first folder is always: `[repo]-[branchOrSha]`. Let's get this in a response header from tree.
-
-This fixes navigation from https://new.uithub.com/brunabaudel/brunabaudel.github.io and any other master default branched repos.
-
-# Add max-token cap warning
-
-In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not.
-
-In uithub UI, add filter warning if tokens were capped that says "apply filters for better results".
-
 # Search/pipe backend
 
 - Add stop criterium if there was one or more basePaths. if so, get last basePath alphabetically and stop after the pathname is behind this one. Will be GREAT for performance for large repos. Best make this a configuration though as it may not always be possible to rely on this!
-- Test glob patterns and ensure exlclude is applied after include
+- Test glob patterns and ensure exclude is applied after include
 - Test search and isRegex
 - Things aren't SUPER fast now. See where in the pipeline I can improve performance. Ensuring applying path filters early is especially a good way.
 
@@ -70,9 +58,20 @@ Follow up:
 
 - ✅ easy login
 - ✅ https://new.uithub.com/owner/repo has new layout
+- search is the biggest feature missing
 - never hit white screen, 404/429/402 if needed
-- way to find other plugins for codebase and use them
-- xymake for repo being one of them (x.uithub.com) - should return actual posts context in md format!
+
+# Provide default branch for github repos (2025-04-07)
+
+Non-'main' default-branch repos should be navigated properly. For this we must somehow retrieve the default branch or head sha without slowing things down. This info is available in the zip as the first folder is always: `[repo]-[branchOrSha]`. Let's get this in a response header from tree.
+
+This fixes navigation from https://new.uithub.com/brunabaudel/brunabaudel.github.io and any other master default branched repos.
+
+# Add max-token cap warning
+
+In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not.
+
+In uithub UI, add filter warning if tokens were capped that says "apply filters for better results".
 
 # TODO before launch
 
@@ -87,6 +86,8 @@ Follow up:
 # Add shadow navigation
 
 Should be added to uithub data so the UI makes navigation easy!
+
+Should come from Source of truth of a flat JSON file and some should show up "Premium". would still navigate there and show a small preview if deposit isn't good enough! Plugin should choose the requirements (all from the JSON)
 
 # Monaco
 

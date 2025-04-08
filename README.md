@@ -1,4 +1,4 @@
-# Universal Information Terminal Hub
+# Universal Information Terminal
 
 U.I.T. is a library for **performant, modular, low-memory** file processing at scale, in the Cloud. It works by offering a 4-step process to gather a file hierarchy from any desired modalty, apply filters and transformations, and output it in any desired modality.
 
@@ -22,9 +22,9 @@ UIT provides the following modules that can be combined to create powerful file 
 - [**uithub.merge**](./uithub.merge) - Combines multiple formdata streams into a single unified stream
 - [**uithub.outputmd**](./uithub.outputmd) - Transforms and outputs data as markdown files
 - [**uithub.outputzip**](./uithub.outputzip) - Packages processed data into downloadable ZIP archives
-- [**uithub.pipe**](./uithub.pipe) - Handles data transformation workflows between different formats
 - [**uithub.search**](./uithub.search) - Provides search capabilities across file hierarchies
 - [**uithub.ziptree**](./uithub.ziptree) - Highly performant zip file-hierarchy extractor
+- [**uithub**](./uithub.pipe) - Brings several modules together, pipes through them, and shows in authenticated HTML interface.
 
 Each module is designed to perform a specific step in the UIT 4-step process (ingest, filter/transform, merge, output) while maintaining performance and low memory usage.
 
