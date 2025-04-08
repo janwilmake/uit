@@ -7,10 +7,10 @@ import html429 from "./public/429.html";
 export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
 import { ratelimit } from "./ratelimiter.js";
+import urlPipe from "./urlPipe.js";
 interface Env {
   GITHUB_PAT: string;
   CREDENTIALS: string;
-  UITHUB_PIPE: { fetch: typeof fetch };
   UITHUB_ZIPTREE: { fetch: typeof fetch };
 }
 
@@ -326,14 +326,11 @@ export default {
           )
       : undefined;
 
-    const pipeFetchFn = env.UITHUB_PIPE || {
-      fetch: (url, init) => fetch(url, init),
-    };
-
-    const response = await pipeFetchFn.fetch(
+    const response = await urlPipe.fetch(
       new Request(finalUrl, {
         headers,
       }),
+      env,
     );
 
     if (!response.ok || !response.body) {

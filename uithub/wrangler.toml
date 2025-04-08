@@ -27,12 +27,6 @@ class_name = "RatelimitDO"
 tag = "v1"
 new_sqlite_classes = ["RatelimitDO"]
 
-
-## Can be commented out to use the remote servers
 [[services]]
-binding = "UITHUB_PIPE"
-service = "uithub_pipe"
-
-# [[services]]
-# binding = "UITHUB_ZIPTREE"
-# service = "uithub_ziptree"
+binding = "UITHUB_ZIPTREE"
+service = "uithub_ziptree"
