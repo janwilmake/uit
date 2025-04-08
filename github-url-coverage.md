@@ -34,9 +34,8 @@ uithubs goal is to support the entire github url structure and make its data acc
 
 # Custom Extensions to URL Structure
 
-| Feature                | URL Pattern                                                      | Description                                                   |
-| ---------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------- |
-| Domain as Owner        | uithub.com/{domain.tld}/{id}                                     | Use domain as owner with repository being an ID               |
-| Alternative Page Types | uithub.com/{owner}/{repository}/{page_type}/{branch_name}/{path} | Page type can be: swc, typedoc, x, etc. beyond standard types |
-| Extended Format        | uithub.com/{owner}/{repository}/{page_type}.{ext}                | Add file extension to page type for different data formats    |
-| Combined Features      | uithub.com/{domain.tld}/{id}/{page_type}.{ext}/{path}            | Combining domain as owner with alternative formats            |
+| Feature                | URL Pattern                                                | Description                                                   |
+| ---------------------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| Domain as Owner        | uithub.com/**{domain.tld}**/{id}                           | Use domain as owner with repository being an ID               |
+| Alternative Page Types | uithub.com/{owner}/{repository}/**{page}**/{branch}/{path} | Page type can be: swc, typedoc, x, etc. beyond standard types |
+| Extended Format        | uithub.com/{owner}/{repository}/**{page}.{ext}**           | Add file extension to page type for different data formats    |
