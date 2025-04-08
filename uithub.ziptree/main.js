@@ -390,7 +390,7 @@ const finalResponse = (
         appendSlash(prependSlash(basePath)),
       )
     ) {
-      console.log({ normalizedPath, basePath });
+      // console.log({ normalizedPath, basePath });
       // filter out other base paths
       return;
     }
@@ -414,7 +414,7 @@ const finalResponse = (
       ? stringifyFn(createTree(finalResult), undefined, 2)
       : stringifyFn(finalResult, undefined, 2);
 
-  console.log({ firstSegment });
+  // console.log({ firstSegment });
   // Return the final processed data
   return new Response(final, {
     status: 200,

@@ -447,7 +447,7 @@
         function setInitialPanelState() {
             const pathSegments = currentPath.split('/').filter(segment => segment !== '');
 
-            if (searchParams.has('search')) {
+            if (searchParams.has('search') || searchParams.has('pathPatterns') || searchParams.has('excludePathPatterns')) {
                 // Open search panel if URL contains ?search
                 togglePanel(searchBtn, searchPanel);
             } else if (searchParams.has('filter')) {
@@ -456,11 +456,12 @@
             } else if (searchParams.has('profile') || window.data.isPaymentRequired) {
                 // Open profile panel if URL contains ?profile
                 togglePanel(profileBtn, profilePanel);
-            } else {
-                // Open explore/files panel if there are more than 4 segments
-                togglePanel(filesBtn, filesPanel);
             }
-            // Otherwise, no sidebar is open by default
+
+            // Open explore/files panel if there are more than 4 segments
+            //  togglePanel(filesBtn, filesPanel);
+            // already open by default
+
         }
 
         // Run on page load

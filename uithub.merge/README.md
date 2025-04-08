@@ -2,7 +2,7 @@ Cloudflare Typescript Worker with `export default { fetch }` that takes and comb
 
 # TODO:
 
-alter `uithub.merge` to:
+Alter `uithub.merge` to:
 
 - allow adding prefix
 - define concurrency (one by one applies sorting automatically, and maybe its better anyway to not create too much backpressure)

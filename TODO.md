@@ -12,12 +12,12 @@
 
 Get the search spec and remake `search.js`. Can be done using prompt completely.
 
-- Populate search from and to URL
-- Changing URL contents should add them to URL history but not refresh page yet
-- Enter in any field should apply URL
-- When history has been altered but page not refreshed yet, an 'search' should appear.
-- When there are search filtered applied. A 'clear' button should be enabled that clears all search filters.
-- Searchbar always have path filters open.
+- ✅ Populate search from and to URL
+- ✅ Changing URL contents should add them to URL history but not refresh page yet
+- ✅ Enter in any field should apply URL
+- ✅ When history has been altered but page not refreshed yet, an 'search' should appear.
+- ✅ When there are search filtered applied. A 'clear' button should be enabled that clears all search filters.
+- ✅ Searchbar always have path filters open.
 
 # Search/pipe backend
 
