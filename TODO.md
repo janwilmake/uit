@@ -13,6 +13,6 @@
 - ✅ easy login
 - ✅ https://new.uithub.com/owner/repo has new layout
 - ✅ search is the biggest feature missing
-- Test `isRegex`
 - Add https://www.simpleanalytics.com event if free plan, or add back google analytics (see: https://github.com/janwilmake/uithub.v1)
+- Test `isRegex`
 - never hit white screen, 404/429/402 if needed

@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", function () {
       /^\/([^\/]+)\/([^\/]+)(?:\/(tree|blob)\/([^\/]+))?(?:\/(.*))?$/;
     const match = path.match(pathRegex);
 
-    console.log({ match });
     if (match) {
       return {
         owner: match[1],
@@ -57,7 +56,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Create and populate the explorer content
   function loadExplorerContent() {
     const repoInfo = getRepoPathInfo();
-    console.log({ repoInfo });
     const defaultExpandLevel = getDefaultExpansionLevel();
 
     filesContent.innerHTML = `

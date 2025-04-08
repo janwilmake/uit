@@ -88,3 +88,9 @@ Please open a discussion, issue, pull request, or [reach out](https://x.com/janw
 - [ADR.md](ADR.md)
 
 ~ Being made with ❤️ by [janwilmake](https://x.com/janwilmake)
+
+# Previous work
+
+- https://github.com/janwilmake/zipobject.vercel - earlier version intended to replace uithub, got too complex
+- https://github.com/janwilmake/shadowfs - similar ideas different angle
+- https://github.com/janwilmake/filetransformers - similar ideas different angle

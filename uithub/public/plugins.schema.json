@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plugins"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "plugins": {
+      "description": "Plugins for uithub. These plugins can be made accessible via the plugins menu in the sidebar, and can be pinned to the UI. \n\nThe key of any plugin in plugin object can be used to access the plugin through its page in format \"/[owner]/[repo]/[page]\".\n\nRight now the plugin store should be focused mainly on the easiest and most impactful ones types of plugins. At a later stage, plugins could become discoverable pieces of code, auto-detected on GitHub, and would be able to be easily used and tested by agents to ensure marketplace quality.",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "url"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Comes from openapi.json#/info/title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Comes from openapi.json#/info/description"
+          },
+          "isPremium": { "type": "boolean" },
+          "domain": {
+            "type": "string",
+            "description": "If given, the plugin is only available for this domain, e.g. github.com or xymake.com"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["api", "formdata-transformer"],
+            "description": "The type of plugin:\n\n- **api**: Should be a GET API in format /owner/repo[/page/branch[/...path]] that takes no query parameters, and responds with the desired content-type.\n- **formdata-transformer**: Should be a FormData transformer.\n"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Must be the origin and basePath. For type 'api' a path will be appended following the uithub convention. For type 'formdata-transformer' it must take formdata as POST or a URL to a FormData stream as GET pathname."
+          }
+        }
+      }
+    }
+  }
+}

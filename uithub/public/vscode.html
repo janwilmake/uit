@@ -144,6 +144,21 @@
             </svg>
         </button>
 
+        <button id="plugins-btn"
+            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="text-gray-700 dark:text-gray-400">
+                <!-- Base square with rounded corners -->
+                <rect x="3" y="3" width="18" height="18" rx="3" ry="3" fill="none" stroke="currentColor"
+                    stroke-width="2" />
+
+                <!-- Horizontal line of the cross -->
+                <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+
+                <!-- Vertical line of the cross -->
+                <line x1="12" y1="7" x2="12" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </button>
+
         <!-- Spacer to push user and github to bottom -->
         <div class="flex-grow"></div>
 
@@ -191,6 +206,14 @@
     <div id="filter-panel"
         class="nav-panel bg-gray-100 dark:bg-gray-800 flex-none h-full border-r border-gray-200 dark:border-gray-700">
         <div id="filter-content" class="filter-content p-2">
+            <!-- Content will be loaded from filter.js -->
+        </div>
+    </div>
+
+    <!-- New Filter panel -->
+    <div id="plugins-panel"
+        class="nav-panel bg-gray-100 dark:bg-gray-800 flex-none h-full border-r border-gray-200 dark:border-gray-700">
+        <div id="plugins-content" class="plugins-content p-2">
             <!-- Content will be loaded from filter.js -->
         </div>
     </div>
@@ -297,6 +320,7 @@
     <script src="/search.js"></script>
     <script src="/filter.js"></script>
     <script src="/profile.js"></script>
+    <script src="/plugins.js"></script>
 
     <script>
         // Variables to track active panel
@@ -304,6 +328,7 @@
 
         // Get DOM elements
         const filesBtn = document.getElementById('files-btn');
+        const pluginsBtn = document.getElementById('plugins-btn');
         const searchBtn = document.getElementById('search-btn');
         const filterBtn = document.getElementById('filter-btn');
         const profileBtn = document.getElementById('profile-btn');
@@ -311,6 +336,7 @@
         const searchPanel = document.getElementById('search-panel');
         const filterPanel = document.getElementById('filter-panel');
         const profilePanel = document.getElementById('profile-panel');
+        const pluginsPanel = document.getElementById('plugins-panel');
         const copyBtn = document.getElementById('copyBtn');
         const textToCopy = document.getElementById('textToCopy');
         const copyNotification = document.getElementById('copyNotification');
@@ -369,10 +395,12 @@
             filesBtn.classList.remove('active');
             searchBtn.classList.remove('active');
             profileBtn.classList.remove('active');
+            pluginsBtn.classList.remove('active');
             filesPanel.classList.remove('open');
             searchPanel.classList.remove('open');
             filterPanel.classList.remove('open');
             profilePanel.classList.remove('open');
+            pluginsPanel.classList.remove('open');
 
             // Toggle only if not already active
             if (!isCurrentlyActive) {
@@ -447,6 +475,7 @@
         filesBtn.addEventListener('click', () => togglePanel(filesBtn, filesPanel));
         searchBtn.addEventListener('click', () => togglePanel(searchBtn, searchPanel));
         profileBtn.addEventListener('click', () => togglePanel(profileBtn, profilePanel));
+        pluginsBtn.addEventListener('click', () => togglePanel(pluginsBtn, pluginsPanel));
 
         // Add event listeners for input changes
         maxTokensInput.addEventListener('input', handleInputChange);

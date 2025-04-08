@@ -95,3 +95,13 @@ The reason it's good is:
 - we need room to give massive discounts to enterprise; b2c doesn't need to be cheap at scale, as they won't have scale
 - 1 cent per additional request is fair, won't cost a dollar for an entire day of regular use. and you won't normally get to this much traffic unless you're really building something bigger
 - $10/month now gives 10k requests which is 333 per day on average, which should be more than sufficient.
+
+# Monaco?
+
+Maybe looks way cooler than raw text! However, may also be much harder to make that stream in... Let's see.
+
+Seems possible to stream to monaco through adding every chunk: https://claude.ai/share/ee1cd1f2-b94c-4340-9c0e-85d0d05d0a7c
+
+This'd make things really pretty and readable!
+
+Edit: tried it, but slows things down as well, and in-md codeblocks didn't highlight easily

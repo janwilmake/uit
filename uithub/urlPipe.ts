@@ -99,6 +99,7 @@ export default {
           `refs/heads/${branch || "main"}`;
 
     // TODO: This logic can be better. IDK Yet How to conventionalize.
+    // TODO: add wiki archive as well! https://github.com/janwilmake/forgithub.wikizip
     const archiveUrl = isDomain
       ? `https://${ownerOrDomain}/${id}/archive/${ref}.zip`
       : `https://github.com/${ownerOrDomain}/${id}/archive/${

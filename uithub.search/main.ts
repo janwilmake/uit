@@ -146,10 +146,10 @@ export default {
         body,
         contentType: streamContentType,
         filterPart: (part: Part) => {
-          return filterPart(part, params, searchPattern, totalTokens, hitFound);
+          return filterPart(part, params, totalTokens, hitFound);
         },
         transformPart: async (part: Part) => {
-          const result = await transformPart(part, params, searchPattern);
+          const result = await transformPart(part, searchPattern);
 
           // Update token tracking
           if (
@@ -286,7 +286,6 @@ const withoutSlash = (path: string) =>
 function filterPart(
   part: Part,
   params: RequestParams,
-  searchPattern: RegExp | null,
   totalTokens: number,
   hitFound: boolean,
 ): { ok: boolean; stop?: boolean } {
@@ -408,21 +407,10 @@ function filterPart(
  */
 async function transformPart(
   part: Part,
-  params: RequestParams,
   searchPattern: RegExp | null,
 ): Promise<{ part: Part | null; stop?: boolean }> {
   // If there's a search pattern, check content (for text files only)
-  if (
-    searchPattern &&
-    part.data &&
-    part["content-type"] &&
-    (part["content-type"].startsWith("text/") ||
-      part["content-type"].includes("javascript") ||
-      part["content-type"].includes("json") ||
-      part["content-type"].includes("xml") ||
-      part["content-type"].includes("html") ||
-      part["content-type"].includes("css"))
-  ) {
+  if (searchPattern && part["content-transfer-encoding"] !== "binary") {
     try {
       // Convert to text for searching
       const data =

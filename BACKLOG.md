@@ -1,5 +1,3 @@
-# ~~~~BONUS~~~~~
-
 # lists
 
 https://github.com/stars/{username} is the base of the url structure we wanna support
@@ -75,21 +73,6 @@ Based on what should features require payment
 The premium features should require deposit of $50
 
 Also add button to unlock for entire organisation/owner (contact me)
-
-# Monaco
-
-Maybe looks way cooler than raw text! However, may also be much harder to make that stream in... Let's see.
-
-Seems possible to stream to monaco through adding every chunk: https://claude.ai/share/ee1cd1f2-b94c-4340-9c0e-85d0d05d0a7c
-
-This'd make things really pretty and readable!
-
-# Improve
-
-- search
-- outputmd
-- merge
-- github-url-coverage
 
 # Performance
 
