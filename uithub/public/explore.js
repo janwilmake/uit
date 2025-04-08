@@ -23,15 +23,18 @@ document.addEventListener("DOMContentLoaded", function () {
   // Extract repository path information from URL
   function getRepoPathInfo() {
     const path = window.location.pathname;
-    const pathRegex = /^\/([^\/]+)\/([^\/]+)(?:\/tree\/([^\/]+))?(?:\/(.*))?$/;
+    // const pathRegex = /^\/([^\/]+)\/([^\/]+)(?:\/tree\/([^\/]+))?(?:\/(.*))?$/;
+    const pathRegex =
+      /^\/([^\/]+)\/([^\/]+)(?:\/(tree|blob)\/([^\/]+))?(?:\/(.*))?$/;
     const match = path.match(pathRegex);
 
+    console.log({ match });
     if (match) {
       return {
         owner: match[1],
         repo: match[2],
-        branch: match[3] || window.data.realBranch || "main",
-        path: match[4] || "",
+        branch: match[4] || window.data.realBranch || "main",
+        path: match[5] || "",
         isBlob: path.includes("/blob/"),
       };
     }
@@ -54,6 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Create and populate the explorer content
   function loadExplorerContent() {
     const repoInfo = getRepoPathInfo();
+    console.log({ repoInfo });
     const defaultExpandLevel = getDefaultExpansionLevel();
 
     filesContent.innerHTML = `
@@ -284,7 +288,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Determine if this folder is active or relevant to current path
     const isActive = isInActivePath(path, repoInfo.path);
     const isRelevant = isRelevantPath(path, repoInfo.path);
-
     // Apply styling based on active state
     const activeFolderClass = isActive ? "text-purple-600 font-medium" : "";
     const inactiveFolderClass = !isRelevant ? "text-gray-500" : "";
