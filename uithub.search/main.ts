@@ -320,10 +320,36 @@ function filterPart(
   }
 
   // Apply pathPatterns (inclusion patterns)
+  // Apply pathPatterns (inclusion patterns)
   if (params.pathPatterns && params.pathPatterns.length > 0) {
-    const matchesPattern = params.pathPatterns.some((pattern) =>
-      minimatch(filename, pattern, { dot: true }),
-    );
+    const matchesPattern = params.pathPatterns.some((pattern) => {
+      // Original pattern matching
+      if (minimatch(filename, pattern, { dot: true })) {
+        return true;
+      }
+
+      // VSCode-like behavior: treat patterns without glob characters as directory prefixes
+      if (!pattern.includes("*") && !pattern.includes("?")) {
+        // Ensure the pattern has a trailing slash
+        const dirPattern = pattern.endsWith("/") ? pattern : pattern + "/";
+
+        // Check if filename starts with the directory pattern
+        if (prependSlash(filename).startsWith(prependSlash(dirPattern))) {
+          return true;
+        }
+
+        // Also try with the ** glob
+        return minimatch(filename, `${pattern}/**`, { dot: true });
+      }
+
+      return false;
+    });
+
+    console.log({
+      pathPatterns: params.pathPatterns,
+      filename,
+      matchesPattern,
+    });
 
     if (!matchesPattern) {
       return { ok: false };
@@ -332,9 +358,28 @@ function filterPart(
 
   // Apply excludePathPatterns
   if (params.excludePathPatterns && params.excludePathPatterns.length > 0) {
-    const matchesExcludePattern = params.excludePathPatterns.some((pattern) =>
-      minimatch(filename, pattern, { dot: true }),
-    );
+    const matchesExcludePattern = params.excludePathPatterns.some((pattern) => {
+      // Original pattern matching
+      if (minimatch(filename, pattern, { dot: true })) {
+        return true;
+      }
+
+      // VSCode-like behavior: treat patterns without glob characters as directory prefixes
+      if (!pattern.includes("*") && !pattern.includes("?")) {
+        // Ensure the pattern has a trailing slash
+        const dirPattern = pattern.endsWith("/") ? pattern : pattern + "/";
+
+        // Check if filename starts with the directory pattern
+        if (prependSlash(filename).startsWith(prependSlash(dirPattern))) {
+          return true;
+        }
+
+        // Also try with the ** glob
+        return minimatch(filename, `${pattern}/**`, { dot: true });
+      }
+
+      return false;
+    });
 
     if (matchesExcludePattern) {
       return { ok: false };
