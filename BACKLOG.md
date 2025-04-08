@@ -1,3 +1,16 @@
+# Wishlist
+
+Wishlist:
+
+- ❗️ VSCode-like path-match and in-file search with regex (especially useful cross-repo!)
+- Support to create a single zip from an object that references multiple zips as `FileEntry<{url:string}>` or `JSON<{$ref:string}>`
+- Shadowrule support (see https://github.com/janwilmake/shadowfs)
+- Support for [git lfs](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage)
+- A plugin for installation of packages
+- A plugin for bundling
+- A plugin that normalizes the imports based on other available paths, and makes more files available if the import references files that weren't available.
+- Also, shadowrules (see shadowfs) so i can go zip to zip with rules. Interesting though to see if we can make that stream as well. Probably, everything can stream, in the end. Better to it right.
+
 # lists
 
 https://github.com/stars/{username} is the base of the url structure we wanna support
@@ -291,3 +304,23 @@ Doing some more tests from iad1 (us-east) I found that retrieving the zip via a 
 Zipfiles of a repo vary widely in size, from several KB to several GBs and beyond. This makes it hard to have a uniform solution.
 
 Depending on the needs i need to make uithub or githuq or githus faster. What these needs are isn't entirely clear yet. For now at least it works well enough without cache with small repos. Let's just keep it like that.
+
+# Nice to have: Improve zip finding and binary urls
+
+Issue: not all branches are accessible yet on github and this is actually quite some logic! Many will actually give a dead link, which is problematic! Since we have more than zipobject alone for github zip finding, this should become a service or lib in itself. Maybe, its better not to allow github URL in the first place, or at least, we should be very clear on what is supported from the github URL structure and what isn't.
+
+Possible github URLs in browser:
+
+- https://github.com/facebook/react
+- https://github.com/facebook/react/tree|blob/main/[path]
+- https://github.com/facebook/react/wiki/[page]
+- https://github.com/facebook/react/tree/18eaf51bd51fed8dfed661d64c306759101d0bfd
+- https://github.com/facebook/react/tree/gh/mvitousek/5/orig/compiler (branch can have strange characters including `/`)
+- https://github.com/facebook/react/tree/v16.3.1 (it's a tag)
+
+Two strategies are possible to figure out the zip url and raw url:
+
+1. trial and error; try most likely and try other possibilities later to finally get the zip url. the tricky part is that https://codeload.github.com/facebook/react/zip/refs/ANYTHING will always redirect even if it didn't exist, so we need to follow the redirect.
+2. use `git.listServerRefs`. If we cache it and But this easily takes half a second...
+
+It's best to create a function to do this trial and error. This would most likely just be ratelimited by 5000 req/hour/ip. Additionally we could cache the tagnames and branchnames - but not the shas they're tied to. However, I don't think this is worth the additional complexity as the amount of trials before a hit is likely between 2-3 on average (assuming we start with 2 in parallel).

@@ -8,11 +8,12 @@
 4. rename all of zipobject to uithub. uithub means 'universal information terminal hub'
 5. make it better, adding lots of new features.
 
-# POC before LONDON
+# POC
 
-- ✅ easy login
-- ✅ https://new.uithub.com/owner/repo has new layout
-- ✅ search is the biggest feature missing
+- premium features aren't clear yet
+- json/yaml buttons don't work yet
+- chat with LLM interface loads very slow sometimes and can be ugly. payment flow not tested yet, also on chat.forgithub.com.
+- should charge small fee for use of uithub api
 - Add https://www.simpleanalytics.com event if free plan, or add back google analytics (see: https://github.com/janwilmake/uithub.v1)
 - Test `isRegex`
 - never hit white screen, 404/429/402 if needed
