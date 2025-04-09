@@ -278,6 +278,8 @@ function createSearchPattern(params: RequestParams): RegExp | null {
 
 const prependSlash = (path: string) =>
   path.startsWith("/") ? path : "/" + path;
+const surroundSlash = (path: string) =>
+  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
 const withoutSlash = (path: string) =>
   path.startsWith("/") ? path.slice(1) : path;
 /**
@@ -311,9 +313,18 @@ function filterPart(
 
   // Check base path filter
   if (params.basePath && params.basePath.length > 0) {
-    const matchesBasePath = params.basePath.some((base) =>
-      prependSlash(filename).startsWith(prependSlash(base)),
-    );
+    const matchesBasePath = params.basePath.some((base) => {
+      // e.g. public/, /public and /public/ all becomes /public/
+      const normalizedBase = surroundSlash(base);
+
+      // e.g. public/index.html becomes /public/index.html/
+
+      const normalizedFilename = surroundSlash(filename);
+
+      // NB: The normalization ensures only entire folders are seen as basepaths
+      const isInBasePath = normalizedFilename.startsWith(normalizedBase);
+      return isInBasePath;
+    });
 
     if (!matchesBasePath) {
       return { ok: false };

@@ -688,6 +688,7 @@ Get the search spec and remake `search.js`. Can be done using prompt completely.
 - ✅ Test match Whole word
 - ✅ Test case sensitive
 - ✅ Improve maxFileSize handling
+- ✅ bug basepath filter https://new.uithub.com/janwilmake/uit/tree/831232048291a7f2c96821d020d7761d293ede98/uithub (fixed)
 
 # UI/UX (2025-04-08)
 
