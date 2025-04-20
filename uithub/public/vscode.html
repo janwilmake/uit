@@ -257,25 +257,37 @@
             <!-- Spacer -->
             <div class="flex-grow"></div>
 
-            <!-- Action buttons - improved with more padding and rounded corners -->
             <button id="copyBtn"
-                class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+                class="text-xs bg-[#8b5cf6] text-white px-3 py-1.5 rounded-md flex items-center hover:bg-purple-600 focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
-                Copy <span class="pl-1.5 text-[10px] text-gray-400">{{currentTokens}} tokens</span>
+                Copy <span class="pl-1.5 text-[10px] text-gray-100">{{currentTokens}} tokens</span>
             </button>
 
-            <a href="{{chatLink}}"
+            <!-- Action buttons - improved with more padding and rounded corners -->
+            <button onclick="addBadgeToReadme()"
+                class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                Add to README
+
+            </button>
+
+            <!-- <a href="{{chatLink}}"
                 class="text-xs bg-[#8b5cf6] text-white px-3 py-1.5 rounded-md flex items-center hover:bg-purple-600 focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
                 Chat with LLM
-            </a>
+            </a> -->
+
+
 
             <a href="{{baseLink}}"
                 class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
@@ -316,6 +328,7 @@
         Copied!
     </div>
 
+    <script src="/badge.js"></script>
     <script src="/explore.js"></script>
     <script src="/search.js"></script>
     <script src="/filter.js"></script>

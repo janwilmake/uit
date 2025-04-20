@@ -702,3 +702,32 @@ explore.js
 - ✅ Navigation path-clicks should keep rest of query
 - ✅ Navigation greying out isn't fully correct right now.
 - ✅ It gets expanded too much if you're deeply nested, e.g. on https://new.uithub.com/facebook/react/tree/336614679600af371b06371c0fbdd31fd9838231/compiler/packages
+
+# 'Add to README' button (2025-04-18)
+
+✅ Fix https://github.com/janwilmake/forgithub.badge
+
+✅ Make it an API as well that takes a github-related URL, and responds with markdown for a badge for it, and also provides the github URL of the page to edit.
+
+Sha url can't be used for edit link, must be branch!
+
+✅ Then embed that in the `vscode.html` so it copies the markdown and opens the readme in edit-mode, so you can paste it.
+
+✅ For now, remove chat with LLM. Not worth it for now.
+
+🤔 Learned that github requires any image to load within a few seconds (and caches it); too slow makes it unusable. To solve this (and to also solve it for og:image's) let's focus on performance in the first place, not caching per se. For this, it's fine to have an outdated number of tokens, but it also needs to be a fast experience in the first place for it to be usable!
+
+# OLD UITHUB improvements (2025-04-19)
+
+- ✅ add "Add to README" to old uithub too
+- ✅ connect `forgithub.badge` tokencount with old uithub
+- ✅ Add top 500 with small size to old uithub too (landingpage)
+
+# Go to market V2 (2025-04-19)
+
+- ✅ Fix https://activity.forgithub.com
+- ✅ let's make this update every 24 hours: https://popular.forgithub.com
+- ✅ let's add top 500 to the landingpage!!!
+- ✅ Also add to the githuq.com landingpage
+- ❌ Let's add questions to each: https://questions.forgithub.com
+- ❌ Make chat.forgithub.com fast

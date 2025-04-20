@@ -4,6 +4,7 @@
 /**
  * @typedef Env {object}
  * @property ZIPTREE_KV {KVNamespace}
+ * @property SECRET {string}
  */
 
 import { stringify } from "yaml";
@@ -40,15 +41,6 @@ export default {
         return new Response("No secret set", { status: 500 });
       }
 
-      if ((!secret || atob(secret) !== env.SECRET) && !isLocal) {
-        return new Response("Secret invalid", {
-          status: 401,
-          headers: {
-            "WWW-Authenticate": 'Basic realm="Tree Access"',
-          },
-        });
-      }
-
       const sourceAuthorization = request.headers.get("x-source-authorization");
       const zipUrl = decodeURIComponent(url.pathname.slice("/tree/".length));
       const type = url.searchParams.get("type");
@@ -70,6 +62,7 @@ export default {
         omitFirstSegment,
         accept,
         sourceAuthorization,
+        secret,
       );
     } catch (error) {
       console.error("Error processing request:", error);
@@ -194,6 +187,7 @@ function getCacheControl(request, url, apiKey) {
  * @param {boolean} omitFirstSegment
  * @param {*} accept
  * @param {string|null} sourceAuthorization
+ * @param {string|undefined} secret
  * @returns {Promise<Response>} Processed tree data response
  */
 async function fetchTree(
@@ -206,6 +200,7 @@ async function fetchTree(
   omitFirstSegment,
   accept,
   sourceAuthorization,
+  secret,
 ) {
   const cacheKey = `v3.ziptree:${zipUrl}/apiKey=${sourceAuthorization}`;
 
@@ -251,6 +246,15 @@ async function fetchTree(
       accept,
       cacheControl,
     );
+  }
+
+  if (!secret || atob(secret) !== env.SECRET) {
+    return new Response("No cached version available and secret invalid", {
+      status: 401,
+      headers: {
+        "WWW-Authenticate": 'Basic realm="Tree Access"',
+      },
+    });
   }
 
   // do it

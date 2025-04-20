@@ -11,17 +11,14 @@ Wishlist:
 - A plugin that normalizes the imports based on other available paths, and makes more files available if the import references files that weren't available.
 - Also, shadowrules (see shadowfs) so i can go zip to zip with rules. Interesting though to see if we can make that stream as well. Probably, everything can stream, in the end. Better to it right.
 
-# lists
+# MCP Button
 
-https://github.com/stars/{username} is the base of the url structure we wanna support
+Instead of the chat, release a AUTHENTICATABLE `fetch mcp` that you'd just paste the URL from uithub in to get it as a markdown starting point.
 
-https://uithub.com/stars/janwilmake would provide all starred repos + details + lists + details, and support available filters too
+# plugins i rly wnt
 
-https://uithub.com/stars/janwilmake/lists/{list-id}[/{page}/{branch}[/{repo}/...]] would provide all repos with branch {branch}
-
-Ideally we'd create several parallel pipes for filters, and stream them back into 1 result. This parallelization would keep things super fast.
-
-In the end, this type of search would be ideally be applicable to generated lists as well, not just github lists. This is a very interesting feature that would set uithub apart and create unfair advantage (as repoprompt, gitingest, etc, wouldn't be easily able to do this)
+- monoflare to cloudflare
+- cloudflare to bundled, deployable, cloudflare
 
 # `explore.js` search examples:
 
@@ -324,3 +321,9 @@ Two strategies are possible to figure out the zip url and raw url:
 2. use `git.listServerRefs`. If we cache it and But this easily takes half a second...
 
 It's best to create a function to do this trial and error. This would most likely just be ratelimited by 5000 req/hour/ip. Additionally we could cache the tagnames and branchnames - but not the shas they're tied to. However, I don't think this is worth the additional complexity as the amount of trials before a hit is likely between 2-3 on average (assuming we start with 2 in parallel).
+
+# oss project alexandria
+
+https://x.com/dok2001/status/1910591729968759240
+
+consider https://www.cloudflare.com/en-gb/lp/project-alexandria/

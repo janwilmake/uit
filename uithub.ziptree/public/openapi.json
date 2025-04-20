@@ -1,16 +1,13 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Zip Object Tree API",
-    "description": "API for fetching and processing zip file contents as tree structures",
-    "version": "1.0.0",
-    "contact": {
-      "name": "tree.zipobject.com"
-    }
+    "title": "ZipTree API",
+    "description": "API for fetching and processing zip file contents as tree structures. This service can calculate token estimates for text files, provide file size information, and structure content hierarchically.",
+    "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "https://tree.zipobject.com",
+      "url": "https://ziptree.uithub.com",
       "description": "Production server"
     }
   ],
@@ -18,7 +15,7 @@
     "/tree/{zipUrl}": {
       "get": {
         "summary": "Get zip file contents as tree structure",
-        "description": "Fetch and process a zip file's contents, returning a hierarchical tree structure or a flat list of files with sizes. The service can calculate token estimates for text files.",
+        "description": "Fetch and process a zip file's contents, returning a hierarchical tree structure or a flat list of files with sizes or CRC32 values. The service can calculate token estimates for text files and filter by base path.",
         "parameters": [
           {
             "name": "zipUrl",
@@ -33,11 +30,11 @@
           {
             "name": "type",
             "in": "query",
-            "description": "Output type format (token-tree, token-list, or file size by default)",
+            "description": "Output type format (token-tree, token-list, file size by default, or crc32)",
             "required": false,
             "schema": {
               "type": "string",
-              "enum": ["token-tree", "token-list", "tree", "crc32"]
+              "enum": ["token-tree", "token-list", "crc32"]
             }
           },
           {
@@ -52,10 +49,11 @@
           {
             "name": "omitFirstSegment",
             "in": "query",
-            "description": "If true, omits first segment",
+            "description": "If true, omits the first segment of each path",
             "required": false,
             "schema": {
-              "type": "boolean"
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -80,23 +78,23 @@
             }
           },
           {
-            "name": "secret",
-            "in": "query",
-            "description": "Secret token for authentication (required, can also be provided via Authorization header)",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Basic authentication with the server secret. Must be Base64 encoded.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Basic c2VjcmV0X3ZhbHVl"
+          },
+          {
+            "name": "x-source-authorization",
+            "in": "header",
+            "description": "Authorization header to pass to the source ZIP URL",
             "required": false,
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "description": "Bearer token for authentication (alternative to secret query parameter)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "example": "Bearer your_secret_here"
           },
           {
             "name": "accept",
@@ -118,30 +116,35 @@
               "type": "string"
             },
             "example": "max-age=3600"
-          },
-          {
-            "name": "x-zip-api-key",
-            "in": "header",
-            "description": "API key for zip service (alternative to apiKey query parameter)",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
           "200": {
             "description": "Successfully processed zip file",
+            "headers": {
+              "X-First-Segment": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The first segment of the paths in the zip file"
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Cache control directives applied to the response"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
                   "oneOf": [
                     {
                       "type": "object",
-                      "description": "Flat file list with crc32",
+                      "description": "Flat file list with CRC32 values",
                       "additionalProperties": {
                         "type": "string",
-                        "description": "crc32 indicating file integrity. good for file comparison without looking at difference"
+                        "description": "CRC32 hash indicating file integrity"
                       },
                       "example": {
                         "/file1.txt": "e09e6d3c",
@@ -150,10 +153,10 @@
                     },
                     {
                       "type": "object",
-                      "description": "Flat file list with sizes",
+                      "description": "Flat file list with sizes or token counts",
                       "additionalProperties": {
                         "type": "integer",
-                        "description": "File size or token estimate"
+                        "description": "File size in bytes or token estimate"
                       },
                       "example": {
                         "/file1.txt": 1000,
@@ -162,11 +165,11 @@
                     },
                     {
                       "type": "object",
-                      "description": "Hierarchical tree with sizes",
+                      "description": "Hierarchical tree with sizes or token counts",
                       "properties": {
                         "__size": {
                           "type": "integer",
-                          "description": "Total size of all files in this directory"
+                          "description": "Total size or token count of all files in this directory"
                         }
                       },
                       "additionalProperties": {
@@ -194,6 +197,14 @@
           },
           "401": {
             "description": "Authentication failed",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Authentication challenge"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -250,7 +261,7 @@
         },
         "security": [
           {
-            "secretAuth": []
+            "basicAuth": []
           }
         ]
       }
@@ -258,10 +269,25 @@
   },
   "components": {
     "securitySchemes": {
-      "secretAuth": {
+      "basicAuth": {
         "type": "http",
-        "scheme": "bearer",
-        "description": "Secret token as a Bearer token in the Authorization header or as a query parameter"
+        "scheme": "basic",
+        "description": "Basic authentication using the server's secret token"
+      }
+    },
+    "schemas": {
+      "FileEntry": {
+        "type": "object",
+        "properties": {
+          "crc32": {
+            "type": "string",
+            "description": "CRC32 hash of the file content"
+          },
+          "uncompressedSize": {
+            "type": "integer",
+            "description": "Uncompressed size of the file in bytes"
+          }
+        }
       }
     }
   }

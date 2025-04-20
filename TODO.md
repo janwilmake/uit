@@ -9,24 +9,42 @@
 5. Deploy/transition (TARGET: april 18, 2025)
 6. make it better, adding lots of new features.
 
+# Genignore UI old github
+
+It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
+
+- ❗️ Fix genignore in old uithub so I can make PRs for it. 🔥 Important for adoption. Huge boost to SEO.
+- ❗️ `?genignore` can be empty to disable, a URL to get from there, or a genignore content string to overwrite
+- Use https://uithub.com/OAI/OpenAPI-Specification?genignore=https://genignore.forgithub.com/custom/oai__openapi-specification/.genignore and confirm that works.
+- Put a badge onthere with a nice message.
+- Add UI to edit .genignore parameter in old version.
+- In this modal you should be able click through to add the `.genignore` to the repo. There should be a comment inthere refering to uithub
+- ❗️ Fix 'add to readme' button default branch (should be added into context!)
+
+# New GitHub smooth transfer
+
+Go back to new `view.html` from old uithub, keeping it clean. Ideally, landing on the repo should instantly give the best possible context without settings. Settings are 'advanced'. People love it for that. New design and filter principles shouldn't be done lightly.
+
+Ideally, make the new one work as well as the old, with the old layout first. From there I can open up more doors without risking anything.
+
+Let's try making the new one FAST FAST FAST for the top repos you'd expect people to search.
+
+# `.genignore` selection + generation worker
+
+- Always check KV directly and give the stale one while revalidate if needed. need result within a few ms to start filtering.
+- Look specifically for all `.genignore` files everywhere, 1 hour cache.
+- If non available, generate `.genignore` based on the tree and README. 1 week cache
+- In the search tab, turn exclude pattern into textarea. prefil exclude patterns with the value from codebase or the generated value, and can be overwritten with ease.
+
 # Feature Parity V1
 
-- Should charge small fee for use of Uithub API with permanent 402 if balance under $ -5 or so
-- Add https://www.simpleanalytics.com event if free plan, or add back google analytics (see: https://github.com/janwilmake/uithub.v1)
+- Should charge small fee for use of uithub API with permanent 402 if balance under $ -5 or so.
+- Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
 - Test `isRegex`
 - Never hit white screen, 404/429/402 if needed
 - Test payment flow
 - Test speed with large repos and make it faster if deemed too slow
-- JSON/yaml buttons don't work yet. should be an easy Claude prompt
-
-# Go to market V2
-
-- lets make this update every 6 hours: https://popular.forgithub.com
-- let's add questions to each: https://questions.forgithub.com
-- lets add top 500 to the landingpage!!!
-- also add to the chat.forgithub.com landingpage
-- make chat.forgithub.com fast
-- from there, focus on optimising for the top 500. openapi, typedoc, etc.
+- JSON/yaml buttons don't work yet. Should be an easy Claude prompt, or we can also remove them maybe.
 
 This would be something I'm confident to ship and share with the world, fully replacing v1.
 
@@ -36,6 +54,10 @@ This would be something I'm confident to ship and share with the world, fully re
 - no easy getting started/docs. how to run uithub and improve individual components locally? how to easily develop a new plugin?
 - url chain auth pass sucks.
 - need standardized way to charge
+
+# OBSERVATION:
+
+Master redirects to production branch. does master always redirect to the deafult branch?????? for zip, maybe https://github.com/cloudflare/cloudflare-docs/archive/refs/heads/production.zip but for other things, definitely not.
 
 ## Ideas
 

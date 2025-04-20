@@ -1,13 +1,15 @@
-Cloudflare Typescript Worker with `export default { fetch }` that takes and combines multiple JSON Streams into one.
+# TODO
 
-# TODO:
+Try the new definition. If it doesn't work out it's too complex, maybe don't support `outputStreamStrategy`; just have 1 concurrency if sort is desired. But try first because this could affect speed for slow streams greatly!
 
-Alter `uithub.merge` to:
+# Limitations
 
-- allow adding prefix
-- define concurrency (one by one applies sorting automatically, and maybe its better anyway to not create too much backpressure)
+- max 1000 requests (max 1000 individual input streams)
+- 1-6 concurreny does not allow for much paralelism
 
 # Definition
+
+Cloudflare Typescript Worker with `export default { fetch }` that takes and combines multiple FormData streams into one.
 
 Env:
 
@@ -15,24 +17,29 @@ Env:
 
 Context:
 
-- https://zipstream.uithub.com/openapi.json
+- https://ingestzip.uithub.com/openapi.json
+- https://raw.githubusercontent.com/janwilmake/multipart-formdata-stream-js/refs/heads/main/README.md
+- https://raw.githubusercontent.com/janwilmake/multipart-formdata-stream-js/refs/heads/main/cloudflare/types.d.ts
 
 Input:
 
-- if `method:GET`: Two or more URLs (query param `url: string[]`) that return a Content JSON Sequence Stream.
-- if `method:POST`: body {url:string,Authorization?:string,pathPrefix?:stirng}[]
-- Basic Authorization header. Will be passed on to every URL unless given by POST method.
-- `collisionStrategy` (query param)
-  - (default): "ignore" - ignores paths with names already counted
-  - "keep" - just passes duplicate names on (has potential to corrupt downstream)
-  - "number" - will number files with same name (abc, abc2, abc3, abc3, etc.)
+- if `method:GET`: Two or more URLs (query param `url: string[]`) that return a Content FormData Stream.
+- if `method:POST`: body `{url:string,Authorization?:string,pathPrefix?:stirng}[]`
+- basic `Authorization` header
+- query params (optional): `maxConcurrency` (number 1-6, default 1), `outputStreamStrategy`, `collisionStrategy`
 
 Process:
 
-- credentials must match `env.CREDENTIALS` otherwise 401 with `www-authenticate`
-- Will stream all into the same response in parallel, but keeps a counts object for file paths so far and apply the right `collisionStrategy` and pathPrefix.
+- Authorization header must contain basic credentials that match `env.CREDENTIALS`, otherwise 401 with `www-authenticate`
+- Will stream in based on the URLs (in parallel if `maxConcurrency` >1) and will determine the amount of streams to be started at once.
+- To apply `collisionStrategy` will keep a `Record<string,number>` to count paths coming in to know what number to add when encountered before, or when to ignore.
+  - "overwrite" (default) - overwrites file if path has already been written to
+  - "ignore" - ignores file if path has already been written to
+  - "number" - will add a number suffix to file with same path (e.g. path/to/file.txt, then path/to/file2.txt, etc.)
 
 Output:
 
-- The same JSON sequence stream format
+- Streams out the resuling FormData stream using `outputStreamStrategy` (use the `multipart-formdata-stream-js` iterate method for this)
+  - "instant" (default) - will stream out files immediately as they come in
+  - "sorted" - will wait for the first url to finish before starting outputting the second
 - If request came from a browser, use content-type `text/plain`, otherwise json stream contenttype. for both, add `charset=utf8`.
