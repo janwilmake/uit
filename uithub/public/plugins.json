@@ -32,7 +32,7 @@
       "type": "api",
       "description": "Gets last commits and contributor info",
       "endpoint": "https://log.forgithub.com/{owner}/{repo}/branches",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/forgithub.log",
       "title": "Commits",
       "domain": "github.com"
     },
@@ -41,7 +41,7 @@
       "type": "api",
       "description": "Gets last commits and contributor info",
       "endpoint": "https://log.forgithub.com/{owner}/{repo}/commits",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/forgithub.log",
       "title": "Commits",
       "domain": "github.com"
     },
@@ -49,7 +49,7 @@
     "releases": {
       "title": "Releases",
       "endpoint": "https://log.forgithub.com/{owner}/{repo}/releases",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/forgithub.log",
       "type": "api",
       "domain": "github.com"
     },
@@ -59,14 +59,14 @@
       "domain": "github.com",
       "type": "api",
       "endpoint": "https://actions.forgithub.com/{owner}/{repo}",
-      "source": "https://github.com/janwilmake/forgithub.cache"
+      "source": "https://github.com/janwilmake/forgithub.actions"
     },
 
     "swc": {
       "title": "SWC",
       "type": "formdata-transformer",
       "endpoint": "https://swc.uithub.com",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/uithub.swc",
       "description": "Uses SWC to parse TypeScript/JavaScript into types, functions, imports/exports, and variables."
     },
 
@@ -75,7 +75,7 @@
       "description": "Uses typedoc to generate a markdown overview.",
       "type": "api",
       "domain": "github.com",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/uithub.typedoc",
       "endpoint": "https://typedoc.uithub.com"
     },
 
@@ -83,7 +83,7 @@
       "title": "Diagram",
       "type": "api",
       "endpoint": "https://diagram.forgithub.com/{owner}/{repo}",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/forgithub.diagram",
       "description": "Uses LLMs to generate a diagram for the codebase."
     },
 
@@ -91,7 +91,7 @@
       "title": "Questions",
       "type": "api",
       "endpoint": "https://questions.forgithub.com/{owner}/{repo}",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/forgithub.questions",
       "description": "Uses LLMs to come up with useful questions about the repo to chat about."
     },
 
@@ -100,14 +100,14 @@
       "type": "api",
       "domain": "github.com",
       "endpoint": "https://threads.forgithub.com/{owner}/{repo}",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/forgithub.threads",
       "description": "Finds relevant X threads using XYMake"
     },
 
     "domain": {
       "title": "Domain",
       "endpoint": "https://domain.uithub.com/{owner}/{repo}",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/uithub.domain",
       "type": "api",
       "description": "Finds potential hosted domains using config files"
     },
@@ -116,7 +116,7 @@
       "title": "OpenAPIs",
       "type": "api",
       "endpoint": "https://openapis.uithub.com/{owner}/{repo}",
-      "source": "https://github.com/janwilmake/forgithub.cache",
+      "source": "https://github.com/janwilmake/uithub.openapis",
       "description": "Finds OpenAPIs in a file system"
     }
   }
