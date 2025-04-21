@@ -1,13 +1,21 @@
 # TODO
 
-🤔 I feel like nerding out on this a bit and showing some love to my users... I still receive most of my praise for uithub. Let's keep working on it and make it an even better foundation!
-
 1. ✅ make it usable and gather early feedback (silently open source it) (TARGET: april 8, 2025)
 2. ✅ Rename all of zipobject to uithub. uithub means 'universal information terminal hub'
-3. 🟠 Let's show some ppl and figure out what to do next!
-4. Feature parity with v1
-5. Deploy/transition (TARGET: april 18, 2025)
-6. make it better, adding lots of new features.
+3. ✅ Let's show some ppl/ais and figure out what to do next! (did this until april 20, 2025)
+4. ✅ Deploy to uuithub.com
+5. As usable as v1, but with plugins
+
+# 2025-04-21
+
+- ✅ Solved all major problems found in initial feedback (see [ADR](ADR.md))
+- ✅ Make `GETTING-STARTED.md` guide
+- Implement `uithub.otp` and use it in `uithub.ingestzip`
+- Implement `uithub.murl` and use it everywhere
+- In `uithub` improve logic with plugin system
+- Make plugins usable from the UI by clicking them after pinning.
+- Add ability to configure a `dev` plugin with cookie.
+- Make all plugins work!
 
 # `FAQ.json`
 
@@ -15,10 +23,6 @@
 - ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
 - uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
 - in uithub interface, FAQs should be easily accessible if the file is present (probably in search tab)
-
-# Improve dev experience
-
-- make `GETTING-STARTED.md`
 
 # Genignore UI old github
 

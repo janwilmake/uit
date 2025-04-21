@@ -17,22 +17,24 @@
       "description": "URI to base configuration file to inherit from",
       "default": "https://raw.githubusercontent.com/janwilmake/uit/refs/heads/main/default-faq.json"
     },
-    "questions": {
+    "items": {
+      "description": "Array of questions and filters. Only slug is required, and at least either question or filter.",
       "type": "array",
       "items": {
         "type": "object",
         "description": "",
         "additionalProperties": false,
-        "required": ["slug", "title", "question"],
+        "required": ["slug"],
         "properties": {
           "slug": {
             "type": "string",
             "maxLength": 40,
+            "description": "URL-friendly identifier",
             "pattern": "^[a-zA-Z0-9_-]+$"
           },
           "title": {
             "type": "string",
-            "description": "Title for quick navigation"
+            "description": "Title for quick navigation. If not given, slug is used."
           },
           "question": {
             "type": "string",

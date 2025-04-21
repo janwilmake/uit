@@ -31,3 +31,5 @@ Add your plugin to [plugins.json](uithub/public/plugins.json) and explore it thr
 # Running a new plugin directly from the hosted interface
 
 This isn't possible yet, but I'm working hard to realize this. Ideally you'd configure the `dev` plugin from the interface with a endpoint URL that is submitted as a shared cookie. This URL must be a remote URL that follows the FormData to FormData spec or is in API format. When visiting the `dev` page (https://uithub.com/[owner]/[repo]/dev/[branch]/...) the plugin provided would become accessible.
+
+🤔 Instead of having to develop `uithub.murl` immediately, it might be faster to build this out quickly and discourage local development altogether. However, having uithub.murl is gonna be great!
