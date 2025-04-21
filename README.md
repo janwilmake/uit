@@ -89,12 +89,19 @@ Please open a discussion, issue, pull request, or [reach out](https://x.com/janw
 
 - https://github.com/cyclotruc/gitingest
 - https://github.com/yamadashy/repomix
-- https://github.com/wildberry-source/open-repoprompt
 - https://repoprompt.com
+- https://github.com/wildberry-source/open-repoprompt
 - https://dev.to/mnishiguchi/building-a-local-ai-friendly-code-viewer-inspired-by-uithub-24ll
 - https://github.com/janwilmake/zipobject.vercel - earlier version intended to replace uithub, got too complex
+<!--
+
+Might OSS Soon:
+
 - https://github.com/janwilmake/shadowfs - similar ideas different angle
 - https://github.com/janwilmake/filetransformers - similar ideas different angle
+- https://github.com/tools-for-gh/uithub.v1 - uithub v1
+
+-->
 
 # License and Attribution
 
