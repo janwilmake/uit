@@ -5,7 +5,8 @@
       "title": "Issues",
       "domain": "github.com",
       "type": "api",
-      "url": "https://cache.forgithub.com/{owner}/{repo}/issues",
+      "endpoint": "https://cache.forgithub.com/{owner}/{repo}/issues",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Loads issues of a repo"
     },
 
@@ -13,7 +14,8 @@
       "title": "Pull Requests",
       "domain": "github.com",
       "type": "api",
-      "url": "https://cache.forgithub.com/{owner}/{repo}/pulls",
+      "endpoint": "https://cache.forgithub.com/{owner}/{repo}/pulls",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Load PRs of a repo"
     },
 
@@ -21,14 +23,16 @@
       "title": "Discussions",
       "domain": "github.com",
       "type": "api",
-      "url": "https://cache.forgithub.com/{owner}/{repo}/discussions",
+      "source": "https://github.com/janwilmake/forgithub.cache",
+      "endpoint": "https://cache.forgithub.com/{owner}/{repo}/discussions",
       "description": "Load Discussions of a repo"
     },
 
     "branches": {
       "type": "api",
       "description": "Gets last commits and contributor info",
-      "url": "https://log.forgithub.com/{owner}/{repo}/branches",
+      "endpoint": "https://log.forgithub.com/{owner}/{repo}/branches",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "title": "Commits",
       "domain": "github.com"
     },
@@ -36,14 +40,16 @@
     "commits": {
       "type": "api",
       "description": "Gets last commits and contributor info",
-      "url": "https://log.forgithub.com/{owner}/{repo}/commits",
+      "endpoint": "https://log.forgithub.com/{owner}/{repo}/commits",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "title": "Commits",
       "domain": "github.com"
     },
 
     "releases": {
       "title": "Releases",
-      "url": "https://log.forgithub.com/{owner}/{repo}/releases",
+      "endpoint": "https://log.forgithub.com/{owner}/{repo}/releases",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "type": "api",
       "domain": "github.com"
     },
@@ -52,13 +58,15 @@
       "title": "Actions",
       "domain": "github.com",
       "type": "api",
-      "url": "https://actions.forgithub.com/{owner}/{repo}"
+      "endpoint": "https://actions.forgithub.com/{owner}/{repo}",
+      "source": "https://github.com/janwilmake/forgithub.cache"
     },
 
     "swc": {
       "title": "SWC",
       "type": "formdata-transformer",
-      "url": "https://swc.uithub.com",
+      "endpoint": "https://swc.uithub.com",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Uses SWC to parse TypeScript/JavaScript into types, functions, imports/exports, and variables."
     },
 
@@ -67,20 +75,23 @@
       "description": "Uses typedoc to generate a markdown overview.",
       "type": "api",
       "domain": "github.com",
-      "url": "https://typedoc.uithub.com"
+      "source": "https://github.com/janwilmake/forgithub.cache",
+      "endpoint": "https://typedoc.uithub.com"
     },
 
     "diagram": {
       "title": "Diagram",
       "type": "api",
-      "url": "https://diagram.forgithub.com/{owner}/{repo}",
+      "endpoint": "https://diagram.forgithub.com/{owner}/{repo}",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Uses LLMs to generate a diagram for the codebase."
     },
 
     "questions": {
       "title": "Questions",
       "type": "api",
-      "url": "https://questions.forgithub.com/{owner}/{repo}",
+      "endpoint": "https://questions.forgithub.com/{owner}/{repo}",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Uses LLMs to come up with useful questions about the repo to chat about."
     },
 
@@ -88,13 +99,15 @@
       "title": "X Threads",
       "type": "api",
       "domain": "github.com",
-      "url": "https://threads.forgithub.com/{owner}/{repo}",
+      "endpoint": "https://threads.forgithub.com/{owner}/{repo}",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Finds relevant X threads using XYMake"
     },
 
     "domain": {
       "title": "Domain",
-      "url": "https://domain.uithub.com/{owner}/{repo}",
+      "endpoint": "https://domain.uithub.com/{owner}/{repo}",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "type": "api",
       "description": "Finds potential hosted domains using config files"
     },
@@ -102,7 +115,8 @@
     "openapis": {
       "title": "OpenAPIs",
       "type": "api",
-      "url": "https://openapis.uithub.com/{owner}/{repo}",
+      "endpoint": "https://openapis.uithub.com/{owner}/{repo}",
+      "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Finds OpenAPIs in a file system"
     }
   }

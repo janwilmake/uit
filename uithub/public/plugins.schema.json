@@ -13,30 +13,40 @@
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["type", "url"],
+        "required": ["type", "endpoint", "source"],
+
         "properties": {
           "title": {
             "type": "string",
             "description": "Comes from openapi.json#/info/title"
           },
+
           "description": {
             "type": "string",
             "description": "Comes from openapi.json#/info/description"
           },
-          "isPremium": { "type": "boolean" },
+
           "domain": {
             "type": "string",
             "description": "If given, the plugin is only available for this domain, e.g. github.com or xymake.com"
           },
+
           "type": {
             "type": "string",
             "enum": ["api", "formdata-transformer"],
             "description": "The type of plugin:\n\n- **api**: Should be a GET API in format /owner/repo[/page/branch[/...path]] that takes no query parameters, and responds with the desired content-type.\n- **formdata-transformer**: Should be a FormData transformer.\n"
           },
-          "url": {
+
+          "endpoint": {
             "type": "string",
             "format": "uri",
             "description": "Must be the origin and basePath. For type 'api' a path will be appended following the uithub convention. For type 'formdata-transformer' it must take formdata as POST or a URL to a FormData stream as GET pathname."
+          },
+
+          "source": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to a GitHub repository where this plugin is hosted."
           }
         }
       }
