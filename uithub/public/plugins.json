@@ -118,6 +118,20 @@
       "endpoint": "https://openapis.uithub.com/{owner}/{repo}",
       "source": "https://github.com/janwilmake/uithub.openapis",
       "description": "Finds OpenAPIs in a file system"
+    },
+    "llms.txt": {
+      "title": "llms.txt",
+      "type": "api",
+      "description": "Presents the repo as a flat llms.txt file.",
+      "endpoint": "https://llms.uithub.com/{owner}/{repo}/llms.txt",
+      "source": "https://github.com/janwilmake/uithub.llms"
+    },
+    "llms-full.txt": {
+      "title": "llms-full.txt",
+      "type": "api",
+      "description": "Presents the repo as a flat llms-full.txt file.",
+      "endpoint": "https://llms.uithub.com/{owner}/{repo}/llms-full.txt",
+      "source": "https://github.com/janwilmake/uithub.llms"
     }
   }
 }

@@ -10,10 +10,10 @@
 
 - ✅ Solved all major problems found in initial feedback (see [ADR](ADR.md))
 - ✅ Make `GETTING-STARTED.md` guide
-- Implement `uithub.otp` and use it in `uithub.ingestzip`
-- Implement `uithub.murl` and use it everywhere
-- In `uithub` improve logic with plugin system
+- In `uithub` improve logic with plugin system ensuring the plugin from the json is used based on the page.
 - Make plugins usable from the UI by clicking them after pinning.
+- Implement `uithub.otp` and use it in `uithub.ingestzip`
+- Implement `monetaryurl` and use it everywhere
 - Add ability to configure a `dev` plugin with cookie.
 - Make all plugins work!
 
