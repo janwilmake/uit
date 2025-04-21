@@ -6,7 +6,7 @@
 4. ✅ Deploy to uuithub.com
 5. As usable as v1, but with plugins
 
-# 2025-04-21
+# 2025-04-21 - solve architectural issues and start implementing plugins
 
 - ✅ Solved all major problems found in initial feedback (see [ADR](ADR.md))
 - ✅ Make `GETTING-STARTED.md` guide
