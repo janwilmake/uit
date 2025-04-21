@@ -1,5 +1,6 @@
 {
   "$schema": "https://uuithub.com/faq.schema.json",
+  "attribution": "Powered by Universal Information Terminal (UIT) by Jan Wilmake - https://github.com/janwilmake/uit",
   "questions": [
     { "title": "ELI5", "question": "Explain like I'm 5", "filter": "?ext=md" },
     {
