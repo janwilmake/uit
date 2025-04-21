@@ -36,9 +36,10 @@ Let's try making the new one FAST FAST FAST for the top repos you'd expect peopl
 - If non available, generate `.genignore` based on the tree and README. 1 week cache
 - In the search tab, turn exclude pattern into textarea. prefil exclude patterns with the value from codebase or the generated value, and can be overwritten with ease.
 
-# `faq.json`
+# `FAQ.json`
 
-Make a schema for it; answers would be instantly answerable by LLM
+- ✅ Make a schema for it; answers would be instantly answerable by LLM
+- ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
 
 # Feature Parity V1
 

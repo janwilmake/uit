@@ -10,9 +10,12 @@
       "default": "https://uuithub.com/faq.schema.json"
     },
     "extends": {
-      "type": "string",
+      "oneOf": [
+        { "type": "string", "format": "uri" },
+        { "type": "array", "items": { "format": "uri", "type": "string" } }
+      ],
       "description": "URI to base configuration file to inherit from",
-      "format": "uri"
+      "default": "https://raw.githubusercontent.com/janwilmake/uit/refs/heads/main/default-faq.json"
     },
     "questions": {
       "type": "array",
