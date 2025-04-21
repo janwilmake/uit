@@ -11,7 +11,8 @@
     },
     "extends": {
       "type": "string",
-      "description": "URI to base configuration file to inherit from"
+      "description": "URI to base configuration file to inherit from",
+      "format": "uri"
     },
     "questions": {
       "type": "array",
@@ -19,8 +20,13 @@
         "type": "object",
         "description": "",
         "additionalProperties": false,
-        "required": ["title", "question"],
+        "required": ["slug", "title", "question"],
         "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 40,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
           "title": {
             "type": "string",
             "description": "Title for quick navigation"
@@ -32,12 +38,14 @@
           },
           "prompt": {
             "type": "string",
-            "description": "Optional; a more extensive prompt to use instead of the question itself"
+            "description": "Optional: a more extensive prompt to use instead of the question itself.",
+            "maxLength": 16000
           },
           "filter": {
             "type": "string",
-            "description": "Pathname and/or querystring to apply to get trimmed down context.",
-            "examples": []
+            "description": "Pathname and/or querystring to apply to get trimmed down context.\n\nStart with ? to only include queryString. The string before '?' is considered the pathname. \n\nPlease do not include the hostname.",
+            "examples": [],
+            "maxLength": 16000
           }
         }
       }
