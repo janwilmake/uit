@@ -1,3 +1,5 @@
-# Formdata blogpost (draft)
+<!--
+Can probably just submit this to dev.to, don't need to make my own page per se. However, could be good for backlinks. A simple static html LLM generation based on BLOG.md would be great.
+-->
 
-To be rendered at `uithub/public/blog.html` (using githus as kv)
+# Formdata blogpost (draft)
