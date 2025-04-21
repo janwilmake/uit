@@ -13,13 +13,7 @@ However, after an enlightening conversation with the great https://x.com/zplesiv
 - ✅ redo uithub.ingestzip using this guide, see if it actually streams as `multipart/formdata`.
 - ✅ redo uithub.search to output MultiPart formdata.
 
-### Auth
-
-I now have a chain of urls that I pipe the request through, a "urlpipe". The problem now is auth should be passed all the way down the chain for this to work. This means I MUST own the hosting for this to be trust worthy. It would be much better if I could stream in the zip output into the last one and stream it back, just like that. Maybe this can be done by adding a temporary token to retrieve back the auth token on the other end, but that's also a lot of extra complexity.
-
-I don't know yet.
-
-# name 'uithub'
+# 2024-11 - name 'uithub'
 
 uithub is the client for the UIT. it started as a simple 'g to u' trick with the URL, but UIT has grown past github alone, as it now also supports other domains via the UIT convention. Uithub is therefore an even more logical name than before.
 
@@ -83,9 +77,7 @@ This is still legally risky, but I understand your business reasoning. Just ensu
 
 Would you like me to elaborate on any of these aspects of the strategy?
 
-# Pricepoint
-
-(Old)
+# 2024-11 - Pricepoint (Old)
 
 Is pricing for regular requests not too expensive? Maybe should make it 10x cheaper: 0.1 cent per request. This is more similar to e.g. scrapingbee. However, let's see first with this pricing (5000x that of upstash)
 
@@ -96,7 +88,7 @@ The reason it's good is:
 - 1 cent per additional request is fair, won't cost a dollar for an entire day of regular use. and you won't normally get to this much traffic unless you're really building something bigger
 - $10/month now gives 10k requests which is 333 per day on average, which should be more than sufficient.
 
-# Monaco?
+# 2025-04 - Monaco?
 
 Maybe looks way cooler than raw text! However, may also be much harder to make that stream in... Let's see.
 
@@ -106,28 +98,38 @@ This'd make things really pretty and readable!
 
 Edit: tried it, but slows things down as well, and in-md codeblocks didn't highlight easily
 
-### Error handling
+# 2025-04-21 - Error handling
 
 Error handling sucks. how to improve?
 
-- Files that error out should maybe add `/.errors/extension-name/...path` files so errors can instantly be shown
-- We could also conventionalize concatenating all errors and adding them as a last file.
+- ❌ Files that error out should maybe add `/.errors/extension-name/...path` files so errors can instantly be shown
+- ❌ We could also conventionalize concatenating all errors and adding them as a last file. This would be
 - ❌ Trailers (headers at the end) are another option so it doesn't become a file. However, this could be trickier working with.
+- ✅ `x-error` with format `{module-id};{status};{message}` should be passed on and if encountered, shouldn't be filtered or processed, so we can see errors for every individual file, where they happened, and with what file input. Perfect! 😃
 
-### No easy getting started / docs
+# 2025-04-21 - No easy getting started / docs
 
-How to run uithub and improve individual components locally? how to easily develop a new plugin?
+How to run uithub and improve individual components locally? How to easily develop a new plugin?
 
 - Figure out if I can do a check whether or not service bindings are connected. If possible, make hostname a configurable setting, and make service binding connection optional falling back to regular fetch.
 - Instruct running and hosting all individual services on Cloudflare. Add 'deploy on cloudflare' buttons.
 
 ### URL Chain Auth Pass Sucks
 
+I now have a chain of urls that I pipe the request through, a "urlpipe". The problem now is auth should be passed all the way down the chain for this to work. This means I MUST own the hosting for this to be trustworthy. It would be much better if I could stream in the zip output into the last one and stream it back, just like that. Maybe this can be done by adding a temporary token to retrieve back the auth token on the other end, but that's also a lot of extra complexity.
+
+I don't know yet.
+
 Doing body-body pipe in a single worker may slow down things but haven't tested yet. In the end it may be better as data comes from any source. Try if I can get it to work, and benchmark on speed. AI should be able to get it done and generalize from an array of requests that should flow into each other with custom headers and query parameters.
 
 If that does not work out, brainstorm to make URL chain more secure and scalable, less error-prone.
 
-In devmode, it'd be very cool to be able to see the intermediate result for any request as an explorable hierarchy. We could do this by creating clones of the responses and streaming those into a zip which can be made viewable in the browser.
+In devmode, it'd be very cool to be able to see the intermediate result for any request as an explorable hierarchy. We could do this by creating clones of the responses and streaming those into a zip which can be made viewable in the browser. However, this could be done with some sort of devtool, and does not need to be part of the spec.
+
+URL Chain sucks because:
+
+- It mixes query params. Can be seen as a regression OR a feature. Not a real problem yet, but could become one for larger pipes with third-party creators.
+- It requires me to pass on the authorization header. The scope of the authorization should be as minimal as possible for each processor so this isn't ideal.
 
 # Need standardized way to charge
 

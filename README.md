@@ -24,7 +24,8 @@ So far, UIT provides the following modules that can be combined to create powerf
 - [**uithub.outputzip**](./uithub.outputzip) - Packages processed data into downloadable ZIP archives
 - [**uithub.search**](./uithub.search) - Provides search capabilities across file hierarchies
 - [**uithub.ziptree**](./uithub.ziptree) - Highly performant zip file-hierarchy extractor
-- [**uithub**](./uithub.pipe) - Brings several modules together, pipes through them, and shows in authenticated HTML interface.
+- [**uithub.otp**](./uithub.otp) - Source proxy that generates an OTP to minimize secret exposure to other modules.
+- [**uithub**](./uithub) - Brings several modules together, pipes through them, and shows in authenticated HTML interface.
 
 Each module is designed to perform a specific step in the UIT 4-step process (ingest, filter/transform, merge, output) while maintaining performance and low memory usage.
 
@@ -56,17 +57,11 @@ The only formalized convention/protocol you need to understand to create a UIT m
 
 ## Non-Standard (Custom) Headers
 
-| Header          | Description                                    | Format                     |
-| --------------- | ---------------------------------------------- | -------------------------- |
-| **x-url**       | Specifies the URL that locates the binary file | URL string                 |
-| **x-file-hash** | Stores the hash of the file                    | Hash string                |
-| **x-error**     | Indicates processing error in the pipeline     | `{handler-name};{message}` |
-
-The `x-error` header marks files that encountered processing errors. When a file contains this header:
-
-- The original file content should be preserved
-- Subsequent handlers should skip processing and pass the file through unchanged
-- The error format identifies which module caused the error and the specific issue
+| Header          | Description                                                                                                                                                                                                                                                                  | Format                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **x-url**       | Specifies the URL that locates the binary file. In some cases it may be desired to omit the binary data and only leave the URL to locate the file.                                                                                                                           | URL string                        |
+| **x-file-hash** | Stores the hash of the file                                                                                                                                                                                                                                                  | Hash string                       |
+| **x-error**     | Indicates processing error in the pipeline. On error in a module, the original incoming file-content should be preserved. If encountered, shouldn't be filtered or processed, so we can see errors for every individual file, where they happened, and with what file input. | `{handler-id};{status};{message}` |
 
 # Contributing to UIT & Plugin System
 
