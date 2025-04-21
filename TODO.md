@@ -6,10 +6,8 @@
 4. ✅ Deploy to uuithub.com
 5. As usable as v1, but with plugins
 
-# 2025-04-21 - solve architectural issues and start implementing plugins
+# 2025-04-22 - start implementing plugins
 
-- ✅ Solved all major problems found in initial feedback (see [ADR](ADR.md))
-- ✅ Make `GETTING-STARTED.md` guide
 - In `uithub` improve logic with plugin system ensuring the plugin from the json is used based on the page.
 - Make plugins usable from the UI by clicking them after pinning.
 - Implement `uithub.otp` and use it in `uithub.ingestzip`
@@ -35,12 +33,6 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - Add UI to edit .genignore parameter in old version.
 - In this modal you should be able click through to add the `.genignore` to the repo. There should be a comment inthere refering to uithub
 - ❗️ Fix 'add to readme' button default branch (should be added into context!)
-
-# llms.txt convention
-
-- `llms-full.txt`: This page should filter to only include the full tree and md files capped at a certain threshold.
-- `llms.txt` This could include JUST the tree and maybe also readme.
-- caching should probably be configurable on the plugin level, but handled by uit. for llms.txt it'd be good to cache strongly with stale-while-revalidate.
 
 # New GitHub smooth transfer
 
@@ -68,13 +60,6 @@ Let's try making the new one FAST FAST FAST for the top repos you'd expect peopl
 - JSON/yaml buttons don't work yet. Should be an easy Claude prompt, or we can also remove them maybe.
 
 This would be something I'm confident to ship and share with the world, fully replacing v1.
-
-# Feedback tl;dr - open questions to make the marketplace work:
-
-- ✅ Error handling sucks. how to improve?
-- ✅ Need standardized way to charge
-- ✅ URL chain auth pass sucks.
-- No easy getting started/docs. how to run uithub and improve individual components locally? how to easily develop a new plugin?
 
 # OBSERVATION:
 

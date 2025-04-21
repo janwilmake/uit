@@ -731,3 +731,15 @@ Sha url can't be used for edit link, must be branch!
 - ✅ Also add to the githuq.com landingpage
 - ❌ Let's add questions to each: https://questions.forgithub.com
 - ❌ Make chat.forgithub.com fast
+
+# 2025-04-21 - Feedback tl;dr - open questions to make the marketplace work:
+
+- ✅ Error handling sucks. how to improve?
+- ✅ Need standardized way to charge
+- ✅ URL chain auth pass sucks.
+- ✅ No easy getting started/docs
+
+# 2025-04-21 - solve architectural issues
+
+- ✅ Solved all major problems found in initial feedback (see [ADR](ADR.md))
+- ✅ Make `GETTING-STARTED.md` guide
