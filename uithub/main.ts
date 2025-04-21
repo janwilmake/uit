@@ -19,6 +19,7 @@ export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
 import { ratelimit } from "./ratelimiter.js";
 import urlPipe from "./urlPipe.js";
+
 interface Env {
   GITHUB_PAT: string;
   CREDENTIALS: string;
@@ -226,13 +227,6 @@ export default {
         headers: { Location: "/mobile-not-supported" },
       });
     }
-    if (url.pathname === "/public/archive/refs/heads/main.zip") {
-      // convention; by exposing the zip of the repo at this path, anyone can find your code at https://uithub.com/{domain}/public, even from a private repo if we pass the PAT!
-      return fetch(
-        `https://github.com/janwilmake/uithub/archive/refs/heads/main.zip`,
-        { headers: { Authorization: `token ${env.GITHUB_PAT}` } },
-      );
-    }
 
     let t = Date.now();
 
@@ -306,6 +300,18 @@ export default {
         status: 429,
         headers: { ...ratelimited?.ratelimitHeaders },
       });
+    }
+
+    if (url.pathname === "/public/archive/refs/heads/main.zip") {
+      // convention; by exposing the zip of the repo at this path, anyone can find your code at https://uithub.com/{domain}/public, even from a private repo if we pass the PAT!
+      return fetch(
+        `https://github.com/janwilmake/uit/archive/refs/heads/main.zip`,
+        {
+          headers: access_token
+            ? { Authorization: `token ${access_token}` }
+            : undefined,
+        },
+      );
     }
 
     const [_, owner, repo, pageAndExt, branch, ...pathParts] =
@@ -430,9 +436,8 @@ export default {
     const domain = owner.includes(".") ? owner : undefined;
 
     //convention will be following githubs archive url structure:
-
-    //option 1:  https://github.com/janwilmake/fetch-each/archive/refs/heads/main.zip
-    //option 2: https://github.com/janwilmake/forgithub/archive/b0f184426de0cc327f469b645a1c153a2c8ba869.zip
+    // option 1:  https://github.com/janwilmake/fetch-each/archive/refs/heads/main.zip
+    // option 2: https://github.com/janwilmake/forgithub/archive/b0f184426de0cc327f469b645a1c153a2c8ba869.zip
 
     const pipeUrl = `https://pipe.uithub.com/${owner}/${repo}${branchPart}${url.search}`;
 

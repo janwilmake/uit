@@ -1,4 +1,11 @@
 CREDENTIALS=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+
+
+# To develop with uithub, set these 2 values to be able to be logged in locally and pay for plugins
+
 GITHUB_PAT=
+
+# IMPORTANT: Don't put this in prod! Will skip login to login with admin PAT!
+SKIP_LOGIN=true

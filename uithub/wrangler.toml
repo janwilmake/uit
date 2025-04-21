@@ -5,7 +5,8 @@ assets = { directory= "./public" }
 dev.port = 3000
 
 routes = [
-  { pattern = "uuithub.com", custom_domain = true }
+  { pattern = "uuithub.com", custom_domain = true },
+  { pattern = "www.uuithub.com", custom_domain = true }
 ]
 
 [vars]
@@ -27,6 +28,8 @@ class_name = "RatelimitDO"
 tag = "v1"
 new_sqlite_classes = ["RatelimitDO"]
 
-[[services]]
-binding = "UITHUB_ZIPTREE"
-service = "uithub_ziptree"
+# Uncomment this service to bind it for better performance.
+
+# [[services]]
+# binding = "UITHUB_ZIPTREE"
+# service = "uithub_ziptree"

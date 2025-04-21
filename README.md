@@ -71,7 +71,7 @@ As a first step I aim to create a plugin system that allows doing file filters a
 
 [The multipart parser](https://github.com/janwilmake/multipart-formdata-stream-js) is designed to handle all `FormData` headers, including any non-standard ones, and can be a useful libary to create FormData filter/transformers. It extracts them from the raw header lines and makes them available in the Part object. The library also maintains the original `headerLines` as part of the parsed data structure.
 
-Please open a discussion, issue, pull request, or [reach out](https://x.com/janwilmake) if you want a new module to be added to this list or have any unmet requirements. UIT is also looking for sponsors. More info: [CONTRIBUTING.md](CONTRIBUTING.md)
+Please open a discussion, issue, pull request, or [reach out](https://x.com/janwilmake) if you want a new module to be added to this list or have any unmet requirements. To create your own plugin, follow the [GETTING-STARTED.md](GETTING-STARTED.md) and [CONTRIBUTING.md](CONTRIBUTING.md). UIT is also looking for sponsors.
 
 # Links
 
@@ -79,6 +79,9 @@ Please open a discussion, issue, pull request, or [reach out](https://x.com/janw
 - [BACKLOG.md](BACKLOG.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [ADR.md](ADR.md)
+- [GETTING-STARTED.md](GETTING-STARTED.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [ATTRIBUTION.md](ATTRIBUTION.md)
 
 # Community & Related work
 

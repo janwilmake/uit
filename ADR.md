@@ -147,5 +147,6 @@ Possible ways to solve it;
 
 How to run uithub and improve individual components locally? How to easily develop a new plugin?
 
+- Try right now to clone uit and make it easy to run locally. A fallback on the individual services would be great, not requiring running them per se.
 - Figure out if I can do a check whether or not service-bindings are connected. If possible, make hostname a configurable setting, and make service binding connection optional falling back to regular fetch.
-- Instruct running and hosting all individual services on Cloudflare. Add 'deploy on cloudflare' buttons.
+- Ideal situation: you only need to run 1 service (uithub) to run locally, and switch to any additional service to use it as part of the pipeline.

@@ -16,6 +16,10 @@
 - uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
 - in uithub interface, FAQs should be easily accessible if the file is present (probably in search tab)
 
+# Improve dev experience
+
+- make `GETTING-STARTED.md`
+
 # Genignore UI old github
 
 It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
