@@ -36,6 +36,10 @@ Let's try making the new one FAST FAST FAST for the top repos you'd expect peopl
 - If non available, generate `.genignore` based on the tree and README. 1 week cache
 - In the search tab, turn exclude pattern into textarea. prefil exclude patterns with the value from codebase or the generated value, and can be overwritten with ease.
 
+# `faq.json`
+
+Make a schema for it; answers would be instantly answerable by LLM
+
 # Feature Parity V1
 
 - Should charge small fee for use of uithub API with permanent 402 if balance under $ -5 or so.

@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "FAQ.json can be used to allow people to more easily understand the codebase through uithub and other context exploration interfaces.",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "default": "https://uuithub.com/faq.schema.json"
+    },
+    "extends": {
+      "type": "string",
+      "description": "URI to base configuration file to inherit from"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "",
+        "additionalProperties": false,
+        "required": ["title", "question"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title for quick navigation"
+          },
+          "question": {
+            "type": "string",
+            "description": "One paragraph question to use in FAQ section",
+            "maxLength": 140
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Optional; a more extensive prompt to use instead of the question itself"
+          },
+          "filter": {
+            "type": "string",
+            "description": "Pathname and/or querystring to apply to get trimmed down context.",
+            "examples": ["?"]
+          }
+        }
+      }
+    }
+  }
+}

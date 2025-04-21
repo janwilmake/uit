@@ -5,11 +5,11 @@ assets = { directory= "./public" }
 dev.port = 3000
 
 routes = [
-  { pattern = "new.uithub.com", custom_domain = true }
+  { pattern = "uuithub.com", custom_domain = true }
 ]
 
 [vars]
-GITHUB_REDIRECT_URI = "https://new.uithub.com/callback"
+GITHUB_REDIRECT_URI = "https://uuithub.com/callback"
 LOGIN_REDIRECT_URI = "/"
 COOKIE_DOMAIN_SHARING = "true"
 
