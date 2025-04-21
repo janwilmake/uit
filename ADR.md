@@ -107,14 +107,7 @@ Error handling sucks. how to improve?
 - ❌ Trailers (headers at the end) are another option so it doesn't become a file. However, this could be trickier working with.
 - ✅ `x-error` with format `{module-id};{status};{message}` should be passed on and if encountered, shouldn't be filtered or processed, so we can see errors for every individual file, where they happened, and with what file input. Perfect! 😃
 
-# 2025-04-21 - No easy getting started / docs
-
-How to run uithub and improve individual components locally? How to easily develop a new plugin?
-
-- Figure out if I can do a check whether or not service bindings are connected. If possible, make hostname a configurable setting, and make service binding connection optional falling back to regular fetch.
-- Instruct running and hosting all individual services on Cloudflare. Add 'deploy on cloudflare' buttons.
-
-### URL Chain Auth Pass Sucks
+# 2025-04-21 - URL Chain Auth Pass Sucks & Need standardized way to charge
 
 I now have a chain of urls that I pipe the request through, a "urlpipe". The problem now is auth should be passed all the way down the chain for this to work. This means I MUST own the hosting for this to be trustworthy. It would be much better if I could stream in the zip output into the last one and stream it back, just like that. Maybe this can be done by adding a temporary token to retrieve back the auth token on the other end, but that's also a lot of extra complexity.
 
@@ -131,12 +124,28 @@ URL Chain sucks because:
 - It mixes query params. Can be seen as a regression OR a feature. Not a real problem yet, but could become one for larger pipes with third-party creators.
 - It requires me to pass on the authorization header. The scope of the authorization should be as minimal as possible for each processor so this isn't ideal.
 
-# Need standardized way to charge
+**Need standardized way to charge**
 
 We cannot use x-price as response header as most servers would not know the exact price in the beginning. Besides that, there's no good way to track usage by which part of the chain right now.
 
 Possible ways to solve it;
 
 - ❌ Trailer (header at the end) that specifies total cost incurred **probably worst option since it'd have a single price at the end and connection could be closed early**
-- Server self-manages: Send along `x-monetary-url` header to server that it can use with sponsorflare to add balance from to themselves and deduct it from the user. Along with expected max cost based on size and openapi spec, this can be a great way, since it allows a lot of freedom on how to charge, while respecting privacy of the user.
-- Optional FormData header for `x-price` that accumulates over time so we know cost intermediate as well. When received formdata already contains this it shall just be ignored and overwritten.
+- ❌ Optional FormData header for `x-price` that accumulates over time so we know cost intermediate as well. When received formdata already contains this it shall just be ignored and overwritten.
+- ✅ Server self-manages: Send along `x-monetary-url` header to server that it can use with sponsorflare to add balance from to themselves and deduct it from the user. Along with expected max cost based on size and openapi spec, this can be a great way, since it allows a lot of freedom on how to charge, while respecting privacy of the user.
+
+✅ Proposed solution:
+
+- At the start, create an OTP and send that along as x-source-authorization header
+- Create a max-budget for the entire request and send that along as x-monetary-url header
+- every module then uses the monetary url with the uit-murl service to withdraw the required amount
+- the module that needs direct access to the source (ingestzip, for example) would use the x-source-authorization together with the otpproxy to retrieve the zip (can be done just once)
+
+🔥 This looks very promising and I'll try to implement it this way using `uithub.murl` and `uithub.otp`.
+
+# 2025-04-21 - No easy getting started / docs
+
+How to run uithub and improve individual components locally? How to easily develop a new plugin?
+
+- Figure out if I can do a check whether or not service-bindings are connected. If possible, make hostname a configurable setting, and make service binding connection optional falling back to regular fetch.
+- Instruct running and hosting all individual services on Cloudflare. Add 'deploy on cloudflare' buttons.
