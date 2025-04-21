@@ -2,3 +2,6 @@
 node_modules
 .wrangler
 package-lock.json
+
+# LISENCE STUFF
+LICENSE.md

@@ -10,7 +10,7 @@ UIT has come about after many iterations of the platform of [uithub](https://uit
 
 ![](process-formdata.drawio.png)
 
-`FormData` has a long history [[RFC 1867 (1995)](https://datatracker.ietf.org/doc/html/rfc1867)] [[RFC 2388 (1998)](https://datatracker.ietf.org/doc/html/rfc2388)] [[RFC 7578 (2015)](https://datatracker.ietf.org/doc/html/rfc7578)] and is deeply embedded into the web. It offers an excellent way to serve multiple files, binary and textual, over a single request. Although `FormData` does not support intermediate reading directly from `Request` and other Web Standards yet, UIT leverages the fact that intermediate results can be read using the [Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API) using [multipart-formdata-stream-js](https://github.com/janwilmake/multipart-formdata-stream-js).
+`FormData` has a long history [[RFC 1867 (1995)](https://datatracker.ietf.org/doc/html/rfc1867)] [[RFC 2388 (1998)](https://datatracker.ietf.org/doc/html/rfc2388)] [[RFC 7578 (2015)](https://datatracker.ietf.org/doc/html/rfc7578)] and is deeply embedded into the web. It offers an excellent way to serve multiple files, binary and textual, over a single request. Although `FormData` does not support stream-reading directly from `Request` and other Web Standards yet, UIT leverages the fact that intermediate results can be read using the [Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API) using [multipart-formdata-stream-js](https://github.com/janwilmake/multipart-formdata-stream-js).
 
 UIT cleverly modularizes filters and transformations on file hierarchies by providing an elegant way to combine multiple UIT 'modules' together to get to a final result. Every UIT 'module' can apply path filters, content filters, and content transformations, to change the files in the file hierarchy, all while streaming, and even merge multiple file hierarchies together in the blink of an eye.
 
@@ -77,7 +77,7 @@ UIT aims to be a convention to streaming, filtering, and transforming binary and
 
 As a first step I aim to create a plugin system that allows doing file filters and transformations with ease from the uithub UI. For intended plugins, check out [plugins.json](uithub/public/plugins.json) and [the spec](uithub/public/plugins.schema.json).
 
-Please open a discussion, issue, pull request, or [reach out](https://x.com/janwilmake) if you want a new module to be added to this list or have any unmet requirements. UIT is also looking for sponsors.
+Please open a discussion, issue, pull request, or [reach out](https://x.com/janwilmake) if you want a new module to be added to this list or have any unmet requirements. UIT is also looking for sponsors. More info: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 # Previous work
 
@@ -91,5 +91,12 @@ Please open a discussion, issue, pull request, or [reach out](https://x.com/janw
 - [BACKLOG.md](BACKLOG.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [ADR.md](ADR.md)
+
+# License and Attribution
+
+> [!IMPORTANT]
+> MIT will be added after official launch
+
+UIT is licensed under the [MIT License](LICENSE.md). While the license only requires preservation of copyright notices, we kindly request attribution when using this project. See [ATTRIBUTION.md](ATTRIBUTION.md) for guidelines on how to provide attribution.
 
 ~ Being made with ❤️ by [janwilmake](https://x.com/janwilmake)

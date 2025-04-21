@@ -1,3 +1,14 @@
+/**
+ * Universal Information Terminal (UIT)
+ * https://github.com/janwilmake/uit
+ *
+ * Copyright (c) 2025 Jan Wilmake
+ * Licensed under MIT License
+ *
+ * For attribution guidelines (not required by license), see:
+ * https://github.com/janwilmake/uit/blob/main/ATTRIBUTION.md
+ */
+
 import { getSponsor, middleware } from "sponsorflare";
 import viewHtml from "./public/vscode.html";
 import profileHtml from "./public/profile.html";
