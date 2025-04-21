@@ -9,6 +9,11 @@
 5. Deploy/transition (TARGET: april 18, 2025)
 6. make it better, adding lots of new features.
 
+# `FAQ.json`
+
+- ✅ Make a schema for it; answers would be instantly answerable by LLM
+- ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
+
 # Genignore UI old github
 
 It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
@@ -20,6 +25,13 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - Add UI to edit .genignore parameter in old version.
 - In this modal you should be able click through to add the `.genignore` to the repo. There should be a comment inthere refering to uithub
 - ❗️ Fix 'add to readme' button default branch (should be added into context!)
+- uithub should always look for `FAQ.json` and `.genignore` and if they exist
+
+# llms.txt convention
+
+- `llms-full.txt`: This page should filter to only include the full tree and md files capped at a certain threshold.
+- `llms.txt` This could include JUST the tree and maybe also readme.
+- caching should probably be configurable on the plugin level, but handled by uit. for llms.txt it'd be good to cache strongly with stale-while-revalidate.
 
 # New GitHub smooth transfer
 
@@ -35,11 +47,6 @@ Let's try making the new one FAST FAST FAST for the top repos you'd expect peopl
 - Look specifically for all `.genignore` files everywhere, 1 hour cache.
 - If non available, generate `.genignore` based on the tree and README. 1 week cache
 - In the search tab, turn exclude pattern into textarea. prefil exclude patterns with the value from codebase or the generated value, and can be overwritten with ease.
-
-# `FAQ.json`
-
-- ✅ Make a schema for it; answers would be instantly answerable by LLM
-- ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
 
 # Feature Parity V1
 
