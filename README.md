@@ -79,18 +79,23 @@ As a first step I aim to create a plugin system that allows doing file filters a
 
 Please open a discussion, issue, pull request, or [reach out](https://x.com/janwilmake) if you want a new module to be added to this list or have any unmet requirements. UIT is also looking for sponsors. More info: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-# Previous work
-
-- https://github.com/janwilmake/zipobject.vercel - earlier version intended to replace uithub, got too complex
-- https://github.com/janwilmake/shadowfs - similar ideas different angle
-- https://github.com/janwilmake/filetransformers - similar ideas different angle
-
 # Links
 
 - [TODO.md](TODO.md)
 - [BACKLOG.md](BACKLOG.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [ADR.md](ADR.md)
+
+# Community & Related work
+
+- https://github.com/cyclotruc/gitingest
+- https://github.com/yamadashy/repomix
+- https://github.com/wildberry-source/open-repoprompt
+- https://repoprompt.com
+- https://dev.to/mnishiguchi/building-a-local-ai-friendly-code-viewer-inspired-by-uithub-24ll
+- https://github.com/janwilmake/zipobject.vercel - earlier version intended to replace uithub, got too complex
+- https://github.com/janwilmake/shadowfs - similar ideas different angle
+- https://github.com/janwilmake/filetransformers - similar ideas different angle
 
 # License and Attribution
 

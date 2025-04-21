@@ -1,4 +1,4 @@
 {
-  "$schema": "https://new.uithub.com/faq.schema.json",
-  "questions": ["How does this work?"]
+  "$schema": "https://uuithub.com/faq.schema.json",
+  "extends": "https://raw.githubusercontent.com/janwilmake/uit/refs/heads/main/default-faq.json"
 }

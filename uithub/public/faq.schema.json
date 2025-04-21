@@ -37,7 +37,7 @@
           "filter": {
             "type": "string",
             "description": "Pathname and/or querystring to apply to get trimmed down context.",
-            "examples": ["?"]
+            "examples": []
           }
         }
       }

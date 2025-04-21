@@ -1,0 +1,12 @@
+{
+  "$schema": "https://uuithub.com/faq.schema.json",
+  "questions": [
+    { "title": "ELI5", "question": "Explain like I'm 5", "filter": "?ext=md" },
+    {
+      "title": "Nutshell summary",
+      "question": "What is this all about, in a nutshell?",
+      "filter": "?ext=md",
+      "prompt": "Please create a single-paragraph abstract-style summary on what this repo is all about."
+    }
+  ]
+}
