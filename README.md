@@ -92,7 +92,8 @@ Please open a discussion, issue, pull request, or [reach out](https://x.com/janw
 - https://repoprompt.com
 - https://github.com/wildberry-source/open-repoprompt
 - https://dev.to/mnishiguchi/building-a-local-ai-friendly-code-viewer-inspired-by-uithub-24ll
-- https://github.com/janwilmake/zipobject.vercel - earlier version intended to replace uithub, got too complex
+- https://github.com/janwilmake/zipobject.vercel - earlier version intended to replace uithub, got too complex (not modular, hard to debug)
+
 <!--
 
 Might OSS Soon:
