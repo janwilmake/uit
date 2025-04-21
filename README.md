@@ -82,6 +82,7 @@ Please open a discussion, issue, pull request, or [reach out](https://x.com/janw
 - [GETTING-STARTED.md](GETTING-STARTED.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [ATTRIBUTION.md](ATTRIBUTION.md)
+- plugins [html](https://uuithub.com/plugins) [md](uithub/public/plugins.json)
 
 # Community & Related work
 
