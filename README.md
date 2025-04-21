@@ -43,39 +43,38 @@ The UIT Protocol is the convention that characterizes any UIT module. As can be 
 
 The only formalized convention/protocol you need to understand to create a UIT module, is which FormData headers UIT modules work with. These FormData headers can be divided into standard and non-standard (custom) headers:
 
+# UIT FormData Headers
+
 ## Standard FormData Headers
 
-1. **Content-Disposition**: The main required header that contains:
-
-   - `name` - Should be equal to filename (required)
-   - `filename` - Original pathname to the file (optional in FormData, required for UIT)
-
-2. **Content-Type**: Specifies the MIME type of the data
-
-3. **Content-Length**: Indicates the uncompressed size of the data
-
-4. **Content-Transfer-Encoding**: Specifies how the data is encoded. [FormData specifies these possibilities](https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html):
-   - `binary` - required for binary files
-   - `8bit` - recommended for text-based (utf8) files
-   - `quoted-printable`
-   - `base64`
-   - `7bit` (default)
+| Header                        | Description                                                                                                                                                                                  | Required |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| **Content-Disposition**       | Contains `name` (should equal filename) and `filename` (original pathname)                                                                                                                   | Yes      |
+| **Content-Type**              | Specifies the MIME type of the data                                                                                                                                                          | No       |
+| **Content-Length**            | Indicates the uncompressed size of the data                                                                                                                                                  | No       |
+| **Content-Transfer-Encoding** | Specifies how the data is encoded:<br>- `binary` (required for binary files)<br>- `8bit` (recommended for text-based/utf8 files)<br>- `quoted-printable`<br>- `base64`<br>- `7bit` (default) | No       |
 
 ## Non-Standard (Custom) Headers
 
-The parser supports custom "x-" prefixed headers:
+| Header          | Description                                    | Format                     |
+| --------------- | ---------------------------------------------- | -------------------------- |
+| **x-url**       | Specifies the URL that locates the binary file | URL string                 |
+| **x-file-hash** | Stores the hash of the file                    | Hash string                |
+| **x-error**     | Indicates processing error in the pipeline     | `{handler-name};{message}` |
 
-1. **x-url**: A non-standard header to specify the URL that locates the binary file.
+The `x-error` header marks files that encountered processing errors. When a file contains this header:
 
-2. **x-file-hash**: A non-standard header to store the hash of the file
-
-[The multipart parser](https://github.com/janwilmake/multipart-formdata-stream-js) is designed to handle all these header and can be a useful libary to create FormData filter/transformers. It extracts them from the raw header lines and makes them available in the Part object. The library also maintains the original `headerLines` as part of the parsed data structure.
+- The original file content should be preserved
+- Subsequent handlers should skip processing and pass the file through unchanged
+- The error format identifies which module caused the error and the specific issue
 
 # Contributing to UIT & Plugin System
 
 UIT aims to be a convention to streaming, filtering, and transforming binary and textual file hierarchies in the Cloud, and maintains a curated list of first-party and third-party libraries that can be included into any UIT data-transformation flow.
 
 As a first step I aim to create a plugin system that allows doing file filters and transformations with ease from the uithub UI. For intended plugins, check out [plugins.json](uithub/public/plugins.json) and [the spec](uithub/public/plugins.schema.json).
+
+[The multipart parser](https://github.com/janwilmake/multipart-formdata-stream-js) is designed to handle all `FormData` headers, including any non-standard ones, and can be a useful libary to create FormData filter/transformers. It extracts them from the raw header lines and makes them available in the Part object. The library also maintains the original `headerLines` as part of the parsed data structure.
 
 Please open a discussion, issue, pull request, or [reach out](https://x.com/janwilmake) if you want a new module to be added to this list or have any unmet requirements. UIT is also looking for sponsors. More info: [CONTRIBUTING.md](CONTRIBUTING.md)
 

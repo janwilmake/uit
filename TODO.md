@@ -13,6 +13,8 @@
 
 - ✅ Make a schema for it; answers would be instantly answerable by LLM
 - ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
+- uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
+- in uithub interface, FAQs should be easily accessible if the file is present (probably in search tab)
 
 # Genignore UI old github
 
@@ -25,7 +27,6 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - Add UI to edit .genignore parameter in old version.
 - In this modal you should be able click through to add the `.genignore` to the repo. There should be a comment inthere refering to uithub
 - ❗️ Fix 'add to readme' button default branch (should be added into context!)
-- uithub should always look for `FAQ.json` and `.genignore` and if they exist
 
 # llms.txt convention
 
@@ -62,10 +63,10 @@ This would be something I'm confident to ship and share with the world, fully re
 
 # Feedback tl;dr - open questions to make the marketplace work:
 
-- error handling sucks. how to improve?
-- no easy getting started/docs. how to run uithub and improve individual components locally? how to easily develop a new plugin?
-- url chain auth pass sucks.
+- No easy getting started/docs. how to run uithub and improve individual components locally? how to easily develop a new plugin?
+- error handling sucks. how to improve? Maybe better to ensure a good way of testing independent FormData components.
 - need standardized way to charge
+- url chain auth pass sucks.
 
 # OBSERVATION:
 
@@ -103,5 +104,5 @@ We cannot use x-price as response header as most servers would not know the exac
 Possible ways to solve it;
 
 - Server self-manages: Send along `x-monetary-url` header to server that it can use with sponsorflare to add balance from to themselves and deduct it from the user. Along with expected max cost based on size and openapi spec, this can be a great way, since it allows a lot of freedom on how to charge, while respecting privacy of the user.
-- Trailer (header at the end) that specifies total cost incurred.
 - Optional FormData header for `x-price` that accumulates over time so we know cost intermediate as well. When received formdata already contains this it shall just be ignored and overwritten.
+- ❌ Trailer (header at the end) that specifies total cost incurred **probably worst option since it'd have a single price at the end and connection could be closed early**
