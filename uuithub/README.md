@@ -8,4 +8,4 @@ In this repo you can find:
 - More details: https://uuithub.com/openapi.html
 - Rendering HTML for browser-usage while offering other formats over `fetch` and `curl`
 
-This is the advanced, new, version of https://uithub.com, made accessible by simply replacing `g` with `uu`. My plan is to make this accessible after it is better than uithub v1 in every way.
+This is the advanced, new, version of https://uithub.com, made accessible by simply replacing `g` with `uu`. My plan is to migrate to this on `uithub` itself only after it is better than uithub v1 in every way. [Feedback is appreciated](https://x.com/janwilmake)
