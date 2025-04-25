@@ -22,8 +22,13 @@ export async function streamZipFile(zipUrl, sourceAuthorization) {
     }
 
     const fetchOptions = sourceAuthorization
-      ? { headers: { Authorization: sourceAuthorization } }
-      : undefined;
+      ? {
+          headers: {
+            Authorization: sourceAuthorization,
+            "User-Agent": "Cloudflare-Worker",
+          },
+        }
+      : { "User-Agent": "Cloudflare-Worker" };
 
     // Create streaming response
     const { readable, writable } = new TransformStream();
@@ -64,7 +69,9 @@ async function processZipFile(url, fetchOptions, writable) {
 
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch ZIP file: ${response.status} ${response.statusText}`,
+        `Failed to fetch ZIP file: ${response.status} ${
+          response.statusText
+        } - ${await response.text()}`,
       );
     }
 

@@ -30,28 +30,29 @@
 - ✅ Removed YAML Button for now
 - ✅ Test `isRegex`
 - ✅ Added 'copy as curl' button
-- 🟠 Test login 401 flow after hitting ratelimit. Fix error!!!
-- Test payment flow
-- `basePath` should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
+- ✅ Test login 401 flow after hitting ratelimit. 
+- ✅ Identified private repo problem. Fix tree error!!!
+- ✅ Fixed branch bug when logged in
+- ✅ Private repo not working; https://uuithub.com/janwilmake/forgithub.activity. Add repo scope!
+
+## Critical before launch
+
+- ❗️ Tested paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
+- ❗️ PERFORMANCE (Try filter on path and extension(binary) early). If a file can be filtered out without loading the file itself, that must be done! I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match.
+- ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted.
+- ❗️ Plugins: at least the API ones from URL should work!
+
+# UI Enhancements 
+
+- In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not. Then, In uithub UI (`vscode.html`), add filter warning if tokens were capped that says "apply filters for better results".
+- `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
+- `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.
 
 # BLOGPOST (start 3PM++)
 
-Focus the blogpost on the modular nature of file processing
+Focus the blogpost on the modular nature of file processing.
 
 ![](process-formdata.drawio.png)
-
-# BONUS
-
-- PERFORMANCE (Try filter on path and extension(binary) early)
-- Needs the whole filetree in the md result with info on tokensize and what was omitted.
-- Plugins: at least the API ones from URL should work!
-
-# `FAQ.json`
-
-- ✅ Make a schema for it; answers would be instantly answerable by LLM
-- ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
-- Uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
-- In uithub interface, FAQs should be easily accessible if the file is present (probably in search tab)
 
 # Genignore UI old github
 
@@ -65,14 +66,9 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - In this modal you should be able click through to add the `.genignore` to the repo. There should be a comment inthere refering to uithub
 - ❗️ Fix 'add to readme' button default branch (should be added into context!)
 
-# Search: Don't load file for path filters (big on performance)
+# `FAQ.json`
 
-If a file can be filtered out without loading the file itself, that must be done!
-
-I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match.
-
-# Add max-token cap warning
-
-In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not.
-
-In uithub UI, add filter warning if tokens were capped that says "apply filters for better results".
+- ✅ Make a schema for it; answers would be instantly answerable by LLM
+- ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
+- Uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
+- In uithub interface, FAQs should be easily accessible if the file is present (probably in search tab)

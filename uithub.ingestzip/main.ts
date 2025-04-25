@@ -27,7 +27,7 @@ export default {
 
     try {
       const headers = new Headers();
-      headers.set("User-Agent", "github-ingestzip-worker");
+      headers.set("User-Agent", "Cloudflare-Worker");
       const authHeader = request.headers.get("x-source-authorization");
 
       if (authHeader) {

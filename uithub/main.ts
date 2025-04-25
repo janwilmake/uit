@@ -507,6 +507,10 @@ export default {
     const zipUrl = encodeURIComponent(
       domain
         ? `https://${domain}/${repo}/archive/refs/heads/${branch || "main"}.zip`
+        : access_token
+        ? `https://api.github.com/repos/${owner}/${repo}/zipball${
+            branch ? "/" + branch : ""
+          }`
         : `https://github.com/${owner}/${repo}/archive/${
             branch ? ref : "HEAD"
           }.zip`,
@@ -540,11 +544,16 @@ export default {
               };
             }
 
+            // This didn't work in
             const firstSegment = res.headers.get("x-first-segment");
-
+            console.log({ firstSegment });
             const realBranch = domain
               ? branch || "main"
-              : firstSegment?.slice(repo.length + 1);
+              : firstSegment?.slice(
+                  access_token
+                    ? owner.length + repo.length + 2
+                    : repo.length + 1,
+                );
 
             return {
               tree: (await res.json()) as { __size: number },
@@ -571,7 +580,7 @@ export default {
           response.status +
           `\n\n${await response.text()}`;
 
-      if ([401, 403, 404].includes(response.status) && acceptHtml) {
+      if (acceptHtml) {
         const data = { owner_login, avatar_url, scope };
         return new Response(
           html404

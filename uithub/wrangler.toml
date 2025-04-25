@@ -30,6 +30,6 @@ new_sqlite_classes = ["RatelimitDO"]
 
 # Uncomment this service to bind it for better performance.
 
-# [[services]]
-# binding = "UITHUB_ZIPTREE"
-# service = "uithub_ziptree"
+[[services]]
+binding = "UITHUB_ZIPTREE"
+service = "uithub_ziptree"

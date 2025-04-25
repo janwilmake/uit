@@ -43,6 +43,7 @@ export default {
 
       const sourceAuthorization = request.headers.get("x-source-authorization");
       const zipUrl = decodeURIComponent(url.pathname.slice("/tree/".length));
+
       const type = url.searchParams.get("type");
       const basePath = url.searchParams.get("basePath");
       const omitFirstSegment =
