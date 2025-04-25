@@ -4,19 +4,19 @@
 2. ✅ Rename all of zipobject to uithub. uithub means 'universal information terminal hub'
 3. ✅ Let's show some ppl/ais and figure out what to do next! (did this until april 20, 2025)
 4. ✅ Deploy to uuithub.com
-5. As usable as v1
-6. Create blogpost / announcement thread, DM influencers
-7. Plugins that I already have, accessible for free.
-8. FAQ
-9. Genignore
-10. Launch (Friday, april 25th, 6PM)
+5.  Launch (Friday, april 25th, 6PM)
+6. As usable as v1
+7. Create blogpost / announcement thread, DM influencers
+8. Plugins that I already have, accessible for free.
+9. FAQ
+10. Genignore
 
 **After launch**
 
-11. Implement `uithub.otp` and use it in `uithub.ingestzip`
-12. Implement `monetaryurl` and use it everywhere
-13. Implement useful plugins!!!
-14. Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
+1.  Implement `uithub.otp` and use it in `uithub.ingestzip`
+2.  Implement `monetaryurl` and use it everywhere
+3.  Implement useful plugins!!!
+4.  Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
 
 # 2025-04-25 (FEEDBACK)
 

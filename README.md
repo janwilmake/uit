@@ -1,10 +1,13 @@
 # Universal Information Terminal
 
-UIT is a library for **performant, modular, low-memory** file processing at scale, in the Cloud. It works by offering a 4-step process to gather a file hierarchy from any desired modalty, apply filters and transformations, and output it in any desired modality.
+UIT is a library for **performant, modular, low-memory** file processing at scale, in the Cloud. It works by offering a 4-step process to gather a file hierarchy from any desired modality, apply filters and transformations, and output it in any desired modality.
 
 - **performance**: speed is of essence when navigating and searching through large amounts of data
 - **low-memory** by applying streaming and parallelization we can run this in low-memory environments such as Cloudflare workers
 - **modular**: modularity is beneficial because by making it composable we get a clear high-level overview of all building blocks. also, not all building blocks can be ran in the same runtime or location.
+
+> [!IMPORTANT]
+> This is an early pre-release. See [TODO](TODO.md) for current challenges. Try the demo at https://uuithub.com
 
 UIT has come about after many iterations of the platform of [uithub](https://uithub.com), which started as a simple node-based parser of zipfiles. While building more and more features and add-ons, I found myself limited by the memory a lot as I was not streaming enough, and going back to JSON too early (because using the Streams API is tricky!). Thus, as features and complexity grew the need was born to create a more modular extensible architecture with good serverless practices in mind.
 
