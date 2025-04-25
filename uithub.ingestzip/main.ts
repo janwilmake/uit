@@ -27,6 +27,7 @@ export default {
 
     try {
       const headers = new Headers();
+      headers.set("User-Agent", "github-ingestzip-worker");
       const authHeader = request.headers.get("x-source-authorization");
 
       if (authHeader) {
@@ -34,6 +35,12 @@ export default {
       }
 
       const archiveResponse = await fetch(zipUrl, { headers });
+      console.log({
+        zipUrl,
+        authHeader,
+        ok: archiveResponse.ok,
+        status: archiveResponse.status,
+      });
 
       if (!archiveResponse.ok || !archiveResponse.body) {
         return new Response(

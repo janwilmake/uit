@@ -59,7 +59,7 @@ export async function urlPipe(
     headers["x-source-authorization"] = sourceAuthorization;
   }
 
-  console.log({ fullUrl });
+  console.log({ fullUrl, sourceAuthorization });
 
   // Make a single request to the nested URL
   const response = await fetch(fullUrl, { headers });
@@ -99,8 +99,6 @@ export default {
     const isYaml = false && (ext === "yaml" || accept === "text/yaml");
     const isDomain = ownerOrDomain.includes(".");
 
-    console.log({ isDomain, branch, pathParts });
-
     const ref =
       branch && /^[0-9a-f]{40}$/i.test(branch)
         ? branch
@@ -111,11 +109,14 @@ export default {
     // TODO: add wiki archive as well! https://github.com/janwilmake/forgithub.wikizip
     const archiveUrl = isDomain
       ? `https://${ownerOrDomain}/${id}/archive/${ref}.zip`
+      : sourceAuthorization
+      ? `https://api.github.com/repos/${ownerOrDomain}/${id}/zipball${
+          branch ? "/" + branch : ""
+        }`
       : `https://github.com/${ownerOrDomain}/${id}/archive/${
           branch ? `${ref}.zip` : "HEAD.zip"
         }`;
 
-    console.log({ archiveUrl });
     // TODO: the sha can be found in the zip actually, so this isn't great!
     const rawUrlPrefix = `https://raw.githubusercontent.com/${ownerOrDomain}/${id}/${ref}`;
     const referToBinary = true;

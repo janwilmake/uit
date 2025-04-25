@@ -15,12 +15,13 @@ import profileHtml from "./public/profile.html";
 import html404 from "./public/404.html";
 import html429 from "./public/429.html";
 import html from "./index.html";
+import { RatelimitDO } from "./ratelimiter.js";
 export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
-import { ratelimit } from "./ratelimiter.js";
 import urlPipe from "./urlPipe.js";
 
 interface Env {
+  RATELIMIT_DO: DurableObjectNamespace<RatelimitDO>;
   GITHUB_PAT: string;
   CREDENTIALS: string;
   UITHUB_ZIPTREE: { fetch: typeof fetch };
@@ -254,6 +255,8 @@ export default {
     const requestLimit = !is_authenticated
       ? // Logged out should get 5 requests per hour, then login first.
         5
+      : (balance || 0) > 0
+      ? 1000
       : (balance || 0) < -1
       ? // after spending more than a dollar, ratelimit is 10 per hour
         10
@@ -262,14 +265,22 @@ export default {
 
     console.log("middleware 1:", Date.now() - t + "ms");
 
-    const ratelimited = requestLimit
-      ? await ratelimit(request, env, {
-          requestLimit,
-          resetIntervalMs: 3600 * 1000,
-        })
-      : undefined;
+    const clientIp =
+      request.headers.get("CF-Connecting-IP") ||
+      request.headers.get("X-Forwarded-For")?.split(",")[0].trim() ||
+      "127.0.0.1";
 
-    console.log("middleware 2:", Date.now() - t + "ms");
+    const ratelimited = await env.RATELIMIT_DO.get(
+      env.RATELIMIT_DO.idFromName("v2." + clientIp),
+    ).checkRateLimit({
+      requestLimit,
+      resetIntervalMs: 3600 * 1000,
+    });
+
+    console.log("middleware 2:", Date.now() - t + "ms", {
+      requestLimit,
+      ratelimited,
+    });
 
     const acceptHtml = request.headers.get("accept")?.includes("text/html");
     const TEST_RATELIMIT_PAGE = false;
@@ -285,24 +296,29 @@ export default {
               owner_login,
               avatar_url,
               balance,
-              ratelimitHeaders: ratelimited?.ratelimitHeaders,
+              ratelimitHeaders: ratelimited?.headers,
             })};</script></body>`,
           ),
           {
             status: 429,
             headers: {
               "Content-Type": "text/html;charset=utf8",
-              ...ratelimited?.ratelimitHeaders,
+              ...ratelimited?.headers,
             },
           },
         );
       }
 
       // can only exceed ratelimit if balance is negative
-      return new Response("Ratelimit exceeded", {
-        status: 429,
-        headers: { ...ratelimited?.ratelimitHeaders },
-      });
+      return new Response(
+        "Ratelimit exceeded\n\n" + ratelimited?.headers
+          ? JSON.stringify(ratelimited?.headers, undefined, 2)
+          : undefined,
+        {
+          status: 429,
+          headers: { ...ratelimited?.headers },
+        },
+      );
     }
 
     if (url.pathname === "/public/archive/refs/heads/main.zip") {
@@ -476,7 +492,7 @@ export default {
     };
 
     if (access_token) {
-      // as sponsorflare uses a github access token 1:1,
+      // as sponsorflare uses a github access token 1:1
       // it can be used directly as github authorization when accessing the source
       headers["x-source-authorization"] = `token ${access_token}`;
     }

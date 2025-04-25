@@ -30,7 +30,7 @@
 - ✅ Removed YAML Button for now
 - ✅ Test `isRegex`
 - ✅ Added 'copy as curl' button
-- Test login 401 flow after hitting ratelimit
+- 🟠 Test login 401 flow after hitting ratelimit. Fix error!!!
 - Test payment flow
 - `basePath` should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
 
