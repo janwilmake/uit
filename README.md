@@ -1,5 +1,9 @@
 # Universal Information Terminal
 
+- [![janwilmake/uit context](https://badge.forgithub.com/janwilmake/uit)](https://uithub.com/janwilmake/uit)
+- [X Thread](https://x.com/janwilmake/status/1915774892500300281)
+- [Hackernews Thread](https://news.ycombinator.com/item?id=43793986)
+
 UIT is a library for **performant, modular, low-memory** file processing at scale, in the Cloud. It works by offering a 4-step process to gather a file hierarchy from any desired modality, apply filters and transformations, and output it in any desired modality.
 
 - **performance**: speed is of essence when navigating and searching through large amounts of data
