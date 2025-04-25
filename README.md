@@ -1,6 +1,6 @@
 # Universal Information Terminal
 
-- [![janwilmake/uit context](https://badge.forgithub.com/janwilmake/uit)](https://uithub.com/janwilmake/uit)
+- [![janwilmake/uit context](https://badge.forgithub.com/janwilmake/uit)](https://uuithub.com/janwilmake/uit)
 - [X Thread](https://x.com/janwilmake/status/1915774892500300281)
 - [Hackernews Thread](https://news.ycombinator.com/item?id=43793986)
 
