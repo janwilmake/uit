@@ -26,21 +26,23 @@
 - ✅ 'No results' warning: 'No results. Please check your filters'
 - ✅ Tab should be localStorage reminded, not populated from URL
 - ✅ Add download button
-- Remove JSON/YAML for now (or quick ai-gen based on outputmd).
-- PERFORMANCE (Try filter binary early)
-- `basePath` should show up on search to easily remove.
-- Disable highlights in nav for now
-- Needs the whole file tree in the md result with info on tokensize and what was omitted.
-- Plugins: at least the API ones from URL should work!
+- ✅ Made quick draft for outputjson
 - Test `isRegex`
-- Test payment flow
 - Test login 401 flow after hitting ratelimit
+- Test payment flow
+- `basePath` should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
 
 # BLOGPOST (start 3PM++)
 
 Focus the blogpost on the modular nature of file processing
 
 ![](process-formdata.drawio.png)
+
+# BONUS
+
+- Plugins: at least the API ones from URL should work!
+- PERFORMANCE (Try filter binary early)
+- Needs the whole filetree in the md result with info on tokensize and what was omitted.
 
 # `FAQ.json`
 

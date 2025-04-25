@@ -1,0 +1,1 @@
+in a similar way to `outputmd`, this is `outputjson`. however, it can just stream directly to the JSON and build up the tree and only stream that out at the end. the data structure we need is `{ files: {[path:string]:{content:string, url:string, type:string}, tree: /\*hierarchically structured tree/, size: {files:number, tokens:number, lines:number}}`

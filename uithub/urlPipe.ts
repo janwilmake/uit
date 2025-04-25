@@ -94,6 +94,9 @@ export default {
     }
 
     const isZip = ext === "zip" || accept === "application/zip";
+    const isMd = ext === "md" || accept === "text/markdown";
+    const isJson = ext === "json" || accept === "application/json";
+    const isYaml = false && (ext === "yaml" || accept === "text/yaml");
     const isDomain = ownerOrDomain.includes(".");
 
     console.log({ isDomain, branch, pathParts });
@@ -123,14 +126,13 @@ export default {
     const ingestUrl = `https://ingestzip.uithub.com/${archiveUrl}?omitFirstSegment=true${rawUrlPrefixPart}`;
     const outputUrl = isZip
       ? "https://outputzip.uithub.com"
-      : ext === "md"
-      ? "https://outputmd.uithub.com"
-      : ext === "json"
+      : isJson
       ? "https://outputjson.uithub.com"
-      : ext === "yaml"
+      : isYaml
       ? "https://outputyaml.uithub.com"
+      : isMd
+      ? "https://outputmd.uithub.com"
       : undefined;
-
     const searchParams = new URLSearchParams(url.searchParams);
 
     if (pathParts.length) {

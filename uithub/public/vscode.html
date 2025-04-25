@@ -245,8 +245,8 @@
                 <div id="formatSelector" class="format-selector">
                     <button id="mdFormat" class="active">MD</button>
                     <button id="jsonFormat">JSON</button>
-                    <button id="yamlFormat">YAML</button>
-                    <button id="downloadFormat">Download</button>
+                    <!-- <button id="yamlFormat">YAML</button> -->
+                    <button id="zipFormat">ZIP</button>
                 </div>
             </div>
 
@@ -332,7 +332,7 @@
         // Format selector elements
         const mdFormatBtn = document.getElementById('mdFormat');
         const jsonFormatBtn = document.getElementById('jsonFormat');
-        const downloadFormatBtn = document.getElementById('downloadFormat');
+        const zipFormatBtn = document.getElementById('zipFormat');
         const yamlFormatBtn = document.getElementById('yamlFormat');
 
         // Simplified toggle function with no animations, now includes localStorage saving
@@ -370,12 +370,14 @@
             // Reset all format buttons
             mdFormatBtn.classList.remove('active');
             jsonFormatBtn.classList.remove('active');
-            yamlFormatBtn.classList.remove('active');
+            if (yamlFormatBtn) {
+                yamlFormatBtn.classList.remove('active');
+            }
 
             // Set active button based on accept parameter
             if (accept === 'application/json') {
                 jsonFormatBtn.classList.add('active');
-            } else if (accept === 'text/yaml') {
+            } else if (accept === 'text/yaml' && yamlFormatBtn) {
                 yamlFormatBtn.classList.add('active');
             } else {
                 mdFormatBtn.classList.add('active');
@@ -390,11 +392,14 @@
                 navigateWithAccept('application/json');
             });
 
-            yamlFormatBtn.addEventListener('click', () => {
-                navigateWithAccept('text/yaml');
-            });
+            if (yamlFormatBtn) {
+                yamlFormatBtn.addEventListener('click', () => {
+                    navigateWithAccept('text/yaml');
+                });
 
-            downloadFormatBtn.addEventListener('click', () => {
+            }
+
+            zipFormatBtn.addEventListener('click', () => {
                 navigateWithAccept('application/zip');
             });
         }
