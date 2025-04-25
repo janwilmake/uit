@@ -240,20 +240,6 @@
                 </div>
             </div>
 
-            <!-- Tokens -->
-            <div class="flex items-center ml-4">
-                <label class="text-xs text-gray-500 dark:text-gray-400 mr-1">Max tokens:</label>
-                <input id="maxTokensInput"
-                    class="text-xs w-16 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 px-1 py-0 focus:outline-none">
-            </div>
-
-            <!-- Max File Size -->
-            <div class="flex items-center ml-4">
-                <label class="text-xs text-gray-500 dark:text-gray-400 mr-1">Max file size:</label>
-                <input id="maxFileSizeInput"
-                    class="text-xs w-16 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 px-1 py-0 focus:outline-none">
-            </div>
-
             <!-- Spacer -->
             <div class="flex-grow"></div>
 
@@ -266,28 +252,6 @@
                 </svg>
                 Copy <span class="pl-1.5 text-[10px] text-gray-100">{{currentTokens}} tokens</span>
             </button>
-
-            <!-- Action buttons - improved with more padding and rounded corners -->
-            <button onclick="addBadgeToReadme()"
-                class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
-                    <path d="M12 5v14M5 12h14"></path>
-                </svg>
-                Add to README
-
-            </button>
-
-            <!-- <a href="{{chatLink}}"
-                class="text-xs bg-[#8b5cf6] text-white px-3 py-1.5 rounded-md flex items-center hover:bg-purple-600 focus:outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                Chat with LLM
-            </a> -->
-
-
 
             <a href="{{baseLink}}"
                 class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
@@ -353,52 +317,11 @@
         const copyBtn = document.getElementById('copyBtn');
         const textToCopy = document.getElementById('textToCopy');
         const copyNotification = document.getElementById('copyNotification');
-        const maxTokensInput = document.getElementById('maxTokensInput');
-        const maxFileSizeInput = document.getElementById('maxFileSizeInput');
 
         // Format selector elements
         const mdFormatBtn = document.getElementById('mdFormat');
         const jsonFormatBtn = document.getElementById('jsonFormat');
         const yamlFormatBtn = document.getElementById('yamlFormat');
-
-        // Get maxTokens and maxFileSize from URL
-        function getURLParams() {
-            const maxTokens = searchParams.get('maxTokens') || '50000';
-            const maxFileSize = searchParams.get('maxFileSize') || '';
-
-            // Set input values
-            maxTokensInput.value = maxTokens;
-            maxFileSizeInput.value = maxFileSize;
-        }
-
-        // Update URL when inputs change
-        function updateURLWithParams() {
-            const newParams = new URLSearchParams(window.location.search);
-            newParams.set('maxTokens', maxTokensInput.value);
-            newParams.set('maxFileSize', maxFileSizeInput.value);
-
-            // Update URL without reloading using History API
-            const newUrl = `${window.location.pathname}?${newParams.toString()}`;
-            history.replaceState({}, '', newUrl);
-        }
-
-        // Handle input change with debounce
-        let debounceTimer;
-        function handleInputChange() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                updateURLWithParams();
-            }, 300); // 300ms debounce
-        }
-
-        // Handle form submission
-        function handleInputSubmit(event) {
-            if (event.key === 'Enter') {
-                updateURLWithParams();
-                // Force reload to apply changes
-                window.location.href = `${window.location.pathname}?${new URLSearchParams(window.location.search).toString()}`;
-            }
-        }
 
         // Simplified toggle function with no animations
         function togglePanel(button, panel) {
@@ -490,14 +413,6 @@
         profileBtn.addEventListener('click', () => togglePanel(profileBtn, profilePanel));
         pluginsBtn.addEventListener('click', () => togglePanel(pluginsBtn, pluginsPanel));
 
-        // Add event listeners for input changes
-        maxTokensInput.addEventListener('input', handleInputChange);
-        maxFileSizeInput.addEventListener('input', handleInputChange);
-
-        // Add event listeners for Enter key
-        maxTokensInput.addEventListener('keydown', handleInputSubmit);
-        maxFileSizeInput.addEventListener('keydown', handleInputSubmit);
-
         // Listen for changes in dark mode
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
 
@@ -505,7 +420,7 @@
         function setInitialPanelState() {
             const pathSegments = currentPath.split('/').filter(segment => segment !== '');
 
-            if (searchParams.has('search') || searchParams.has('pathPatterns') || searchParams.has('excludePathPatterns')) {
+            if (searchParams.has('search') || searchParams.has('pathPatterns') || searchParams.has('excludePathPatterns') || searchParams.has('maxFileSize') || searchParams.has('maxTokens')) {
                 // Open search panel if URL contains ?search
                 togglePanel(searchBtn, searchPanel);
             } else if (searchParams.has('filter')) {
@@ -519,7 +434,6 @@
 
         // Run on page load
         window.addEventListener('DOMContentLoaded', () => {
-            getURLParams();
             initFormatSelector();
             setInitialPanelState();
         });

@@ -150,3 +150,23 @@ How to run uithub and improve individual components locally? How to easily devel
 - Try right now to clone uit and make it easy to run locally. A fallback on the individual services would be great, not requiring running them per se.
 - Figure out if I can do a check whether or not service-bindings are connected. If possible, make hostname a configurable setting, and make service binding connection optional falling back to regular fetch.
 - Ideal situation: you only need to run 1 service (uithub) to run locally, and switch to any additional service to use it as part of the pipeline.
+
+# github master zip redirect
+
+Master redirects to production branch. does master always redirect to the deafult branch?????? for zip, maybe https://github.com/cloudflare/cloudflare-docs/archive/refs/heads/production.zip but for other things, definitely not.
+
+# 2025-04 - Pricing / ratelimiting
+
+Based on what should plugins be free:
+
+- repos over 1000 stars
+
+Based on what should features require pay-as-you-go
+
+- private repos
+- organisation repos
+- repos under 1000 stars
+
+The premium features should require deposit of $50
+
+Also add button to unlock for entire organisation/owner (contact me)

@@ -425,8 +425,6 @@ export default {
     const realMaxFileSize =
       maxFileSize && !isNaN(Number(maxFileSize))
         ? Number(maxFileSize)
-        : needHtml
-        ? 25000
         : undefined;
 
     const branchPart = `/${page || "tree"}.${ext || "md"}${

@@ -68,18 +68,52 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="mb-3">
           <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">files to exclude</div>
           <div class="relative">
-            <input type="text" id="files-exclude"
+            <textarea id="files-exclude"
+              class="w-full py-2 px-3 rounded-sm dark:bg-gray-800 dark:text-gray-100 dark:border dark:border-gray-600 focus:outline-none resize-y"
+              placeholder="e.g. node_modules, *.test.js" rows="3"></textarea>
+          </div>
+        </div>
+        
+        <!-- Max tokens filter -->
+        <div class="mb-3">
+          <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">max tokens</div>
+          <div class="relative">
+            <input type="text" id="max-tokens"
               class="w-full py-2 px-3 rounded-sm dark:bg-gray-800 dark:text-gray-100 dark:border dark:border-gray-600 focus:outline-none"
-              placeholder="e.g. node_modules, *.test.js">
+              placeholder="defaults to 50000">
+          </div>
+        </div>
+        
+        <!-- Max file size filter -->
+        <div class="mb-3">
+          <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">max file size (characters)</div>
+          <div class="relative">
+            <input type="text" id="max-file-size"
+              class="w-full py-2 px-3 rounded-sm dark:bg-gray-800 dark:text-gray-100 dark:border dark:border-gray-600 focus:outline-none"
+              placeholder="e.g. 100">
           </div>
         </div>
       </div>
+
+      <div class="mb-3">
+      <p class="mb-1 text-xs text-gray-600 dark:text-gray-400">Add this filter to your README?<p>
+  <button onclick="addBadgeToReadme()"
+      class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+          <path d="M12 5v14M5 12h14"></path>
+      </svg>
+      Create README Badge
+
+  </button></div>
     `;
 
     // Get DOM elements
     const searchInput = document.getElementById("search-input");
     const filesIncludeInput = document.getElementById("files-include");
     const filesExcludeInput = document.getElementById("files-exclude");
+    const maxTokensInput = document.getElementById("max-tokens");
+    const maxFileSizeInput = document.getElementById("max-file-size");
     const matchCaseBtn = document.getElementById("match-case-btn");
     const matchWordBtn = document.getElementById("match-word-btn");
     const regexBtn = document.getElementById("regex-btn");
@@ -95,6 +129,8 @@ document.addEventListener("DOMContentLoaded", function () {
       isRegex: false,
       pathPatterns: [],
       excludePathPatterns: [],
+      maxTokens: "",
+      maxFileSize: "",
     };
 
     // Load parameters from URL
@@ -135,7 +171,19 @@ document.addEventListener("DOMContentLoaded", function () {
         searchParams.excludePathPatterns = urlParams.getAll(
           "excludePathPatterns",
         );
-        filesExcludeInput.value = searchParams.excludePathPatterns.join(", ");
+        // For textarea, join with newlines instead of commas
+        filesExcludeInput.value = searchParams.excludePathPatterns.join("\n");
+      }
+
+      // Max tokens and max file size
+      if (urlParams.has("maxTokens")) {
+        searchParams.maxTokens = urlParams.get("maxTokens");
+        maxTokensInput.value = searchParams.maxTokens;
+      }
+
+      if (urlParams.has("maxFileSize")) {
+        searchParams.maxFileSize = urlParams.get("maxFileSize");
+        maxFileSizeInput.value = searchParams.maxFileSize;
       }
 
       // Show clear button if any filters are applied
@@ -145,7 +193,9 @@ document.addEventListener("DOMContentLoaded", function () {
         searchParams.isMatchWholeWord ||
         searchParams.isRegex ||
         searchParams.pathPatterns.length > 0 ||
-        searchParams.excludePathPatterns.length > 0
+        searchParams.excludePathPatterns.length > 0 ||
+        searchParams.maxTokens ||
+        searchParams.maxFileSize
       ) {
         clearFiltersBtn.classList.remove("hidden");
       }
@@ -191,6 +241,15 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       }
 
+      // Add max tokens and max file size if they exist
+      if (searchParams.maxTokens) {
+        urlParams.set("maxTokens", searchParams.maxTokens);
+      }
+
+      if (searchParams.maxFileSize) {
+        urlParams.set("maxFileSize", searchParams.maxFileSize);
+      }
+
       // Update URL without refreshing
       const newUrl =
         url.pathname + (urlParams.toString() ? "?" + urlParams.toString() : "");
@@ -211,6 +270,35 @@ document.addEventListener("DOMContentLoaded", function () {
         .split(",")
         .map((item) => item.trim())
         .filter((item) => item);
+    }
+
+    // Parse textarea input with newlines and commas as separators
+    function parseTextareaInput(input) {
+      if (!input.trim()) return [];
+
+      // First split by newlines
+      const lines = input
+        .split(/\n/)
+        .map((line) => line.trim())
+        .filter((line) => line);
+
+      // Then process each line for possible comma separation
+      let patterns = [];
+      for (const line of lines) {
+        if (line.includes(",")) {
+          // If the line has commas, split it and add each part
+          const parts = line
+            .split(",")
+            .map((part) => part.trim())
+            .filter((part) => part);
+          patterns = patterns.concat(parts);
+        } else {
+          // Otherwise add the whole line
+          patterns.push(line);
+        }
+      }
+
+      return patterns;
     }
 
     // Toggle active state for icon buttons
@@ -246,11 +334,26 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    filesExcludeInput.addEventListener("keyup", function (e) {
+    filesExcludeInput.addEventListener("input", function () {
+      searchParams.excludePathPatterns = parseTextareaInput(this.value);
+      updateURL();
+    });
+
+    // Event handlers for max tokens and max file size
+    maxTokensInput.addEventListener("keyup", function (e) {
       if (e.key === "Enter") {
         applySearch();
       } else {
-        searchParams.excludePathPatterns = parseCommaSeparatedInput(this.value);
+        searchParams.maxTokens = this.value.trim();
+        updateURL();
+      }
+    });
+
+    maxFileSizeInput.addEventListener("keyup", function (e) {
+      if (e.key === "Enter") {
+        applySearch();
+      } else {
+        searchParams.maxFileSize = this.value.trim();
         updateURL();
       }
     });
@@ -281,12 +384,16 @@ document.addEventListener("DOMContentLoaded", function () {
         isRegex: false,
         pathPatterns: [],
         excludePathPatterns: [],
+        maxTokens: "",
+        maxFileSize: "",
       };
 
       // Reset UI
       searchInput.value = "";
       filesIncludeInput.value = "";
       filesExcludeInput.value = "";
+      maxTokensInput.value = "";
+      maxFileSizeInput.value = "";
 
       // Reset toggle buttons
       if (matchCaseBtn.classList.contains("text-blue-500")) {
@@ -314,9 +421,11 @@ document.addEventListener("DOMContentLoaded", function () {
       searchParams.pathPatterns = parseCommaSeparatedInput(
         filesIncludeInput.value,
       );
-      searchParams.excludePathPatterns = parseCommaSeparatedInput(
+      searchParams.excludePathPatterns = parseTextareaInput(
         filesExcludeInput.value,
       );
+      searchParams.maxTokens = maxTokensInput.value.trim();
+      searchParams.maxFileSize = maxFileSizeInput.value.trim();
 
       // Update URL and refresh page
       updateURL(true);
@@ -324,27 +433,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Focus styling for inputs
     searchInput.addEventListener("focus", function () {
-      this.classList.add("ring-2", "ring-blue-500");
+      this.classList.add("ring-1", "ring-blue-500");
     });
 
     searchInput.addEventListener("blur", function () {
-      this.classList.remove("ring-2", "ring-blue-500");
+      this.classList.remove("ring-1", "ring-blue-500");
     });
 
     filesIncludeInput.addEventListener("focus", function () {
-      this.classList.add("ring-2", "ring-blue-500");
+      this.classList.add("ring-1", "ring-blue-500");
     });
 
     filesIncludeInput.addEventListener("blur", function () {
-      this.classList.remove("ring-2", "ring-blue-500");
+      this.classList.remove("ring-1", "ring-blue-500");
     });
 
     filesExcludeInput.addEventListener("focus", function () {
-      this.classList.add("ring-2", "ring-blue-500");
+      this.classList.add("ring-1", "ring-blue-500");
     });
 
     filesExcludeInput.addEventListener("blur", function () {
-      this.classList.remove("ring-2", "ring-blue-500");
+      this.classList.remove("ring-1", "ring-blue-500");
+    });
+
+    maxTokensInput.addEventListener("focus", function () {
+      this.classList.add("ring-1", "ring-blue-500");
+    });
+
+    maxTokensInput.addEventListener("blur", function () {
+      this.classList.remove("ring-1", "ring-blue-500");
+    });
+
+    maxFileSizeInput.addEventListener("focus", function () {
+      this.classList.add("ring-1", "ring-blue-500");
+    });
+
+    maxFileSizeInput.addEventListener("blur", function () {
+      this.classList.remove("ring-1", "ring-blue-500");
     });
 
     // Handle back/forward navigation

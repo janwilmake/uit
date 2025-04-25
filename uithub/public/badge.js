@@ -30,9 +30,7 @@ function addBadgeToReadme() {
     if (!successful) {
       throw new Error("Copy command failed");
     } else {
-      alert(
-        "Copied to clipboard. You can now add the badge for this context to the README",
-      );
+      alert("Copied.\n\nYou will now be redirected to edit the README.");
     }
 
     // Navigate to README edit page

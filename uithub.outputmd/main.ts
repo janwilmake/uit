@@ -4,7 +4,6 @@
 import { iterateMultipart } from "multipart-formdata-stream-js";
 
 const DEFAULT_MAX_TOKENS = 50000;
-const DEFAULT_MAX_FILE_SIZE = 25000; // ±5k tokens
 const TOKEN_ESTIMATION_FACTOR = 5;
 
 const withLeadingSpace = (lineNumber: number, totalLines: number) => {
@@ -74,9 +73,7 @@ async function processZipArchive(request, env) {
   // Parse query parameters
   const maxTokens =
     parseInt(url.searchParams.get("maxTokens") || "", 10) || DEFAULT_MAX_TOKENS;
-  const maxFileSize =
-    parseInt(url.searchParams.get("maxFileSize") || "", 10) ||
-    DEFAULT_MAX_FILE_SIZE;
+  const maxFileSize = parseInt(url.searchParams.get("maxFileSize") || "", 10);
 
   try {
     const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };

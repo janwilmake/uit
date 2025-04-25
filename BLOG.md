@@ -2,6 +2,8 @@
 Can probably just submit this to dev.to, don't need to make my own page per se. However, could be good for backlinks. A simple static html LLM generation based on BLOG.md would be great.
 -->
 
+Inspo: https://www.gitlip.com/blog
+
 # Formdata Blogpost (draft)
 
 Draft outline:
@@ -94,3 +96,92 @@ This is a great start for your blogpost outline! To make it a potential top Hack
 For a Hacker News audience, focus on the novel technical insights, unexpected discoveries about FormData capabilities, and architectural decisions that led to your current approach. The HN community especially appreciates posts that teach them something new about a familiar technology or challenge conventional wisdom with solid technical reasoning.
 
 Would you like me to elaborate on any specific section of this enhanced outline?
+
+# X Thread (leading to blogpost and repo)
+
+<!-- It could literally lead to the blog ON GitHub. Why should I make a separate website for that? -->
+
+# Get back to users after launch
+
+https://x.com/janwilmake/status/1895375026939142292
+
+Make a pinned post like this one: https://x.com/samwillis/status/1824385175486337137 a thread that introduces me to my new followers and explains my mission. also, hackernews and producthunt.
+
+# X Thread
+
+(🧵 1/8)
+Excited to announce that UIthub is now open source! 🎉
+We're building the future of code analysis and development, starting with the entire GitHub ecosystem.
+
+(2/8)
+What is UIthub? Think GitHub, but with a U - we're creating a powerful platform for extracting, analyzing, and interacting with code from any repository.
+
+(3/8)
+Our mission: Enable a community of builders to create the next generation of code analysis tools. We believe in augmenting developers with AI while ensuring quality and reliability.
+
+(4/8)
+🔍 Key Features:
+• Smart code extraction from any repo
+• Direct code chat interface
+• Rich context for LLMs
+• Comprehensive analytics dashboard
+
+(5/8)
+The future of software development will be collaborative - between humans and AI agents. UIthub provides the foundation for building and validating these tools.
+
+(6/8)
+We're working on making it incredibly simple to write code with UIthub. New features coming soon will revolutionize how developers interact with codebases.
+
+(7/8)
+Join us in building the future of software development. Check out our repo, star us on GitHub, and start contributing today!
+[GitHub Link]
+
+(8/8)
+Launch also live on:
+• Product Hunt: [Link]
+• Hacker News: [Link]
+
+Let's build something amazing together! 🚀
+
+# For Hacker News:
+
+Title: UIthub – Open-source platform for code analysis and AI-assisted development
+
+Show HN: I've been building UIthub, a platform for advanced code analysis and AI-assisted development, and today I'm making it open source. UIthub makes it easy to extract and analyze code from any GitHub repository, providing rich context for LLMs and enabling direct code chat capabilities.
+
+The goal is to create an ecosystem where developers can build powerful code analysis tools on top of GitHub's dataset. This will be crucial for developing and validating software development agents in the future.
+
+Key features:
+
+- Smart code extraction from any repository
+- Direct code chat interface
+- Rich context generation for LLMs
+- Analytics dashboard
+- Coming soon: Simplified code writing experience
+
+I believe the future of software development will be highly collaborative between humans and AI agents. UIthub aims to provide the foundation for building and validating these tools while ensuring quality and reliability.
+
+Repository: [Link]
+Documentation: [Link]
+
+Would love to hear your thoughts and feedback!
+
+# For Product Hunt:
+
+Title: UIthub - Open-source code analysis platform
+
+Tagline: Extract, analyze, and chat with code from any GitHub repository
+
+Description:
+UIthub is now open source! We're building a platform that makes it easy to analyze and interact with code from any GitHub repository. Our mission is to enable developers to create powerful code analysis tools and lay the groundwork for reliable AI-assisted development.
+
+What makes UIthub special:
+• Smart code extraction
+• Built-in code chat interface
+• Rich context for LLMs
+• Comprehensive analytics
+• Active community focus
+
+We're committed to building an ecosystem where developers can create innovative tools for code analysis and AI-assisted development. Join us in shaping the future of software development!
+
+[Include relevant screenshots and links]
