@@ -6,26 +6,6 @@ import { iterateMultipart } from "multipart-formdata-stream-js";
 const DEFAULT_MAX_TOKENS = 50000;
 const TOKEN_ESTIMATION_FACTOR = 5;
 
-const withLeadingSpace = (lineNumber: number, totalLines: number) => {
-  const totalCharacters = String(totalLines).length;
-  const spacesNeeded = totalCharacters - String(lineNumber).length;
-  return " ".repeat(spacesNeeded) + String(lineNumber);
-};
-
-// TODO: maybe bring this back?
-const addLineNumbers = (content: string, shouldAddLineNumbers: boolean) => {
-  if (!shouldAddLineNumbers) {
-    return content;
-  }
-  const lines = content.split("\n");
-
-  return lines
-    .map(
-      (line, index) => `${withLeadingSpace(index + 1, lines.length)} | ${line}`,
-    )
-    .join("\n");
-};
-
 /**
  * Token counter that approximates the number of tokens in a string
  * @param {string} text - The text to count tokens for
@@ -57,86 +37,6 @@ function isTextFile(filename) {
 }
 
 /**
- * Processes a ZIP archive and returns its contents as markdown
- * @param {Request} request - The incoming request
- * @param {*} env -
- * @returns {Response} - The response with markdown content
- */
-async function processZipArchive(request, env) {
-  const url = new URL(request.url);
-  const formDataUrl = url.pathname.substring(1) + url.search; // Remove leading slash
-
-  if (!formDataUrl) {
-    return new Response("No form data URL provided", { status: 400 });
-  }
-
-  // Parse query parameters
-  const maxTokens =
-    parseInt(url.searchParams.get("maxTokens") || "", 10) || DEFAULT_MAX_TOKENS;
-  const maxFileSize = parseInt(url.searchParams.get("maxFileSize") || "", 10);
-
-  try {
-    const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
-
-    const sourceAuthorization = request.headers.get("x-source-authorization");
-    if (sourceAuthorization) {
-      headers["x-source-authorization"] = sourceAuthorization;
-    }
-    // Fetch the form data
-    const response = await fetch(formDataUrl, { headers });
-    if (!response.ok) {
-      return new Response(
-        `outputmd - Failed to fetch form data: ${response.status} ${
-          response.statusText
-        }\n${await response.text()}`,
-        { status: 500 },
-      );
-    }
-
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("multipart/form-data")) {
-      return new Response(
-        "The provided URL does not contain multipart form data",
-        { status: 400 },
-      );
-    }
-
-    // Extract boundary from content-type
-    const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
-    if (!boundaryMatch) {
-      return new Response("Could not find boundary in content-type header", {
-        status: 400,
-      });
-    }
-
-    const boundary = boundaryMatch[1] || boundaryMatch[2];
-    const body = response.body;
-
-    if (!body) {
-      return new Response("Empty response body", { status: 500 });
-    }
-
-    // Create a transform stream for processing parts
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-
-    // Process the parts in a separate task
-    processPartsToMarkdown(body, boundary, writer, maxTokens, maxFileSize);
-
-    // Return the readable stream as the response
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/markdown; charset=utf-8",
-      },
-    });
-  } catch (error) {
-    return new Response(`Error processing form data: ${error.message}`, {
-      status: 500,
-    });
-  }
-}
-
-/**
  * Process multipart form data into markdown format
  * @param {ReadableStream<Uint8Array>} body - The form data body
  * @param {string} boundary - The form data boundary
@@ -159,6 +59,7 @@ async function processPartsToMarkdown(
     let depth = 0;
     let isCapped = false;
     let lastPath: string[] = [];
+    let count = 0;
 
     // Function to write text to the stream
     const writeText = async (text) => {
@@ -169,6 +70,8 @@ async function processPartsToMarkdown(
     // Iterate through parts
     for await (const part of iterateMultipart(body, boundary)) {
       if (!part.name) continue;
+
+      count++;
 
       const isBinary = part["content-transfer-encoding"] === "binary";
       const filename = part.filename || part.name;
@@ -257,21 +160,24 @@ async function processPartsToMarkdown(
 
     // Write the complete markdown to the stream
 
-    await writeText(treeStructure);
-    await writeText(fileContents);
-
-    if (isCapped) {
-      await writeText(
-        `\n\nThe content has been capped at ${maxTokens} tokens, and files over ${maxFileSize} bytes have been omitted. The user could consider applying other filters to refine the result. `,
-      );
+    if (count === 0) {
+      await writeText(`No results. Please check your filters`);
     } else {
-      await writeText(`\n\n`);
+      await writeText(treeStructure);
+      await writeText(fileContents);
+
+      if (isCapped) {
+        await writeText(
+          `\n\nThe content has been capped at ${maxTokens} tokens, and files over ${maxFileSize} bytes have been omitted. The user could consider applying other filters to refine the result. `,
+        );
+      } else {
+        await writeText(`\n\n`);
+      }
+
+      await writeText(
+        `The better and more specific the context, the better the LLM can follow instructions. If the context seems verbose, the user can refine the filter using uithub. Thank you for using https://uithub.com - Perfect LLM context for any GitHub repo.`,
+      );
     }
-
-    await writeText(
-      `The better and more specific the context, the better the LLM can follow instructions. If the context seems verbose, the user can refine the filter using uithub. Thank you for using https://uithub.com - Perfect LLM context for any GitHub repo.`,
-    );
-
     // Close the writer
     await writer.close();
   } catch (error) {
@@ -281,6 +187,77 @@ async function processPartsToMarkdown(
 
 export default {
   async fetch(request, env, ctx) {
-    return processZipArchive(request, env);
+    const url = new URL(request.url);
+    const formDataUrl = url.pathname.substring(1) + url.search; // Remove leading slash
+
+    if (!formDataUrl) {
+      return new Response("No form data URL provided", { status: 400 });
+    }
+
+    // Parse query parameters
+    const maxTokens =
+      parseInt(url.searchParams.get("maxTokens") || "", 10) ||
+      DEFAULT_MAX_TOKENS;
+    const maxFileSize = parseInt(url.searchParams.get("maxFileSize") || "", 10);
+
+    try {
+      const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
+
+      const sourceAuthorization = request.headers.get("x-source-authorization");
+      if (sourceAuthorization) {
+        headers["x-source-authorization"] = sourceAuthorization;
+      }
+      // Fetch the form data
+      const response = await fetch(formDataUrl, { headers });
+      if (!response.ok) {
+        return new Response(
+          `outputmd - Failed to fetch form data: ${response.status} ${
+            response.statusText
+          }\n${await response.text()}`,
+          { status: 500 },
+        );
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("multipart/form-data")) {
+        return new Response(
+          "The provided URL does not contain multipart form data",
+          { status: 400 },
+        );
+      }
+
+      // Extract boundary from content-type
+      const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
+      if (!boundaryMatch) {
+        return new Response("Could not find boundary in content-type header", {
+          status: 400,
+        });
+      }
+
+      const boundary = boundaryMatch[1] || boundaryMatch[2];
+      const body = response.body;
+
+      if (!body) {
+        return new Response("Empty response body", { status: 500 });
+      }
+
+      // Create a transform stream for processing parts
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
+
+      // Process the parts in a separate task
+      processPartsToMarkdown(body, boundary, writer, maxTokens, maxFileSize);
+
+      // Return the readable stream as the response
+      return new Response(readable, {
+        headers: {
+          "Content-Type": "text/markdown; charset=utf-8",
+        },
+      });
+    } catch (error) {
+      return new Response(`Error processing form data: ${error.message}`, {
+        status: 500,
+      });
+    }
   },
 };

@@ -1,3 +1,31 @@
+# LATER
+
+- Nav highlights: make it possible to see search filters in tree as well by moving this logic to the backend.
+- Should charge small fee for use of uithub API with permanent 402 if balance under $ -5 or so.
+- Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
+- Bug with spaces: https://x.com/janwilmake/status/1898753253988253946
+
+# `explore.js` search examples:
+
+- (If too much code, make this an external HTML page) - Below the search inputs, list a few examples that would change the value of the inputs:
+  - only md,mdx
+  - omit package-lock.json
+  - only ts,js,tsx but omit build
+  - regex: only files with hardcoded URLs
+  - regex: `import ... from "react"`
+
+# Ratelimiter is slow
+
+Keep watching ratelimiter speed. Sorta slow sometimes, maybe ratelimt resets too fast which causes required reinitialisation which takes a bit longer?
+
+# IDEA: Search early stop basepath (big on performance)
+
+Can I detect if we passed the selected base path?
+
+If the basePath DID occur before AND now we're paste it, THEN we can stop safely, if we can assume things are alphabetical.
+
+Add stop criterium if there was one or more basePaths. if so, get last basePath alphabetically and stop after the pathname is behind this one. Will be GREAT for performance for large repos. Best make this a configuration though as it may not always be possible to rely on this!
+
 # creating sha-cached basePath-based subzips (big on performance)
 
 This could be big on performance as well!

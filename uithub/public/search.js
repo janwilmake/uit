@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
             Clear
           </button>
           <button id="apply-search-btn" class="text-xs px-2 py-1 bg-blue-500 text-white hover:bg-blue-600 rounded hidden">
-            Search
+            Update
           </button>
         </div>
       </div>
@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="relative">
             <input type="text" id="max-file-size"
               class="w-full py-2 px-3 rounded-sm dark:bg-gray-800 dark:text-gray-100 dark:border dark:border-gray-600 focus:outline-none"
-              placeholder="e.g. 100">
+              placeholder="e.g. 5000">
           </div>
         </div>
       </div>

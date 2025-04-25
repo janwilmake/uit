@@ -59,6 +59,8 @@ export async function urlPipe(
     headers["x-source-authorization"] = sourceAuthorization;
   }
 
+  console.log({ fullUrl });
+
   // Make a single request to the nested URL
   const response = await fetch(fullUrl, { headers });
 
@@ -83,11 +85,15 @@ export default {
     const sourceAuthorization = request.headers.get("x-source-authorization");
 
     const [page, ext] = (pageAndExt || "").split(".");
+    const acceptQuery = url.searchParams.get("accept");
+    const acceptHeader = request.headers.get("Accept");
+    const accept = acceptQuery || acceptHeader || undefined;
 
     if (!ownerOrDomain || !id) {
       return new Response("Usage: /owner/repo or /domain.tld/id");
     }
 
+    const isZip = ext === "zip" || accept === "application/zip";
     const isDomain = ownerOrDomain.includes(".");
 
     console.log({ isDomain, branch, pathParts });
@@ -115,16 +121,15 @@ export default {
       ? `&rawUrlPrefix=${rawUrlPrefix}`
       : "";
     const ingestUrl = `https://ingestzip.uithub.com/${archiveUrl}?omitFirstSegment=true${rawUrlPrefixPart}`;
-    const outputUrl =
-      ext === "zip"
-        ? "https://outputzip.uithub.com"
-        : ext === "md"
-        ? "https://outputmd.uithub.com"
-        : ext === "json"
-        ? "https://outputjson.uithub.com"
-        : ext === "yaml"
-        ? "https://outputyaml.uithub.com"
-        : undefined;
+    const outputUrl = isZip
+      ? "https://outputzip.uithub.com"
+      : ext === "md"
+      ? "https://outputmd.uithub.com"
+      : ext === "json"
+      ? "https://outputjson.uithub.com"
+      : ext === "yaml"
+      ? "https://outputyaml.uithub.com"
+      : undefined;
 
     const searchParams = new URLSearchParams(url.searchParams);
 

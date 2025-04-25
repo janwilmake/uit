@@ -413,7 +413,9 @@ export default {
     const crawler = getCrawler(request.headers.get("user-agent"));
     const isCrawler = !!crawler;
     const isBrowser = acceptHeader?.includes("text/html");
-    const needHtml = isBrowser || isCrawler;
+    const isZip = ext === "zip" || accept === "application/zip";
+
+    const needHtml = (isBrowser || isCrawler) && !isZip;
 
     const realMaxTokens =
       maxTokens && !isNaN(Number(maxTokens))
@@ -533,6 +535,7 @@ export default {
           })
       : undefined;
 
+    console.log({ finalUrl });
     const response = await urlPipe.fetch(
       new Request(finalUrl, {
         headers,
@@ -566,6 +569,16 @@ export default {
       }
       return new Response(`${response.status} - ${message}`, {
         status: response.status,
+      });
+    }
+
+    if (isZip) {
+      // special output: zip
+      return new Response(response.body, {
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": 'attachment; filename="formdata.zip"',
+        },
       });
     }
 

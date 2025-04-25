@@ -20,6 +20,14 @@
         }
 
         updateTheme();
+
+        let activePanelId = 'files';
+        if (!localStorage.getItem('panel')) {
+            console.log("Setting panel to 'files'")
+            localStorage.setItem('panel', 'files');
+        } else {
+            activePanelId = localStorage.getItem('panel')
+        }
     </script>
     <style>
         /* Clean, snappy styles with no animations */
@@ -125,7 +133,8 @@
     <div
         class="flex-none w-12 bg-gray-100 dark:bg-gray-800 flex flex-col items-center py-1 z-10 border-r border-gray-200 dark:border-gray-700">
         <button id="files-btn"
-            class="nav-icon w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+            class="nav-icon active w-full p-2 mb-1 focus:outline-none hover:bg-gray-200 dark:hover:bg-gray-700">
+
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 class="text-gray-700 dark:text-gray-400">
@@ -237,6 +246,7 @@
                     <button id="mdFormat" class="active">MD</button>
                     <button id="jsonFormat">JSON</button>
                     <button id="yamlFormat">YAML</button>
+                    <button id="downloadFormat">Download</button>
                 </div>
             </div>
 
@@ -300,6 +310,7 @@
     <script src="/plugins.js"></script>
 
     <script>
+
         // Variables to track active panel
         let activePanel = null;
 
@@ -321,10 +332,11 @@
         // Format selector elements
         const mdFormatBtn = document.getElementById('mdFormat');
         const jsonFormatBtn = document.getElementById('jsonFormat');
+        const downloadFormatBtn = document.getElementById('downloadFormat');
         const yamlFormatBtn = document.getElementById('yamlFormat');
 
-        // Simplified toggle function with no animations
-        function togglePanel(button, panel) {
+        // Simplified toggle function with no animations, now includes localStorage saving
+        function togglePanel(button, panel, panelId) {
             const isCurrentlyActive = button.classList.contains('active');
 
             // Reset all
@@ -342,6 +354,11 @@
             if (!isCurrentlyActive) {
                 button.classList.add('active');
                 panel.classList.add('open');
+                // Save to localStorage
+                localStorage.setItem('panel', panelId);
+            } else {
+                // If closing the active panel, remove from localStorage
+                localStorage.removeItem('panel');
             }
         }
 
@@ -376,6 +393,10 @@
             yamlFormatBtn.addEventListener('click', () => {
                 navigateWithAccept('text/yaml');
             });
+
+            downloadFormatBtn.addEventListener('click', () => {
+                navigateWithAccept('application/zip');
+            });
         }
 
         function navigateWithAccept(format) {
@@ -407,35 +428,42 @@
             }, 2000);
         });
 
-        // Add event listeners
-        filesBtn.addEventListener('click', () => togglePanel(filesBtn, filesPanel));
-        searchBtn.addEventListener('click', () => togglePanel(searchBtn, searchPanel));
-        profileBtn.addEventListener('click', () => togglePanel(profileBtn, profilePanel));
-        pluginsBtn.addEventListener('click', () => togglePanel(pluginsBtn, pluginsPanel));
+        // Add event listeners with panel IDs for localStorage
+        filesBtn.addEventListener('click', () => togglePanel(filesBtn, filesPanel, 'files'));
+        searchBtn.addEventListener('click', () => togglePanel(searchBtn, searchPanel, 'search'));
+        profileBtn.addEventListener('click', () => togglePanel(profileBtn, profilePanel, 'profile'));
+        pluginsBtn.addEventListener('click', () => togglePanel(pluginsBtn, pluginsPanel, 'plugins'));
 
         // Listen for changes in dark mode
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
 
-        // Check pathname and URL parameters to determine initial state
-        function setInitialPanelState() {
-            const pathSegments = currentPath.split('/').filter(segment => segment !== '');
-
-            if (searchParams.has('search') || searchParams.has('pathPatterns') || searchParams.has('excludePathPatterns') || searchParams.has('maxFileSize') || searchParams.has('maxTokens')) {
-                // Open search panel if URL contains ?search
-                togglePanel(searchBtn, searchPanel);
-            } else if (searchParams.has('filter')) {
-                // Open filter panel if URL contains ?filter
-                togglePanel(filterBtn, filterPanel);
-            } else if (searchParams.has('profile') || window.data && window.data.isPaymentRequired) {
-                // Open profile panel if URL contains ?profile
-                togglePanel(profileBtn, profilePanel);
-            }
-        }
 
         // Run on page load
         window.addEventListener('DOMContentLoaded', () => {
             initFormatSelector();
-            setInitialPanelState();
+
+            // Check if there is an active panel saved
+            if (activePanelId) {
+                // Activate the corresponding panel
+                switch (activePanelId) {
+                    case 'files':
+                        // already active
+                        // togglePanel(filesBtn, filesPanel, 'files');
+                        break;
+                    case 'search':
+                        togglePanel(searchBtn, searchPanel, 'search');
+                        break;
+                    case 'profile':
+                        togglePanel(profileBtn, profilePanel, 'profile');
+                        break;
+                    case 'plugins':
+                        togglePanel(pluginsBtn, pluginsPanel, 'plugins');
+                        break;
+                }
+            } else {
+                // Default to files panel if nothing saved
+                togglePanel(filesBtn, filesPanel, 'files');
+            }
         });
     </script>
 </body>
