@@ -27,7 +27,9 @@
 - ✅ Tab should be localStorage reminded, not populated from URL
 - ✅ Add download button
 - ✅ Made quick draft for outputjson
-- Test `isRegex`
+- ✅ Removed YAML Button for now
+- ✅ Test `isRegex`
+- ✅ Added 'copy as curl' button
 - Test login 401 flow after hitting ratelimit
 - Test payment flow
 - `basePath` should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
@@ -40,9 +42,9 @@ Focus the blogpost on the modular nature of file processing
 
 # BONUS
 
-- Plugins: at least the API ones from URL should work!
-- PERFORMANCE (Try filter binary early)
+- PERFORMANCE (Try filter on path and extension(binary) early)
 - Needs the whole filetree in the md result with info on tokensize and what was omitted.
+- Plugins: at least the API ones from URL should work!
 
 # `FAQ.json`
 

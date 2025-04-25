@@ -5,6 +5,14 @@ document.addEventListener("DOMContentLoaded", function () {
   // Create and populate the search content
   function loadSearchContent() {
     searchContent.innerHTML = `
+
+
+
+<!-- Add this notification element to the body - can be placed at the beginning -->
+<div id="curl-notification" 
+    class="fixed top-4 left-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 transform transition-opacity duration-300 opacity-0 pointer-events-none">
+    Copied to clipboard!
+</div>
       <div class="flex items-center mb-4">
         <h2 class="text-sm font-semibold uppercase">Search</h2>
         <div class="ml-auto flex space-x-2">
@@ -106,6 +114,17 @@ document.addEventListener("DOMContentLoaded", function () {
       Create README Badge
 
   </button></div>
+
+      <!-- Add this button next to the "Create README Badge" button -->
+<button id="copy-as-curl-btn"
+    class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+    </svg>
+    Copy as cURL
+</button>
     `;
 
     // Get DOM elements
@@ -481,6 +500,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Initialize by loading search params from URL
     loadSearchParamsFromURL();
+
+    document
+      .getElementById("copy-as-curl-btn")
+      .addEventListener("click", function () {
+        const curlCommand = `curl -H 'Authorization: Bearer YOUR_API_KEY' "${location.href}"`;
+
+        // Copy to clipboard
+        navigator.clipboard
+          .writeText(curlCommand)
+          .then(() => {
+            // Show notification
+            const notification = document.getElementById("curl-notification");
+            notification.classList.remove("opacity-0");
+            notification.classList.add("opacity-100");
+
+            // Hide notification after 2 seconds
+            setTimeout(() => {
+              notification.classList.remove("opacity-100");
+              notification.classList.add("opacity-0");
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error("Failed to copy: ", err);
+          });
+      });
   }
 
   // Load the search content

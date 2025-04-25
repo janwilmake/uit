@@ -252,17 +252,20 @@ export default {
     );
 
     const requestLimit = !is_authenticated
-      ? 5
+      ? // Logged out should get 5 requests per hour, then login first.
+        5
       : (balance || 0) < -1
-      ? 10
-      : undefined;
+      ? // after spending more than a dollar, ratelimit is 10 per hour
+        10
+      : // for now 100 per hour max until I got pricing
+        100;
 
     console.log("middleware 1:", Date.now() - t + "ms");
 
     const ratelimited = requestLimit
       ? await ratelimit(request, env, {
           requestLimit,
-          resetIntervalMs: 3600000,
+          resetIntervalMs: 3600 * 1000,
         })
       : undefined;
 
