@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "mime-db": "^1.54.0"
+    "mime-db": "^1.54.0",
+    "minimatch": "^10.0.1"
   },
   "devDependencies": {
     "@types/mime-db": "^1.43.5"

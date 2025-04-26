@@ -1,4 +1,26 @@
+// Import minimatch for glob pattern matching
+import { minimatch } from "minimatch";
+
 import map from "./public/ext-to-mime.json";
+
+// Helper functions for path normalization
+const prependSlash = (path: string) =>
+  path.startsWith("/") ? path : "/" + path;
+const surroundSlash = (path: string) =>
+  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
+const withoutSlash = (path: string) =>
+  path.startsWith("/") ? path.slice(1) : path;
+
+// Define a FilterOptions interface
+interface FilterOptions {
+  omitFirstSegment?: boolean;
+  basePath?: string[];
+  pathPatterns?: string[];
+  excludePathPatterns?: string[];
+  maxFileSize?: number;
+  omitBinary?: boolean;
+  enableFuzzyMatching?: boolean;
+}
 
 type Env = { CREDENTIALS: string };
 export default {
@@ -24,23 +46,26 @@ export default {
     const omitFirstSegment =
       url.searchParams.get("omitFirstSegment") === "true";
     const rawUrlPrefix = url.searchParams.get("rawUrlPrefix");
+    const enableFuzzyMatching =
+      url.searchParams.get("enableFuzzyMatching") === "true";
+    const omitBinary = url.searchParams.get("omitBinary") === "true";
+    const basePath = url.searchParams.getAll("basePath");
+    const pathPatterns = url.searchParams.getAll("pathPatterns");
+    const excludePathPatterns = url.searchParams.getAll("excludePathPatterns");
+    const maxFileSizeQuery = url.searchParams.get("maxFileSize");
+    const maxFileSize =
+      maxFileSizeQuery && !isNaN(Number(maxFileSizeQuery))
+        ? Number(maxFileSizeQuery)
+        : undefined;
 
     try {
-      const headers = new Headers();
-      headers.set("User-Agent", "Cloudflare-Worker");
+      const headers = new Headers({ "User-Agent": "Cloudflare-Worker" });
       const authHeader = request.headers.get("x-source-authorization");
-
       if (authHeader) {
         headers.set("Authorization", authHeader);
       }
 
       const archiveResponse = await fetch(zipUrl, { headers });
-      console.log({
-        zipUrl,
-        authHeader,
-        ok: archiveResponse.ok,
-        status: archiveResponse.status,
-      });
 
       if (!archiveResponse.ok || !archiveResponse.body) {
         return new Response(
@@ -65,14 +90,17 @@ export default {
       // Process ZIP and create multipart stream
       const { readable, writable } = new TransformStream();
 
-      processZipToMultipart(
-        archiveResponse.body,
-        writable,
+      processZipToMultipart(archiveResponse.body, writable, {
         boundary,
         omitFirstSegment,
         rawUrlPrefix,
-        zipUrl,
-      );
+        basePath,
+        enableFuzzyMatching,
+        omitBinary,
+        maxFileSize,
+        excludePathPatterns,
+        pathPatterns,
+      });
 
       // Return the multipart stream response
       return new Response(readable, {
@@ -130,23 +158,53 @@ function processFilePath(fileName: string, omitFirstSegment: boolean): string {
   return "/" + parts.slice(1).join("/");
 }
 
-// Process the ZIP archive and convert it to multipart/form-data stream
+/**
+ * Process the ZIP archive and convert it to multipart/form-data stream,
+ * with optimized filtering at the ZIP reader level.
+ */
 async function processZipToMultipart(
   zipStream: ReadableStream,
   output: WritableStream,
-  boundary: string,
-  omitFirstSegment: boolean,
-  rawUrlPrefix: string | null,
-  zipUrl: string,
+  config: {
+    boundary: string;
+    omitFirstSegment: boolean;
+    rawUrlPrefix: string | null;
+    basePath: string[] | undefined;
+    pathPatterns: string[] | undefined;
+    excludePathPatterns: string[] | undefined;
+    enableFuzzyMatching: boolean;
+    omitBinary: boolean;
+    maxFileSize: number | undefined;
+  },
 ): Promise<void> {
+  const {
+    boundary,
+    omitFirstSegment,
+    rawUrlPrefix,
+    basePath,
+    enableFuzzyMatching,
+    excludePathPatterns,
+    omitBinary,
+    pathPatterns,
+    maxFileSize,
+  } = config;
+
   const writer = output.getWriter();
-  const zipReader = new ZipStreamReader(zipStream);
+
+  // Pass filter options to ZipStreamReader for early filtering
+  const zipReader = new ZipStreamReader(zipStream, {
+    omitFirstSegment,
+    basePath,
+    pathPatterns,
+    excludePathPatterns,
+    maxFileSize,
+    omitBinary,
+    enableFuzzyMatching,
+  });
 
   try {
     // Process the ZIP entries
     await zipReader.readEntries(async (entry) => {
-      if (entry.isDirectory) return; // Skip directories
-
       try {
         // Process file path if needed
         const processedPath = processFilePath(entry.fileName, omitFirstSegment);
@@ -181,8 +239,13 @@ async function processZipToMultipart(
         // Determine if content is binary
         const isBinary = !isUtf8(content);
 
+        // Skip binary files if omitBinary is true
+        if (omitBinary && isBinary) {
+          return;
+        }
+
         // Check if we should use raw URL for binary content
-        if (rawUrlPrefix && isBinary && isBinary) {
+        if (rawUrlPrefix && isBinary) {
           // For binary files with rawUrlPrefix, add x-url header instead of content
           const rawUrl = `${rawUrlPrefix}${processedPath}`;
           await writer.write(encoder.encode(`x-url: ${rawUrl}\r\n`));
@@ -239,7 +302,6 @@ async function getContentAndHash(
 ): Promise<{ content: Uint8Array; hash: string }> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
-  const hash = await crypto.subtle.digest("SHA-256", new Uint8Array());
 
   while (true) {
     const { done, value } = await reader.read();
@@ -270,12 +332,14 @@ async function getContentAndHash(
   return { content, hash: hashHex };
 }
 
-// ZipStreamReader class to process ZIP files
+// ZipStreamReader class to process ZIP files with early filtering
 class ZipStreamReader {
   private stream: ReadableStream;
+  private filterOptions: FilterOptions;
 
-  constructor(stream: ReadableStream) {
+  constructor(stream: ReadableStream, filterOptions?: FilterOptions) {
     this.stream = stream;
+    this.filterOptions = filterOptions || {};
   }
 
   async readEntries(
@@ -351,6 +415,17 @@ class ZipStreamReader {
           // Determine if it's a directory (ends with /)
           const isDirectory = fileName.endsWith("/");
 
+          // Apply early filtering - skip files that don't match criteria
+          if (
+            !this.shouldProcessFile(fileName, isDirectory, uncompressedSize)
+          ) {
+            // Skip to the next entry
+            const dataPosition =
+              position + 30 + fileNameLength + extraFieldLength;
+            position = dataPosition + compressedSize;
+            continue;
+          }
+
           // Calculate data position and size
           const dataPosition =
             position + 30 + fileNameLength + extraFieldLength;
@@ -404,5 +479,112 @@ class ZipStreamReader {
       // Keep any remaining data for next iteration
       buffer = buffer.slice(position);
     }
+  }
+
+  private shouldProcessFile(
+    fileName: string,
+    isDirectory: boolean,
+    size?: number,
+  ): boolean {
+    if (isDirectory) return false; // Skip directories
+
+    const {
+      omitFirstSegment,
+      basePath,
+      pathPatterns,
+      excludePathPatterns,
+      maxFileSize,
+    } = this.filterOptions;
+
+    // Process the path with omitFirstSegment if needed
+    const processedPath = omitFirstSegment
+      ? processFilePath(fileName, true)
+      : fileName;
+
+    // Check maxFileSize filter
+    if (maxFileSize !== undefined && size !== undefined && size > maxFileSize) {
+      return false;
+    }
+
+    // Check base path filter
+    if (basePath && basePath.length > 0) {
+      const matchesBasePath = basePath.some((base) => {
+        // Normalize base path and filename for directory matching
+        const normalizedBase = surroundSlash(base);
+        const normalizedFilename = surroundSlash(processedPath);
+        return normalizedFilename.startsWith(normalizedBase);
+      });
+
+      if (!matchesBasePath) {
+        return false;
+      }
+    }
+
+    // Apply inclusion patterns if defined
+    let included = true;
+    if (pathPatterns && pathPatterns.length > 0) {
+      const matchesPattern = pathPatterns.some((pattern) => {
+        // Special handling for patterns that start with "*" to match basename
+        if (pattern.startsWith("*")) {
+          const basename = processedPath.split("/").pop() || "";
+          if (minimatch(basename, pattern, { dot: true })) {
+            return true;
+          }
+        }
+
+        // Standard pattern matching
+        if (minimatch(withoutSlash(processedPath), pattern, { dot: true })) {
+          return true;
+        }
+
+        // VSCode-like behavior: treat patterns without glob characters as directory prefixes
+        if (!pattern.includes("*") && !pattern.includes("?")) {
+          return minimatch(withoutSlash(processedPath), `${pattern}/**`, {
+            dot: true,
+          });
+        }
+
+        return false;
+      });
+
+      if (!matchesPattern) {
+        included = false;
+      }
+    }
+
+    // Apply exclusion patterns
+    let excluded = false;
+    if (excludePathPatterns && excludePathPatterns.length > 0) {
+      const matchesExcludePattern = excludePathPatterns.some((pattern) => {
+        // Special handling for patterns that start with "*" to match basename
+        if (pattern.startsWith("*")) {
+          const basename = processedPath.split("/").pop() || "";
+          if (minimatch(basename, pattern, { dot: true })) {
+            return true;
+          }
+        }
+
+        // Standard pattern matching
+        if (minimatch(withoutSlash(processedPath), pattern, { dot: true })) {
+          return true;
+        }
+
+        // VSCode-like behavior: treat patterns without glob characters as directory prefixes
+        if (!pattern.includes("*") && !pattern.includes("?")) {
+          return minimatch(withoutSlash(processedPath), `${pattern}/**`, {
+            dot: true,
+          });
+        }
+
+        return false;
+      });
+
+      if (matchesExcludePattern) {
+        excluded = true;
+      }
+    }
+
+    // If file is both included and excluded, exclusion takes precedence
+    return included && !excluded;
   }
 }
