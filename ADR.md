@@ -170,3 +170,9 @@ Based on what should features require pay-as-you-go
 The premium features should require deposit of $50
 
 Also add button to unlock for entire organisation/owner (contact me)
+
+# UIT vs. ActionSchema
+
+Actionschema was json-based and because of it, it got the side effects of state at arbitrary public urls. this protocol potentially removes this problem using the formdata standard, while also making things stream through more easily, by design. They're two different beasts that solve the problem in different ways.
+
+Let's lay them against each other and figure out how they measure up and how we can get the best of both worlds, in one.

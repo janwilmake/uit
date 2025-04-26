@@ -1,6 +1,5 @@
-// Import minimatch for glob pattern matching
-import { minimatch } from "minimatch";
-
+// Import picomatch for glob pattern matching
+import picomatch from "picomatch";
 import map from "./public/ext-to-mime.json";
 
 // Helper functions for path normalization
@@ -37,7 +36,7 @@ export default {
 
     // Parse URL and query parameters
     const url = new URL(request.url);
-    const zipUrl = url.pathname.slice(1);
+    const zipUrl = decodeURIComponent(url.pathname.slice(1));
     if (!zipUrl) {
       return new Response("No ZIP URL provided", { status: 400 });
     }
@@ -156,6 +155,85 @@ function processFilePath(fileName: string, omitFirstSegment: boolean): string {
   if (parts.length <= 1) return fileName;
 
   return "/" + parts.slice(1).join("/");
+}
+
+/**
+ * Precompile picomatch patterns for faster matching
+ */
+function compileMatchers(options: FilterOptions): CompiledMatchers {
+  // Common picomatch options
+  const picoOptions = {
+    dot: true, // Match dotfiles
+    windows: false, // Use forward slashes (POSIX style)
+  };
+
+  // For each category, create separate matchers for normal patterns and basename patterns
+  const inclusionMatchers = {
+    normal: [] as Array<(path: string) => boolean>,
+    basename: [] as Array<(basename: string) => boolean>,
+  };
+
+  const exclusionMatchers = {
+    normal: [] as Array<(path: string) => boolean>,
+    basename: [] as Array<(basename: string) => boolean>,
+  };
+
+  // Process inclusion patterns
+  if (options.pathPatterns && options.pathPatterns.length > 0) {
+    for (const pattern of options.pathPatterns) {
+      if (pattern.startsWith("*")) {
+        // Compile basename matchers
+        inclusionMatchers.basename.push(picomatch(pattern, picoOptions));
+      } else if (!pattern.includes("*") && !pattern.includes("?")) {
+        // VSCode-like behavior for non-glob patterns
+        inclusionMatchers.normal.push(picomatch(`${pattern}/**`, picoOptions));
+      } else {
+        // Standard pattern matching
+        inclusionMatchers.normal.push(picomatch(pattern, picoOptions));
+      }
+    }
+  }
+
+  // Process exclusion patterns
+  if (options.excludePathPatterns && options.excludePathPatterns.length > 0) {
+    for (const pattern of options.excludePathPatterns) {
+      if (pattern.startsWith("*")) {
+        // Compile basename matchers
+        exclusionMatchers.basename.push(picomatch(pattern, picoOptions));
+      } else if (!pattern.includes("*") && !pattern.includes("?")) {
+        // VSCode-like behavior for non-glob patterns
+        exclusionMatchers.normal.push(picomatch(`${pattern}/**`, picoOptions));
+      } else {
+        // Standard pattern matching
+        exclusionMatchers.normal.push(picomatch(pattern, picoOptions));
+      }
+    }
+  }
+
+  return {
+    inclusionMatchers,
+    exclusionMatchers,
+    hasInclusion:
+      inclusionMatchers.normal.length > 0 ||
+      inclusionMatchers.basename.length > 0,
+    hasExclusion:
+      exclusionMatchers.normal.length > 0 ||
+      exclusionMatchers.basename.length > 0,
+  };
+}
+
+// Updated CompiledMatchers interface
+interface CompiledMatchers {
+  inclusionMatchers: {
+    normal: Array<(path: string) => boolean>;
+    basename: Array<(basename: string) => boolean>;
+  };
+  exclusionMatchers: {
+    normal: Array<(path: string) => boolean>;
+    basename: Array<(basename: string) => boolean>;
+  };
+  hasInclusion: boolean;
+  hasExclusion: boolean;
 }
 
 /**
@@ -336,10 +414,14 @@ async function getContentAndHash(
 class ZipStreamReader {
   private stream: ReadableStream;
   private filterOptions: FilterOptions;
+  private matchers: CompiledMatchers;
 
   constructor(stream: ReadableStream, filterOptions?: FilterOptions) {
     this.stream = stream;
     this.filterOptions = filterOptions || {};
+
+    // Precompile all matchers once during initialization
+    this.matchers = compileMatchers(this.filterOptions);
   }
 
   async readEntries(
@@ -488,13 +570,7 @@ class ZipStreamReader {
   ): boolean {
     if (isDirectory) return false; // Skip directories
 
-    const {
-      omitFirstSegment,
-      basePath,
-      pathPatterns,
-      excludePathPatterns,
-      maxFileSize,
-    } = this.filterOptions;
+    const { omitFirstSegment, basePath, maxFileSize } = this.filterOptions;
 
     // Process the path with omitFirstSegment if needed
     const processedPath = omitFirstSegment
@@ -520,71 +596,58 @@ class ZipStreamReader {
       }
     }
 
+    // Extract basename once for potential basename pattern matching
+    const basename = processedPath.split("/").pop() || "";
+    const normalizedPath = withoutSlash(processedPath);
+
     // Apply inclusion patterns if defined
     let included = true;
-    if (pathPatterns && pathPatterns.length > 0) {
-      const matchesPattern = pathPatterns.some((pattern) => {
-        // Special handling for patterns that start with "*" to match basename
-        if (pattern.startsWith("*")) {
-          const basename = processedPath.split("/").pop() || "";
-          if (minimatch(basename, pattern, { dot: true })) {
-            return true;
-          }
-        }
+    if (this.matchers.hasInclusion) {
+      // Check normal patterns
+      const matchesNormalPattern = this.matchers.inclusionMatchers.normal.some(
+        (matcher) => matcher(normalizedPath),
+      );
 
-        // Standard pattern matching
-        if (minimatch(withoutSlash(processedPath), pattern, { dot: true })) {
-          return true;
-        }
+      // Check basename patterns
+      const matchesBasenamePattern =
+        this.matchers.inclusionMatchers.basename.some((matcher) =>
+          matcher(basename),
+        );
 
-        // VSCode-like behavior: treat patterns without glob characters as directory prefixes
-        if (!pattern.includes("*") && !pattern.includes("?")) {
-          return minimatch(withoutSlash(processedPath), `${pattern}/**`, {
-            dot: true,
-          });
-        }
+      // File is included if it matches either type of pattern
+      included = matchesNormalPattern || matchesBasenamePattern;
+    }
 
-        return false;
-      });
-
-      if (!matchesPattern) {
-        included = false;
-      }
+    // If not included, no need to check exclusion
+    if (!included) {
+      return false;
     }
 
     // Apply exclusion patterns
-    let excluded = false;
-    if (excludePathPatterns && excludePathPatterns.length > 0) {
-      const matchesExcludePattern = excludePathPatterns.some((pattern) => {
-        // Special handling for patterns that start with "*" to match basename
-        if (pattern.startsWith("*")) {
-          const basename = processedPath.split("/").pop() || "";
-          if (minimatch(basename, pattern, { dot: true })) {
-            return true;
-          }
-        }
+    if (this.matchers.hasExclusion) {
+      // Check normal patterns
+      const matchesNormalExcludePattern =
+        this.matchers.exclusionMatchers.normal.some((matcher) =>
+          matcher(normalizedPath),
+        );
 
-        // Standard pattern matching
-        if (minimatch(withoutSlash(processedPath), pattern, { dot: true })) {
-          return true;
-        }
+      // Check basename patterns
+      const matchesBasenameExcludePattern =
+        this.matchers.exclusionMatchers.basename.some((matcher) =>
+          matcher(basename),
+        );
 
-        // VSCode-like behavior: treat patterns without glob characters as directory prefixes
-        if (!pattern.includes("*") && !pattern.includes("?")) {
-          return minimatch(withoutSlash(processedPath), `${pattern}/**`, {
-            dot: true,
-          });
-        }
+      // File is excluded if it matches either type of exclusion pattern
+      const excluded =
+        matchesNormalExcludePattern || matchesBasenameExcludePattern;
 
+      // If excluded, it takes precedence over inclusion
+      if (excluded) {
         return false;
-      });
-
-      if (matchesExcludePattern) {
-        excluded = true;
       }
     }
 
-    // If file is both included and excluded, exclusion takes precedence
-    return included && !excluded;
+    // If we reach this point, the file should be processed
+    return true;
   }
 }

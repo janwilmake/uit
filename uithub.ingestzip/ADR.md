@@ -52,3 +52,7 @@ Looking at the picomatch code, I think it's an excellent choice for your gitigno
 5. **Compatible with Your Requirements**:
    - Can efficiently scan many files (100k+) against multiple patterns
    - API is designed for reusing compiled patterns
+
+# Efficiency of my zip stream implementation
+
+https://claude.ai/share/9b094feb-bcb7-4f79-af7e-29eda292ee8b

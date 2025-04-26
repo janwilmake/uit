@@ -4,55 +4,29 @@
 2. ✅ Rename all of zipobject to uithub. uithub means 'universal information terminal hub'
 3. ✅ Let's show some ppl/ais and figure out what to do next! (did this until april 20, 2025)
 4. ✅ Deploy to uuithub.com
-5.  Launch (Friday, april 25th, 6PM)
-6. As usable as v1
-7. Create blogpost / announcement thread, DM influencers
-8. Plugins that I already have, accessible for free.
-9. FAQ
-10. Genignore
+5. ✅ Announcement (Friday, april 25th, 6PM)
+6. Critical stuff
+7. UI enhancement
+8. Make plugins work
+9. `FAQ.json`
+10. `.genignore`
+11. Implement `uithub.otp` and use it in `uithub.ingestzip`
+12. Implement `monetaryurl` and use it everywhere
+13. Implement useful plugins!!! Make the footprint of a plugin as simple as possible without loosing capability. E.g. also allow file=>file.
+14. Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
 
-**After launch**
+## Critical stuff
 
-1.  Implement `uithub.otp` and use it in `uithub.ingestzip`
-2.  Implement `monetaryurl` and use it everywhere
-3.  Implement useful plugins!!!
-4.  Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
-
-# 2025-04-25 (FEEDBACK)
-
-- ✅ Improved plugins tab
-- ✅ Improved overal layout
-- ✅ Improved search tab
-- ✅ 'No results' warning: 'No results. Please check your filters'
-- ✅ Tab should be localStorage reminded, not populated from URL
-- ✅ Add download button
-- ✅ Made quick draft for outputjson
-- ✅ Removed YAML Button for now
-- ✅ Test `isRegex`
-- ✅ Added 'copy as curl' button
-- ✅ Test login 401 flow after hitting ratelimit. 
-- ✅ Identified private repo problem. Fix tree error!!!
-- ✅ Fixed branch bug when logged in
-- ✅ Private repo not working; https://uuithub.com/janwilmake/forgithub.activity. Add repo scope!
-
-## Critical before launch
-
+- ❗️ PERFORMANCE (Try filter on path and extension(binary) early). If a file can be filtered out without loading the file itself, that must be done! I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match. Try https://uithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs vs https://uuithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs. Must be AS FAST!!! 
+- ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
 - ❗️ Tested paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
-- ❗️ PERFORMANCE (Try filter on path and extension(binary) early). If a file can be filtered out without loading the file itself, that must be done! I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match.
 - ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted.
-- ❗️ Plugins: at least the API ones from URL should work!
 
 # UI Enhancements 
 
 - In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not. Then, In uithub UI (`vscode.html`), add filter warning if tokens were capped that says "apply filters for better results".
 - `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
 - `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.
-
-# BLOGPOST (start 3PM++)
-
-Focus the blogpost on the modular nature of file processing.
-
-![](process-formdata.drawio.png)
 
 # Genignore UI old github
 

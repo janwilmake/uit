@@ -743,3 +743,20 @@ Sha url can't be used for edit link, must be branch!
 
 - ✅ Solved all major problems found in initial feedback (see [ADR](ADR.md))
 - ✅ Make `GETTING-STARTED.md` guide
+
+# 2025-04-25 (FEEDBACK)
+
+- ✅ Improved plugins tab
+- ✅ Improved overal layout
+- ✅ Improved search tab
+- ✅ 'No results' warning: 'No results. Please check your filters'
+- ✅ Tab should be localStorage reminded, not populated from URL
+- ✅ Add download button
+- ✅ Made quick draft for outputjson
+- ✅ Removed YAML Button for now
+- ✅ Test `isRegex`
+- ✅ Added 'copy as curl' button
+- ✅ Test login 401 flow after hitting ratelimit.
+- ✅ Identified private repo problem. Fix tree error!!!
+- ✅ Fixed branch bug when logged in
+- ✅ Private repo not working; https://uuithub.com/janwilmake/forgithub.activity. Add repo scope!
