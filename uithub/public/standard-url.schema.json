@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "sourceType": { "type": "string" },
+    "sourceUrl": { "type": "string" },
+    "primarySourceSegment": { "type": "string" },
+    "pluginId": { "type": "string" },
+    "secondarySourceSegment": { "type": "string" },
+    "basePath": { "type": "string" },
+    "ext": { "type": "string" }
+  }
+}

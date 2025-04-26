@@ -1,3 +1,13 @@
+# uithub router
+
+uithub brings the UIT protocol to the browser by routing any URL structure to the right source, plugin, and query params. This allows uithub to view context for any domain.
+
+![](router.drawio.png)
+
+Anyone can create a website-router to become viewable by uithub. Your domain specific router should mirror the URL structure of the original domain (e.g. github -> uithub, x -> xymake) and map the URL to a StandardURL JSON Response. See [standard-url.schema.json](public/standard-url.schema.json) for the specification.
+
+# notes
+
 github.com/owner/repo/page/branch/...subpath
 
 npmjs.com/package/@owner/package

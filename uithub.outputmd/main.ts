@@ -221,7 +221,7 @@ export default {
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("multipart/form-data")) {
         return new Response(
-          "The provided URL does not contain multipart form data",
+          `The provided URL (${formDataUrl}) does not contain multipart form data `,
           { status: 400 },
         );
       }

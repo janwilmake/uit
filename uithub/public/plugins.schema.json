@@ -33,8 +33,8 @@
 
           "type": {
             "type": "string",
-            "enum": ["api", "formdata-transformer"],
-            "description": "The type of plugin:\n\n- **api**: Should be a GET API in format /owner/repo[/page/branch[/...path]] that takes no query parameters, and responds with the desired content-type.\n- **formdata-transformer**: Should be a FormData transformer.\n"
+            "enum": ["api", "formdata-transformer", "ingest"],
+            "description": "The type of plugin:\n\n- **api**: Should be a GET API in format /owner/repo[/page/branch[/...path]] that takes no query parameters, and responds with the desired content-type.\n- **formdata-transformer**: Should be a FormData transformer.\n- **ingest**: Should be an API that returns something that would be the source.\n"
           },
 
           "icon": {

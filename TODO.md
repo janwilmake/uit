@@ -7,7 +7,7 @@
 5. ✅ Announcement (Friday, april 25th, 6PM)
 6. Critical stuff
 7. UI enhancement
-8. Make plugins work
+8. Plugins POC
 9. `FAQ.json`
 10. `.genignore`
 11. Implement `uithub.otp` and use it in `uithub.ingestzip`
@@ -15,13 +15,13 @@
 13. Implement useful plugins!!! Make the footprint of a plugin as simple as possible without loosing capability. E.g. also allow file=>file.
 14. Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
 
-## Critical stuff
+# Critical stuff
 
-- ✅ PERFORMANCE (Try filter on path and extension(binary) early). If a file can be filtered out without loading the file itself, that must be done! I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match. Try https://uithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs vs https://uuithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs. Must be AS FAST!!! 
-- Clean up ingestzip; needs proper binary filter on paths as well as content.
-- ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
+- Clean up ingestzip; needs proper binary filter on paths as well as content. May need a few more minor improvements.
 - ❗️ Tested paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
-- ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted.
+- ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted. Let's make this good.
+
+Let's focus on this, making uuithub actually better than the v1.
 
 # UI Enhancements 
 
@@ -43,7 +43,14 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 
 # `FAQ.json`
 
-- ✅ Make a schema for it; answers would be instantly answerable by LLM
-- ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
-- Uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
+- uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
 - In uithub interface, FAQs should be easily accessible if the file is present (probably in search tab)
+
+# Plugins
+
+- Make `ingestjson.uithub.com` so all the apis make sense!
+- Also figure out how to nail navigation.
+- Also try the "api" datatype which just passes each file that fits the mediatype to the endpoint according to some convention. ActionSchema!
+- Make `domains.json` function
+- Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
+- ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.

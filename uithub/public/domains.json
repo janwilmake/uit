@@ -1,0 +1,6 @@
+{
+  "github.com": {
+    "mirrorBasepath": "https://router.uithub.com"
+  },
+  "x.com": { "mirrorBasePath": "https://router.xymake.com" }
+}

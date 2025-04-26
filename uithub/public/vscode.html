@@ -245,7 +245,7 @@
                 <div id="formatSelector" class="format-selector">
                     <button id="mdFormat" class="active">MD</button>
                     <button id="jsonFormat">JSON</button>
-                    <!-- <button id="yamlFormat">YAML</button> -->
+                    <button id="formDataFormat">FormData</button>
                     <button id="zipFormat">ZIP</button>
                 </div>
             </div>
@@ -333,7 +333,7 @@
         const mdFormatBtn = document.getElementById('mdFormat');
         const jsonFormatBtn = document.getElementById('jsonFormat');
         const zipFormatBtn = document.getElementById('zipFormat');
-        const yamlFormatBtn = document.getElementById('yamlFormat');
+        const formDataFormatBtn = document.getElementById('formDataFormat');
 
         // Simplified toggle function with no animations, now includes localStorage saving
         function togglePanel(button, panel, panelId) {
@@ -370,15 +370,14 @@
             // Reset all format buttons
             mdFormatBtn.classList.remove('active');
             jsonFormatBtn.classList.remove('active');
-            if (yamlFormatBtn) {
-                yamlFormatBtn.classList.remove('active');
-            }
+            formDataFormatBtn.classList.remove('active');
+
 
             // Set active button based on accept parameter
             if (accept === 'application/json') {
                 jsonFormatBtn.classList.add('active');
-            } else if (accept === 'text/yaml' && yamlFormatBtn) {
-                yamlFormatBtn.classList.add('active');
+            } else if (accept === 'multipart/form-data') {
+                formDataFormatBtn.classList.add('active');
             } else {
                 mdFormatBtn.classList.add('active');
             }
@@ -392,12 +391,9 @@
                 navigateWithAccept('application/json');
             });
 
-            if (yamlFormatBtn) {
-                yamlFormatBtn.addEventListener('click', () => {
-                    navigateWithAccept('text/yaml');
-                });
-
-            }
+            formDataFormatBtn.addEventListener('click', () => {
+                navigateWithAccept('multipart/form-data');
+            });
 
             zipFormatBtn.addEventListener('click', () => {
                 navigateWithAccept('application/zip');

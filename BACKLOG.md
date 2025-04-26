@@ -1,3 +1,13 @@
+# x plugin
+
+1) give context of x threads found in the data
+2) determine the key keyword or keywords that identify this repo
+3) Find the X account(s) linked to the owner (and if that's an organisation, at least the core contributor, but if not, also look at top 50% contributors or so).
+4) Use keywords within context of posts of X accounts to filter out threads that are relevant (without duplication).
+5) Run a search on x with results of people mentioning the keyword(s) to find other mentions about this repo.
+
+All of this should be done respecing privacy and with an xymake configuration in the repo. This will be a challenge, but very cool nonetheless!
+
 # LATER
 
 - Nav highlights: make it possible to see search filters in tree as well by moving this logic to the backend.

@@ -760,3 +760,14 @@ Sha url can't be used for edit link, must be branch!
 - ✅ Identified private repo problem. Fix tree error!!!
 - ✅ Fixed branch bug when logged in
 - ✅ Private repo not working; https://uuithub.com/janwilmake/forgithub.activity. Add repo scope!
+- ✅ Make a schema for FAQ; answers would be instantly answerable by LLM
+- ✅ Create default faq and FAQ.json for `uit` which, currently, just inherits from the default.
+
+# 2025-04-26
+
+- ✅ PERFORMANCE (Try filter on path and extension(binary) early). If a file can be filtered out without loading the file itself, that must be done! I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match.
+- ✅ Try https://uithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs vs https://uuithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs. Must be AS FAST!!!
+- ✅ Add `FormData` to type selector and default to markdown
+- ✅ Ensure the path pattern for domains can be variable on a per-domain basis
+- ✅ Added concept for lists
+- ✅ For uithub, make routing of plugins work. api plugins are basically ingest plugins. Rename that.

@@ -4,7 +4,7 @@
     "issues": {
       "title": "Issues",
       "domain": "github.com",
-      "type": "api",
+      "type": "ingest",
       "endpoint": "https://cache.forgithub.com/{owner}/{repo}/issues",
       "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Loads issues of a repo"
@@ -13,7 +13,7 @@
     "pulls": {
       "title": "Pull Requests",
       "domain": "github.com",
-      "type": "api",
+      "type": "ingest",
       "endpoint": "https://cache.forgithub.com/{owner}/{repo}/pulls",
       "source": "https://github.com/janwilmake/forgithub.cache",
       "description": "Load PRs of a repo"
@@ -22,14 +22,14 @@
     "discussions": {
       "title": "Discussions",
       "domain": "github.com",
-      "type": "api",
+      "type": "ingest",
       "source": "https://github.com/janwilmake/forgithub.cache",
       "endpoint": "https://cache.forgithub.com/{owner}/{repo}/discussions",
       "description": "Load Discussions of a repo"
     },
 
     "branches": {
-      "type": "api",
+      "type": "ingest",
       "description": "Gets last commits and contributor info",
       "endpoint": "https://log.forgithub.com/{owner}/{repo}/branches",
       "source": "https://github.com/janwilmake/forgithub.log",
@@ -38,7 +38,7 @@
     },
 
     "commits": {
-      "type": "api",
+      "type": "ingest",
       "description": "Gets last commits and contributor info",
       "endpoint": "https://log.forgithub.com/{owner}/{repo}/commits",
       "source": "https://github.com/janwilmake/forgithub.log",
@@ -50,14 +50,14 @@
       "title": "Releases",
       "endpoint": "https://log.forgithub.com/{owner}/{repo}/releases",
       "source": "https://github.com/janwilmake/forgithub.log",
-      "type": "api",
+      "type": "ingest",
       "domain": "github.com"
     },
 
     "actions": {
       "title": "Actions",
       "domain": "github.com",
-      "type": "api",
+      "type": "ingest",
       "endpoint": "https://actions.forgithub.com/{owner}/{repo}",
       "source": "https://github.com/janwilmake/forgithub.actions"
     },
@@ -73,7 +73,7 @@
     "typedoc": {
       "title": "Typedoc",
       "description": "Uses typedoc to generate a markdown overview.",
-      "type": "api",
+      "type": "ingest",
       "domain": "github.com",
       "source": "https://github.com/janwilmake/uithub.typedoc",
       "endpoint": "https://typedoc.uithub.com"
@@ -81,7 +81,7 @@
 
     "diagram": {
       "title": "Diagram",
-      "type": "api",
+      "type": "ingest",
       "endpoint": "https://diagram.forgithub.com/{owner}/{repo}",
       "source": "https://github.com/janwilmake/forgithub.diagram",
       "description": "Uses LLMs to generate a diagram for the codebase."
@@ -89,7 +89,7 @@
 
     "questions": {
       "title": "Questions",
-      "type": "api",
+      "type": "ingest",
       "endpoint": "https://questions.forgithub.com/{owner}/{repo}",
       "source": "https://github.com/janwilmake/forgithub.questions",
       "description": "Uses LLMs to come up with useful questions about the repo to chat about."
@@ -97,7 +97,7 @@
 
     "threads": {
       "title": "X Threads",
-      "type": "api",
+      "type": "ingest",
       "domain": "github.com",
       "endpoint": "https://threads.forgithub.com/{owner}/{repo}",
       "source": "https://github.com/janwilmake/forgithub.threads",
@@ -108,27 +108,28 @@
       "title": "Domain",
       "endpoint": "https://domain.uithub.com/{owner}/{repo}",
       "source": "https://github.com/janwilmake/uithub.domain",
-      "type": "api",
+      "type": "ingest",
       "description": "Finds potential hosted domains using config files"
     },
 
     "openapis": {
       "title": "OpenAPIs",
-      "type": "api",
+      "type": "ingest",
       "endpoint": "https://openapis.uithub.com/{owner}/{repo}",
       "source": "https://github.com/janwilmake/uithub.openapis",
       "description": "Finds OpenAPIs in a file system"
     },
+
     "llms.txt": {
       "title": "llms.txt",
-      "type": "api",
+      "type": "ingest",
       "description": "Presents the repo as a flat llms.txt file.",
       "endpoint": "https://llms.uithub.com/{owner}/{repo}/llms.txt",
       "source": "https://github.com/janwilmake/uithub.llms"
     },
     "llms-full.txt": {
       "title": "llms-full.txt",
-      "type": "api",
+      "type": "ingest",
       "description": "Presents the repo as a flat llms-full.txt file.",
       "endpoint": "https://llms.uithub.com/{owner}/{repo}/llms-full.txt",
       "source": "https://github.com/janwilmake/uithub.llms"

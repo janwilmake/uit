@@ -4,6 +4,7 @@
     "moduleResolution": "NodeNext",
     "target": "ES2015",
     "lib": ["ESNext", "DOM"],
+    "resolveJsonModule": true,
     "strict": true
   }
 }
