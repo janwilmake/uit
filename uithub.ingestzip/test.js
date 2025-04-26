@@ -5,9 +5,9 @@ async function testZipProcessor() {
   const githubZipUrl =
     "https://github.com/sam-goodwin/alchemy/archive/refs/heads/main.zip";
 
-  const CREDENTIALS = "";
+  const CREDENTIALS = process.env.CREDENTIALS;
   // Local server URL
-  const serverUrl = "http://localhost:3000";
+  const serverUrl = "https://ingestzip.uithub.com"; // "http://localhost:3000";
 
   // Path we want to extract from the ZIP
   const targetPath = "alchemy-web/docs";

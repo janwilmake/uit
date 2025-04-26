@@ -17,7 +17,8 @@
 
 ## Critical stuff
 
-- ❗️ PERFORMANCE (Try filter on path and extension(binary) early). If a file can be filtered out without loading the file itself, that must be done! I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match. Try https://uithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs vs https://uuithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs. Must be AS FAST!!! 
+- ✅ PERFORMANCE (Try filter on path and extension(binary) early). If a file can be filtered out without loading the file itself, that must be done! I want things to be FAST. it should especially be fast skipping over files we don't need such as binary and files and files for which the path/size doesn't match. Try https://uithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs vs https://uuithub.com/sam-goodwin/alchemy/tree/main/alchemy-web/docs. Must be AS FAST!!! 
+- Clean up ingestzip; needs proper binary filter on paths as well as content.
 - ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
 - ❗️ Tested paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 - ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted.

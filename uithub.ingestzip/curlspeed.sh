@@ -5,4 +5,4 @@ function curlspeed() {
   echo " | Speed: $speed_mb MB/s"
 }
 
-curlspeed "http://localhost:3000/https://github.com/oven-sh/bun/archive/refs/heads/main.zip"
+curlspeed "https://ingestzip.uithub.com/https://github.com/oven-sh/bun/archive/refs/heads/main.zip"

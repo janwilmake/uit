@@ -4,7 +4,10 @@ Implements zip -> multipart/form-data without filters.
 
 # TODO:
 
-Takes 2 minutes for bun. speed can likely be improved down to about 15-40s. see https://claude.ai/share/d4059e61-7ab8-404a-b5cd-f4dc2823101c
+- ✅ Added search filters and replaced minimatch with picomatch for creating precompiled regexes
+- Omit binary based on extension too
+- Implement https://en.wikipedia.org/wiki/Boyer–Moore_string-search_algorithm
+- Takes 2 minutes for bun. speed can likely be improved down to about 15-40s. see https://claude.ai/share/d4059e61-7ab8-404a-b5cd-f4dc2823101c
 
 # Definition
 

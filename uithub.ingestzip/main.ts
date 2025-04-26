@@ -432,134 +432,216 @@ class ZipStreamReader {
       uncompressedSize?: number;
     }) => Promise<void>,
   ): Promise<void> {
-    // Create a reader for the input stream
     const reader = this.stream.getReader();
 
-    // Buffer for collecting bytes
-    let buffer = new Uint8Array(0);
+    // Pre-allocate a buffer but more conservatively
+    let buffer = new Uint8Array(32768); // 32KB initial size
+    let bufferSize = 0;
+    let foundCentralDirectory = false;
 
-    // Process the ZIP file
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    const textDecoder = new TextDecoder();
 
-      // Append new data to buffer
-      const newBuffer = new Uint8Array(buffer.length + value.length);
-      newBuffer.set(buffer);
-      newBuffer.set(value, buffer.length);
-      buffer = newBuffer;
+    try {
+      while (true) {
+        // Fetch more data if buffer is getting low
+        if (bufferSize < 30) {
+          const { done, value } = await reader.read();
+          if (done && bufferSize === 0) break; // No more data and buffer is empty
+          if (done) break;
 
-      // Process entries in the buffer
-      let position = 0;
-
-      while (position + 30 <= buffer.length) {
-        // Minimum local file header size
-        // Check for local file header signature (0x04034b50)
-        if (
-          buffer[position] === 0x50 &&
-          buffer[position + 1] === 0x4b &&
-          buffer[position + 2] === 0x03 &&
-          buffer[position + 3] === 0x04
-        ) {
-          // Extract header information
-          const compressionMethod =
-            buffer[position + 8] | (buffer[position + 9] << 8);
-          const compressedSize =
-            buffer[position + 18] |
-            (buffer[position + 19] << 8) |
-            (buffer[position + 20] << 16) |
-            (buffer[position + 21] << 24);
-          const uncompressedSize =
-            buffer[position + 22] |
-            (buffer[position + 23] << 8) |
-            (buffer[position + 24] << 16) |
-            (buffer[position + 25] << 24);
-          const fileNameLength =
-            buffer[position + 26] | (buffer[position + 27] << 8);
-          const extraFieldLength =
-            buffer[position + 28] | (buffer[position + 29] << 8);
-
-          // Check if we have enough data to read the filename
-          if (
-            position + 30 + fileNameLength + extraFieldLength >
-            buffer.length
-          ) {
-            break; // Wait for more data
+          // Resize buffer if needed
+          if (bufferSize + value.length > buffer.length) {
+            const newBuffer = new Uint8Array(
+              Math.max(buffer.length * 2, bufferSize + value.length),
+            );
+            newBuffer.set(buffer.subarray(0, bufferSize));
+            buffer = newBuffer;
           }
 
-          // Extract filename
-          const fileNameBytes = buffer.slice(
-            position + 30,
-            position + 30 + fileNameLength,
-          );
-          const fileName = new TextDecoder().decode(fileNameBytes);
+          // Append new data
+          buffer.set(value, bufferSize);
+          bufferSize += value.length;
+          continue; // Re-evaluate with new data
+        }
 
-          // Determine if it's a directory (ends with /)
-          const isDirectory = fileName.endsWith("/");
+        let position = 0;
+        let processedEntries = false;
 
-          // Apply early filtering - skip files that don't match criteria
+        // Process entries while we have enough data
+        while (position + 30 <= bufferSize) {
+          // Check for local file header signature (0x04034b50)
           if (
-            !this.shouldProcessFile(fileName, isDirectory, uncompressedSize)
+            buffer[position] === 0x50 &&
+            buffer[position + 1] === 0x4b &&
+            buffer[position + 2] === 0x03 &&
+            buffer[position + 3] === 0x04
           ) {
-            // Skip to the next entry
+            // Extract header information
+            const compressionMethod =
+              buffer[position + 8] | (buffer[position + 9] << 8);
+            const compressedSize =
+              buffer[position + 18] |
+              (buffer[position + 19] << 8) |
+              (buffer[position + 20] << 16) |
+              (buffer[position + 21] << 24);
+            const uncompressedSize =
+              buffer[position + 22] |
+              (buffer[position + 23] << 8) |
+              (buffer[position + 24] << 16) |
+              (buffer[position + 25] << 24);
+            const fileNameLength =
+              buffer[position + 26] | (buffer[position + 27] << 8);
+            const extraFieldLength =
+              buffer[position + 28] | (buffer[position + 29] << 8);
+
+            // Validate sizes to avoid overflow
+            if (
+              fileNameLength < 0 ||
+              extraFieldLength < 0 ||
+              compressedSize < 0
+            ) {
+              console.log("Invalid entry");
+              // Invalid entry, skip forward
+              position++;
+              continue;
+            }
+
+            // Check if we have enough data for the complete entry
+            const totalEntrySize =
+              30 + fileNameLength + extraFieldLength + compressedSize;
+            if (position + totalEntrySize > bufferSize) {
+              break; // Wait for more data
+            }
+
+            // Extract filename
+            const fileNameStart = position + 30;
+            const fileNameEnd = fileNameStart + fileNameLength;
+            if (fileNameEnd > bufferSize) {
+              break; // Not enough data, wait for more
+            }
+
+            const fileName = textDecoder.decode(
+              buffer.subarray(fileNameStart, fileNameEnd),
+            );
+            const isDirectory = fileName.endsWith("/");
+
+            // Apply filtering
+            if (
+              !this.shouldProcessFile(fileName, isDirectory, uncompressedSize)
+            ) {
+              position += totalEntrySize;
+              processedEntries = true;
+              continue;
+            }
+
+            // Calculate data position
             const dataPosition =
               position + 30 + fileNameLength + extraFieldLength;
-            position = dataPosition + compressedSize;
-            continue;
-          }
+            if (dataPosition + compressedSize > bufferSize) {
+              break; // Not enough data, wait for more
+            }
 
-          // Calculate data position and size
-          const dataPosition =
-            position + 30 + fileNameLength + extraFieldLength;
-
-          // Check if we have the complete file data
-          if (dataPosition + compressedSize > buffer.length) {
-            break; // Wait for more data
-          }
-
-          // Extract and process file data
-          const compressedData = buffer.slice(
-            dataPosition,
-            dataPosition + compressedSize,
-          );
-
-          // Create a ReadableStream from the compressed data
-          const compressedStream = new ReadableStream({
-            start(controller) {
-              controller.enqueue(compressedData);
-              controller.close();
-            },
-          });
-
-          // Decompress if needed
-          let fileDataStream;
-          if (compressionMethod === 8) {
-            // DEFLATE
-            fileDataStream = compressedStream.pipeThrough(
-              new DecompressionStream("deflate-raw"),
+            // Extract the compressed data - we need to copy here to ensure data safety
+            const compressedData = new Uint8Array(compressedSize);
+            compressedData.set(
+              buffer.subarray(dataPosition, dataPosition + compressedSize),
             );
+
+            // Create stream from the data
+            const compressedStream = new ReadableStream({
+              start(controller) {
+                controller.enqueue(compressedData);
+                controller.close();
+              },
+            });
+
+            // Determine final stream (decompress if needed)
+            let fileDataStream;
+            if (compressionMethod === 8) {
+              fileDataStream = compressedStream.pipeThrough(
+                new DecompressionStream("deflate-raw"),
+              );
+            } else {
+              fileDataStream = compressedStream;
+            }
+
+            // Process the entry
+            await callback({
+              fileName,
+              isDirectory,
+              fileData: fileDataStream,
+              uncompressedSize,
+            });
+
+            position += totalEntrySize;
+            processedEntries = true;
+          } else if (
+            buffer[position] === 0x50 &&
+            buffer[position + 1] === 0x4b &&
+            buffer[position + 2] === 0x01 &&
+            buffer[position + 3] === 0x02
+          ) {
+            foundCentralDirectory = true;
+            console.log("FOUND CENTRAL DIRECtORY");
+            // We've reached the central directory, which means we're done with file data
+            // You might want to break out of the processing loop or handle accordingly
+            break;
           } else {
-            fileDataStream = compressedStream;
+            // Not a valid header, move forward
+            position++;
+          }
+        }
+
+        if (foundCentralDirectory) {
+          // Explicitly cancel the reader before releasing lock
+          try {
+            await reader.cancel();
+          } catch (e) {
+            console.log("Error canceling reader:", e);
+          }
+          reader.releaseLock();
+          break;
+        }
+
+        // Compact the buffer if we processed any entries
+        if (position > 0) {
+          // Only copy remaining data if there's anything left
+          if (position < bufferSize) {
+            buffer.copyWithin(0, position, bufferSize);
+          }
+          bufferSize -= position;
+        }
+
+        // If we didn't process any entries and couldn't find a header,
+        // we might have incomplete data at the start, so get more data
+        if (!processedEntries && bufferSize >= 30) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Ensure buffer is large enough
+          if (bufferSize + value.length > buffer.length) {
+            const newSize = Math.max(
+              buffer.length * 2,
+              bufferSize + value.length,
+            );
+            console.log({ newSize });
+            const newBuffer = new Uint8Array(newSize);
+            newBuffer.set(buffer.subarray(0, bufferSize));
+            buffer = newBuffer;
           }
 
-          // Pass entry to callback
-          await callback({
-            fileName,
-            isDirectory,
-            fileData: fileDataStream,
-            uncompressedSize,
-          });
-
-          // Move position past this entry
-          position = dataPosition + compressedSize;
-        } else {
-          // Not at a local file header, move forward and keep looking
-          position++;
+          // Append new data
+          buffer.set(value, bufferSize);
+          bufferSize += value.length;
         }
       }
-
-      // Keep any remaining data for next iteration
-      buffer = buffer.slice(position);
+    } catch (error) {
+      console.error("Error in readEntries:", error);
+      reader.releaseLock();
+      throw error;
+    } finally {
+      // Make sure to release the lock in all cases
+      reader.releaseLock();
     }
   }
 
@@ -582,6 +664,7 @@ class ZipStreamReader {
       return false;
     }
 
+    // console.log({ processedPath });
     // Check base path filter
     if (basePath && basePath.length > 0) {
       const matchesBasePath = basePath.some((base) => {
@@ -591,6 +674,7 @@ class ZipStreamReader {
         return normalizedFilename.startsWith(normalizedBase);
       });
 
+      console.log(processedPath, { matchesBasePath });
       if (!matchesBasePath) {
         return false;
       }
