@@ -4,7 +4,7 @@ I'm using https://github.com/isaacs/minimatch/tree/main/src
 
 Claude suggests to search for a faster alternative:
 
-https://claude.ai/share/74ffea85-a55a-44ec-b0aa-ba137de3af07
+https://claude.ai/share/b54c0d45-8ed0-4bab-98f3-03ec4339dcf3
 
 These came up:
 
