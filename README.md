@@ -57,18 +57,28 @@ The only formalized convention/protocol you need to understand to create a UIT m
 
 | Header                        | Description                                                                                                                                                                                  | Required |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| **Content-Disposition**       | Contains `name` (should equal filename) and `filename` (original pathname)                                                                                                                   | Yes      |
+| **Content-Disposition**       | Contains `name` (should equal pathname) and `filename` (should equal pathname)                                                                                                               | Yes      |
 | **Content-Type**              | Specifies the MIME type of the data                                                                                                                                                          | No       |
 | **Content-Length**            | Indicates the uncompressed size of the data                                                                                                                                                  | No       |
 | **Content-Transfer-Encoding** | Specifies how the data is encoded:<br>- `binary` (required for binary files)<br>- `8bit` (recommended for text-based/utf8 files)<br>- `quoted-printable`<br>- `base64`<br>- `7bit` (default) | No       |
 
 ## Non-Standard (Custom) Headers
 
-| Header          | Description                                                                                                                                                                                                                                                                  | Format                            |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| **x-url**       | Specifies the URL that locates the binary file. In some cases it may be desired to omit the binary data and only leave the URL to locate the file.                                                                                                                           | URL string                        |
-| **x-file-hash** | Stores the hash of the file                                                                                                                                                                                                                                                  | Hash string                       |
-| **x-error**     | Indicates processing error in the pipeline. On error in a module, the original incoming file-content should be preserved. If encountered, shouldn't be filtered or processed, so we can see errors for every individual file, where they happened, and with what file input. | `{handler-id};{status};{message}` |
+| Header          | Description                                     | Format                           |
+| --------------- | ----------------------------------------------- | -------------------------------- |
+| **x-url**       | Specifies the URL that locates the binary file. | URL string                       |
+| **x-file-hash** | Stores the hash of the file                     | Hash string                      |
+| **x-error**     | Indicates processing error in the pipeline.     | `{plugin-id};{status};{message}` |
+| **x-filter**    | Indicates a file got filtered out.              | `{plugin-id};{status};{message}` |
+
+Important:
+
+- In some cases it may be desired to omit the binary data and only leave the URL to locate the file.
+- On error in a module, the original incoming file-content should be preserved. If encountered, shouldn't be filtered or processed, so we can see errors for every individual file, where they happened, and with what file input.
+- On filtering in a module, the `FormData` can be passed on with `x-filter` but without content
+- On renaming and/or transforming, `x-filter` does not need to be aplied.
+
+<!-- think about x-rename response header for when a file is renamed (x-rename: {plugin-id};{original-path};{new-path}). This could be beneficial to track in complex pipelines -->
 
 # Contributing to UIT & Plugin System
 

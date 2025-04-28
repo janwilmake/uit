@@ -17,12 +17,18 @@
 
 # Critical stuff
 
-- ✅ Clean up `ingestzip`; Added proper binary filter on paths as well as content. May need a few more minor improvements.
+- ✅ Clean up `ingestzip`; Added proper binary filter on paths as well as content.
 - ✅ Added `omitBinary` to `uithub` requests for non-zip responses. For zip responses, binary is not omitted anymore.
-- ❗️ Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 - ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted. Let's make this good.
+- ❗️ Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 
 Let's focus on this, making uuithub actually better than the v1.
+
+# Improving the markdown output
+
+What's the perfect markdown output?
+
+- should include entire file structure, including files where content got omitted
 
 # UI Enhancements 
 

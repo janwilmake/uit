@@ -391,19 +391,22 @@ async function processZipToMultipart(
           // Second, more efficient way, to filter out binary files, while still responding with raw url but not with content.
           await writeEmptyBinary();
           // NB: started the entry.fileData so also need to cancel it.
-          await entry.fileData.cancel();
+          await entry.fileData?.cancel();
           return;
         }
 
         // Get content and hash
         const { content, hash } = await getContentAndHash(entry.fileData);
-        await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
+
+        if (hash) {
+          await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
+        }
 
         // Determine if content is binary
         const isBinaryContent = !isUtf8(content);
 
         // Skip binary files if omitBinary is true
-        if (omitBinary && isBinaryContent) {
+        if (content && omitBinary && isBinaryContent) {
           await writeEmptyBinary();
           return;
         }
@@ -418,7 +421,9 @@ async function processZipToMultipart(
         );
 
         // Write the file content
-        await writer.write(content);
+        if (content) {
+          await writer.write(content);
+        }
         await writer.write(encoder.encode("\r\n"));
       } catch (error) {
         console.error(`Error processing file ${entry.fileName}:`, error);
@@ -441,7 +446,10 @@ async function processZipToMultipart(
 const encoder = new TextEncoder();
 
 // Check if content is valid UTF-8
-function isUtf8(data: Uint8Array): boolean {
+function isUtf8(data: Uint8Array | undefined): boolean {
+  if (!data) {
+    return false;
+  }
   try {
     const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false });
     decoder.decode(data);
@@ -453,8 +461,11 @@ function isUtf8(data: Uint8Array): boolean {
 
 // Get content and generate hash
 async function getContentAndHash(
-  stream: ReadableStream,
-): Promise<{ content: Uint8Array; hash: string }> {
+  stream?: ReadableStream,
+): Promise<{ content?: Uint8Array; hash?: string }> {
+  if (!stream) {
+    return { content: undefined, hash: undefined };
+  }
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
 
