@@ -2,6 +2,8 @@
 
 Try the new definition. If it doesn't work out it's too complex, maybe don't support `outputStreamStrategy`; just have 1 concurrency if sort is desired. But try first because this could affect speed for slow streams greatly!
 
+Another idea to think about is to do paralelization on subzips even without basePath, later merging it. Imagine performing a search query on 300 zips this way! Could be much better than merging before search/filters.
+
 # Limitations
 
 - max 1000 requests (max 1000 individual input streams)

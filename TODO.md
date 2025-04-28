@@ -17,8 +17,8 @@
 
 # Critical stuff
 
-- Clean up ingestzip; needs proper binary filter on paths as well as content. May need a few more minor improvements.
-- ❗️ Tested paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
+- Clean up `ingestzip`; needs proper binary filter on paths as well as content. May need a few more minor improvements.
+- ❗️ Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 - ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted. Let's make this good.
 
 Let's focus on this, making uuithub actually better than the v1.
@@ -29,7 +29,7 @@ Let's focus on this, making uuithub actually better than the v1.
 - `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
 - `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.
 
-# Genignore UI old github
+# Genignore UI
 
 It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
 
@@ -54,3 +54,4 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - Make `domains.json` function
 - Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
 - ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
+

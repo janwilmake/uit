@@ -1,4 +1,18 @@
-# x plugin
+# creating sha-cached basePath-based inferences (big on performance)
+
+1. the url + query is the unique identifier
+2. we can destructure the url and make it incrementally more generic, the source being the most generic
+3. when something needs generating, we can find the closest generation first, then generate from there to save on compute
+4. when someone visits a repo for which the latest sha hasn't been indexed yet, all plugins and obvious paths should be added to a queue to pre-generate them. This makes everything superfast.
+
+The logic of what to generate should be surfaced to give organisations or owners control. Pregenerating is an upfront investment that has future benefit to others, and could be seen as a business in itself. What would you pregenerate for others?
+
+Only do the above for public repos with permissive lisence allowing commercial redistribution (for now).
+
+> [!WARNING]
+> Caching introduces legal risk
+
+# X plugin
 
 1) give context of x threads found in the data
 2) determine the key keyword or keywords that identify this repo
@@ -35,15 +49,6 @@ Can I detect if we passed the selected base path?
 If the basePath DID occur before AND now we're paste it, THEN we can stop safely, if we can assume things are alphabetical.
 
 Add stop criterium if there was one or more basePaths. if so, get last basePath alphabetically and stop after the pathname is behind this one. Will be GREAT for performance for large repos. Best make this a configuration though as it may not always be possible to rely on this!
-
-# creating sha-cached basePath-based subzips (big on performance)
-
-This could be big on performance as well!
-
-Another idea to think about is to do paralelization on subzips even without basePath, later merging it. Imagine performing a search query on 300 zips this way! Could be much better than merging before search/filters.
-
-> [!WARNING]
-> Caching introduces legal risk
 
 # uithub as API product
 
@@ -136,3 +141,16 @@ Two strategies are possible to figure out the zip url and raw url:
 2. use `git.listServerRefs`. If we cache it and But this easily takes half a second...
 
 It's best to create a function to do this trial and error. This would most likely just be ratelimited by 5000 req/hour/ip. Additionally we could cache the tagnames and branchnames - but not the shas they're tied to. However, I don't think this is worth the additional complexity as the amount of trials before a hit is likely between 2-3 on average (assuming we start with 2 in parallel).
+
+# uit cli
+
+Installs context from url into standard location `.rules`
+
+# `ingesttar`
+
+@samgoodwin - as a Alchemy maintainer, I want control over what my users use for context from my package. NPM version-managed as a source makes most sense.
+
+# version selectors
+
+- a github repo has branches and versions
+- a npm package has versions

@@ -1,0 +1,16 @@
+{
+  "name": "uitx",
+  "version": "0.0.5",
+  "main": "index.js",
+  "description": "Use UIT programmatically",
+  "license": "MIT",
+  "man": [
+    "README.md"
+  ],
+  "bin": {
+    "uitx": "cli.js"
+  },
+  "files": [
+    "index.js"
+  ]
+}

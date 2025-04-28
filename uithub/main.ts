@@ -40,6 +40,13 @@ export default {
       return getIndex();
     }
 
+    if (url.pathname === "/archive.zip") {
+      // convention; by exposing the zip of the repo at this path, anyone can find your code at https://uithub.com/{domain}/public, even from a private repo if we pass the PAT!
+      return fetch(
+        `https://github.com/janwilmake/uit/archive/refs/heads/main.zip`,
+      );
+    }
+
     const userAgent = request.headers.get("user-agent") || "";
 
     // More specific regex that tries to exclude larger tablets
@@ -148,13 +155,6 @@ export default {
           status: 429,
           headers: { ...ratelimited?.headers },
         },
-      );
-    }
-
-    if (url.pathname === "/archive.zip") {
-      // convention; by exposing the zip of the repo at this path, anyone can find your code at https://uithub.com/{domain}/public, even from a private repo if we pass the PAT!
-      return fetch(
-        `https://github.com/janwilmake/uit/archive/refs/heads/main.zip`,
       );
     }
 

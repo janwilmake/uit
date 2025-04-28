@@ -7,15 +7,42 @@
   "properties": {
     "$schema": { "type": "string" },
     "plugins": {
-      "description": "Plugins for uithub. These plugins can be made accessible via the plugins menu in the sidebar, and can be pinned to the UI. \n\nThe key of any plugin in plugin object can be used to access the plugin through its page in format \"/[owner]/[repo]/[page]\".\n\nRight now the plugin store should be focused mainly on the easiest and most impactful ones types of plugins. At a later stage, plugins could become discoverable pieces of code, auto-detected on GitHub, and would be able to be easily used and tested by agents to ensure marketplace quality.",
+      "description": "Plugins for uithub. These plugins can be made accessible via the plugins menu in the sidebar, and can be pinned to the UI. \n\nThe key of any plugin in plugin object can be used to access the plugin through its page in format \"/[owner]/[repo]/[page]\".\n\nRight now the plugin store should be focused mainly on the easiest and most impactful types of plugins. At a later stage, plugins could become discoverable pieces of code, auto-detected on GitHub, and would be able to be easily used and tested by agents to ensure marketplace quality.",
       "type": "object",
       "properties": {},
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["type", "endpoint", "source"],
+        "required": ["type", "source", "endpoint"],
 
         "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ingest",
+              "transform-file",
+              "transform-formdata",
+              "output",
+              "storage",
+              "workflow",
+              "scope"
+            ],
+            "$comment": "I may later also want to add plugins for:\n\n- **output**: A plugin that transforms the transformed into a target format.\n- **storage**: A plugin that allows storing any state to a storage medium like GitHub or S3.\n- **workflow**: A plugin that take full control over more than a single module, combining several into a workflow that is to be executed for a given URL.\n- **scope**: A set of sources and workflows to be inferred automatically, prioritisable, contstrainable to a budget.",
+            "description": "The type of plugin:\n\n- **ingest**: Should be an API that returns something that needs to become the source.\n- **transform-file**: Should be a GET API. Will process every matching mime-type and output the resulting content as new file.\n- **transform-formdata**: Should be a FormData transformer (allowing to stream through the files and many to many transformations).\n"
+          },
+
+          "source": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to a GitHub repository where this plugin is hosted."
+          },
+
+          "endpoint": {
+            "type": "string",
+            "format": "uri",
+            "description": "Must be the origin and pathname where the plugin is hosted. The API interface must adhere to the convention.\n\nRequired now, but may become optional after we'll self-host automatically from source."
+          },
+
           "title": {
             "type": "string",
             "description": "Comes from openapi.json#/info/title"
@@ -26,32 +53,15 @@
             "description": "Comes from openapi.json#/info/description"
           },
 
-          "domain": {
-            "type": "string",
-            "description": "If given, the plugin is only available for this domain, e.g. github.com or xymake.com"
-          },
-
-          "type": {
-            "type": "string",
-            "enum": ["api", "formdata-transformer", "ingest"],
-            "description": "The type of plugin:\n\n- **api**: Should be a GET API in format /owner/repo[/page/branch[/...path]] that takes no query parameters, and responds with the desired content-type.\n- **formdata-transformer**: Should be a FormData transformer.\n- **ingest**: Should be an API that returns something that would be the source.\n"
-          },
-
           "icon": {
             "type": "string",
             "format": "uri",
             "description": "URL to an image to show as icon."
           },
-          "endpoint": {
-            "type": "string",
-            "format": "uri",
-            "description": "Must be the origin and basePath. For type 'api' a path will be appended following the uithub convention. For type 'formdata-transformer' it must take formdata as POST or a URL to a FormData stream as GET pathname."
-          },
 
-          "source": {
+          "domain": {
             "type": "string",
-            "format": "uri",
-            "description": "URL to a GitHub repository where this plugin is hosted."
+            "description": "If given, the plugin is only available for this domain, e.g. github.com or x.com"
           }
         }
       }
