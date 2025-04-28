@@ -1,39 +1,99 @@
-# uithub zipstream
+# uithub ingestzip
 
-Implements zip -> multipart/form-data without filters.
+A Cloudflare Worker that processes ZIP archives and streams their contents as multipart/form-data responses, with powerful filtering options and optimized performance.
 
-# TODO:
+## Features
 
-- ✅ Added search filters and replaced minimatch with picomatch for creating precompiled regexes
-- Omit binary based on extension too
-- Implement https://en.wikipedia.org/wiki/Boyer–Moore_string-search_algorithm
-- Takes 2 minutes for bun. speed can likely be improved down to about 15-40s. see https://claude.ai/share/d4059e61-7ab8-404a-b5cd-f4dc2823101c
+- **Streaming Architecture**: Processes ZIP files as streams for optimal memory usage and performance
+- **Authentication**: Basic authentication support for secure access
+- **Content Filtering**: Multiple filtering methods including path patterns, exclusions, and base paths
+- **Binary File Handling**: Options to handle binary files differently from text files
+- **Path Transformation**: Option to remove the first segment of file paths
+- **Content Hashing**: Automatic SHA-256 hashing of file contents
+- **Browser Compatibility**: Different response formats for browser vs. API clients
 
-# Definition
+## Usage
 
-Context: NONE!
+### Authentication
 
-I need a Typescript Cloudflare worker:
+All requests require Basic Authentication using the credentials configured in the `CREDENTIALS` environment variable.
 
-Input:
+### Request Methods
 
-- `export default { fetch }` typescript worker. type ctx as any since it's not available by default
-- Authentication: confirm the authorization basic header is present and provided encoded credentials match `env.CREDENTIALS`. If not, return 401 with www-authenticate header.
-- method GET: Takes a zip URL as pathname, and an optional `x-source-authorization` header.
-- method POST: request body should contain a zip stream.
+#### GET
 
-Process:
+```
+https://your-worker.example.com/{url-encoded-zip-url}?[options]
+```
 
-- allow `?omitFirstSegment=true`. if given, will remove first segment of the path from the output (still start with `/`)
-- Also allow `?rawUrlPrefix` that, when given, does not include contents in response for binary files, but rather provides `x-url` header for these. still show text contents! Always try decoding it as utf8 (`new TextDecoder("utf-8", { fatal: true, ignoreBOM: false })`) and if it fails it means it's binary.
-- Uses web standards to read the zip file contents looking at the file boundaries. use first principles and stream and process files in parallel as soon as they come in. optimise for low-memory!
-- Uses `DecompressionStream("deflate-raw")` to handle deflation of archive
-- Streams the output as a `multipart/form-data` stream to the response. Ensure to put the path in the content-disposition "filename". ensure to add content-type, content-length, x-file-hash, and content-transfer-encoding as well.
-- if request is made from a browser, ensure to respond with text/plain but keep the boundary and charset=utf8.. if not browser: multipart/form-data. ensure to pass a filename too for non-browser requests
-- don't use crypto library to make hash, use web standards
+- The ZIP URL should be URL-encoded and provided as the path
+- You can optionally include an `x-source-authorization` header that will be passed to the ZIP URL request
 
-NB: A stream-oriented approach that minimizes buffer copies would likely show significant performance improvements. Focus on performance and minimal memory pressure
+#### POST (Not yet implemented)
 
-# ADR
+Future support for direct ZIP upload in request body.
 
-It's VERY IMPORTANT to provide GOOD INSTRUCTIONS. I got stuck because I assumed `fflate` was good for the job and wanted it to use it. It followed my instructions but got stuck because it didn't want to tell me it couldn't be done in that way! When I got clearer on the goal and gave it more freedom, it succeeded.
+### Query Parameters
+
+| Parameter               | Type    | Description                                                                                                                                      |
+| ----------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `omitFirstSegment`      | Boolean | When `true`, removes the first segment of each file path in the output                                                                           |
+| `omitBinary`            | Boolean | When `true`, binary files will be excluded from the response                                                                                     |
+| `rawUrlPrefix`          | String  | Base URL prefix for binary files. When provided, binary file contents are replaced with an `x-url` header pointing to `{rawUrlPrefix}{filePath}` |
+| `basePath[]`            | String  | One or more base paths to filter on (filters applied after first segment omission if enabled)                                                    |
+| `pathPatterns[]`        | String  | Glob patterns for files to include. Multiple patterns can be specified by repeating this parameter                                               |
+| `excludePathPatterns[]` | String  | Glob patterns for files to exclude. Applied after `pathPatterns`                                                                                 |
+| `enableFuzzyMatching`   | Boolean | When `true`, enables VSCode-like fuzzy matching for file paths                                                                                   |
+| `maxFileSize`           | Number  | Maximum file size in bytes to include in the response                                                                                            |
+
+### Response Format
+
+The response is a multipart/form-data stream with the following characteristics:
+
+- Each file in the ZIP is represented as a part in the multipart response
+- File paths are included in the `Content-Disposition` header's filename attribute
+- Each part includes `Content-Type`, `Content-Length`, `x-file-hash` (SHA-256), and `Content-Transfer-Encoding` headers
+- For binary files with `rawUrlPrefix`, an `x-url` header is included instead of content
+- Browser requests receive `text/plain` responses with the same boundary (for better compatibility)
+
+## Examples
+
+### Basic Usage
+
+```
+https://your-worker.example.com/https%3A%2F%2Fexample.com%2Farchive.zip
+```
+
+### Filter by Path Pattern
+
+```
+https://your-worker.example.com/https%3A%2F%2Fexample.com%2Farchive.zip?pathPatterns=*.js&pathPatterns=*.ts
+```
+
+### Exclude Binary Files and Use Raw URL Prefix
+
+```
+https://your-worker.example.com/https%3A%2F%2Fexample.com%2Farchive.zip?omitBinary=true&rawUrlPrefix=https://cdn.example.com/files
+```
+
+### Complex Filtering
+
+```
+https://your-worker.example.com/https%3A%2F%2Fexample.com%2Farchive.zip?basePath=src&pathPatterns=**/*.{js,ts}&excludePathPatterns=**/node_modules/**&omitFirstSegment=true&maxFileSize=1048576
+```
+
+## Implementation Notes
+
+- Uses native Web APIs including `TransformStream` and `DecompressionStream`
+- Early filtering at the ZIP reader level for improved performance
+- Streaming architecture for minimal memory pressure
+- SHA-256 hashing of file contents
+- Glob pattern matching via picomatch
+- Content type detection by file extension
+
+## Future Enhancements
+
+- Implement POST method for direct ZIP upload
+- Add support for compressed response formats
+- Implement cache control options
+- Add additional authentication methods

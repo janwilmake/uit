@@ -1,30 +1,31 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "ZIP Archive Processor API",
-    "description": "An API that fetches and processes ZIP archives, returning the contents as multipart form data with various processing options.",
+    "title": "IngestZip API",
+    "description": "An API service that fetches and processes ZIP files, converting them to multipart/form-data streams with various filtering options.",
     "version": "1.0.0",
     "contact": {
-      "name": "API Support"
+      "name": "UIThub",
+      "url": "https://ingestzip.uithub.com"
     }
   },
   "servers": [
     {
-      "url": "https://api.example.com",
+      "url": "https://ingestzip.uithub.com",
       "description": "Production server"
     }
   ],
   "paths": {
     "/{zipUrl}": {
       "get": {
-        "summary": "Process a ZIP archive",
-        "description": "Fetches a ZIP archive from the specified URL, processes its contents, and returns the files as multipart form data. Authentication is required.",
+        "summary": "Fetch and process a ZIP file",
+        "description": "Fetches a ZIP file from the provided URL, processes its contents, and returns a multipart/form-data stream with the filtered files.",
         "parameters": [
           {
             "name": "zipUrl",
             "in": "path",
+            "description": "URL-encoded path to the ZIP file to fetch and process",
             "required": true,
-            "description": "URL path to the ZIP archive that should be processed",
             "schema": {
               "type": "string"
             }
@@ -32,7 +33,28 @@
           {
             "name": "omitFirstSegment",
             "in": "query",
-            "description": "When true, removes the first segment from file paths in the ZIP archive",
+            "description": "Remove the first segment from file paths in the ZIP archive",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "omitBinary",
+            "in": "query",
+            "description": "Skip binary files in the output",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "enableFuzzyMatching",
+            "in": "query",
+            "description": "Enable fuzzy matching for path patterns",
+            "required": false,
             "schema": {
               "type": "boolean",
               "default": false
@@ -41,60 +63,98 @@
           {
             "name": "rawUrlPrefix",
             "in": "query",
-            "description": "URL prefix to use for referencing binary files instead of including them directly in the response",
+            "description": "Prefix to use for raw URLs for binary files (if set, binary files are referenced by URL instead of including content)",
+            "required": false,
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "Authorization",
-            "in": "header",
-            "description": "Basic authentication credentials (base64 encoded)",
-            "required": true,
+            "name": "basePath",
+            "in": "query",
+            "description": "Base path(s) to filter files by. Only files under these paths will be included",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
-            "example": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+            "style": "form",
+            "explode": true
           },
           {
-            "name": "x-source-authorization",
-            "in": "header",
-            "description": "Alternative way to provide authentication credentials, also passed to the ZIP archive source if present",
+            "name": "pathPatterns",
+            "in": "query",
+            "description": "Glob pattern(s) to include files matching these patterns. Supports picomatch syntax",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "excludePathPatterns",
+            "in": "query",
+            "description": "Glob pattern(s) to exclude files matching these patterns. Supports picomatch syntax",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "maxFileSize",
+            "in": "query",
+            "description": "Maximum file size in bytes to include",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
             }
+          }
+        ],
+        "security": [
+          {
+            "basicAuth": []
           }
         ],
         "responses": {
           "200": {
-            "description": "Successfully processed ZIP archive",
+            "description": "ZIP file successfully processed and streamed",
             "content": {
               "multipart/form-data": {
                 "schema": {
-                  "$ref": "#/components/schemas/ZipContents"
+                  "type": "object"
                 }
               },
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ZipContents"
-                },
-                "description": "For browser requests, content is returned as text/plain with the same boundary format"
+                  "type": "string"
+                }
               }
             }
           },
           "400": {
-            "description": "Bad request - No ZIP URL provided",
+            "description": "Bad request, missing ZIP URL",
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string",
-                  "example": "No ZIP URL provided"
+                  "type": "string"
                 }
               }
             }
           },
           "401": {
-            "description": "Authentication required",
+            "description": "Unauthorized, authentication required",
             "headers": {
               "WWW-Authenticate": {
                 "schema": {
@@ -106,19 +166,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string",
-                  "example": "Authentication required"
+                  "type": "string"
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "Server error processing the ZIP file",
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string",
-                  "example": "Error processing ZIP: [error message]"
+                  "type": "string"
                 }
               }
             }
@@ -128,86 +186,46 @@
     }
   },
   "components": {
-    "schemas": {
-      "ZipContents": {
-        "type": "object",
-        "description": "The contents of the ZIP archive represented as a multipart form data object",
-        "properties": {
-          "files": {
-            "type": "array",
-            "description": "Array of file entries extracted from the ZIP archive",
-            "items": {
-              "$ref": "#/components/schemas/FileEntry"
-            }
-          }
-        }
-      },
-      "FileEntry": {
-        "type": "object",
-        "description": "A file entry extracted from the ZIP archive",
-        "required": [
-          "name",
-          "content",
-          "contentType",
-          "contentTransferEncoding",
-          "fileHash"
-        ],
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Path and name of the file within the ZIP archive, potentially modified by omitFirstSegment",
-            "example": "/path/to/file.txt"
-          },
-          "filename": {
-            "type": "string",
-            "description": "Same as name, representing the file's original path and name",
-            "example": "/path/to/file.txt"
-          },
-          "content": {
-            "type": "string",
-            "format": "binary",
-            "description": "The binary content of the file (may be omitted if rawUrlPrefix is provided for binary files)"
-          },
-          "contentType": {
-            "type": "string",
-            "description": "MIME type of the file content, determined by the file extension",
-            "example": "text/plain"
-          },
-          "contentLength": {
-            "type": "integer",
-            "description": "Length of the uncompressed file in bytes",
-            "example": 12345
-          },
-          "contentTransferEncoding": {
-            "type": "string",
-            "description": "Encoding used for the content (binary or 8bit)",
-            "enum": ["binary", "8bit"],
-            "example": "8bit"
-          },
-          "fileHash": {
-            "type": "string",
-            "description": "SHA-256 hash of the file content",
-            "example": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "url": {
-            "type": "string",
-            "description": "URL for accessing the file directly (only present if rawUrlPrefix is provided and the file is binary)",
-            "example": "https://cdn.example.com/path/to/file.jpg"
-          }
-        }
-      }
-    },
     "securitySchemes": {
       "basicAuth": {
         "type": "http",
         "scheme": "basic",
-        "description": "Basic authentication credentials required for API access"
+        "description": "Basic authentication with credentials"
+      }
+    },
+    "headers": {
+      "x-source-authorization": {
+        "description": "Optional authorization header to forward to the ZIP source",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "FormDataFile": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "format": "binary",
+            "description": "File content (or omitted if using rawUrlPrefix for binary files)"
+          },
+          "x-file-hash": {
+            "type": "string",
+            "description": "SHA-256 hash of the file content"
+          },
+          "x-url": {
+            "type": "string",
+            "description": "URL to access the raw file (only present for binary files when rawUrlPrefix is provided)"
+          }
+        }
       }
     }
   },
-  "security": [
+  "tags": [
     {
-      "basicAuth": []
+      "name": "ZIP Processing",
+      "description": "Operations related to fetching and processing ZIP files"
     }
   ]
 }

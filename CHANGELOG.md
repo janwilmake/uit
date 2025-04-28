@@ -771,3 +771,9 @@ Sha url can't be used for edit link, must be branch!
 - ✅ Ensure the path pattern for domains can be variable on a per-domain basis
 - ✅ Added concept for lists
 - ✅ For uithub, make routing of plugins work. api plugins are basically ingest plugins. Rename that.
+- ✅ Added search filters and replaced minimatch with picomatch for creating precompiled regexes
+- ✅ Omit binary based on extension too
+- ❌ Implement https://en.wikipedia.org/wiki/Boyer–Moore_string-search_algorithm
+- ✅ Takes 2 minutes for bun. speed can likely be improved down to about 15-40s. see https://claude.ai/share/d4059e61-7ab8-404a-b5cd-f4dc2823101c
+
+# 2025-04-28

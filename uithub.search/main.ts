@@ -1,4 +1,3 @@
-import { minimatch } from "minimatch";
 import { getReadableFormDataStream, Part } from "multipart-formdata-stream-js";
 
 interface Env {
@@ -11,10 +10,6 @@ interface Env {
 interface RequestParams {
   omitFirstSegment?: boolean;
   rawUrlPrefix?: string;
-  basePath?: string[];
-  pathPatterns?: string[];
-  excludePathPatterns?: string[];
-  enableFuzzyMatching?: boolean;
   disableGenignore?: boolean;
   maxFileSize?: number;
   search?: string;
@@ -39,21 +34,6 @@ export default {
           break;
         case "rawUrlPrefix":
           params.rawUrlPrefix = value;
-          break;
-        case "basePath":
-          params.basePath = params.basePath || [];
-          params.basePath.push(value);
-          break;
-        case "pathPatterns":
-          params.pathPatterns = params.pathPatterns || [];
-          params.pathPatterns.push(value);
-          break;
-        case "excludePathPatterns":
-          params.excludePathPatterns = params.excludePathPatterns || [];
-          params.excludePathPatterns.push(value);
-          break;
-        case "enableFuzzyMatching":
-          params.enableFuzzyMatching = value === "true";
           break;
         case "disableGenignore":
           params.disableGenignore = value === "true";
@@ -120,11 +100,10 @@ export default {
 
       if (!request.body) {
         // No body. Build API URL
-        const apiUrl = buildApiUrl(url.pathname.slice(1), params);
+        const apiUrl = url.pathname.slice(1) + url.search;
         if (!apiUrl) {
           return new Response("No ZIP URL provided", { status: 400 });
         }
-        console.log({ apiUrl });
         const apiResponse = await fetch(apiUrl, { headers });
 
         if (!apiResponse.ok || !apiResponse.body) {
@@ -213,31 +192,6 @@ function validateAuth(
 }
 
 /**
- * Build the API URL with appropriate parameters
- */
-function buildApiUrl(
-  urlFromPathname: string,
-  params: RequestParams,
-): string | null {
-  if (!urlFromPathname) {
-    return null;
-  }
-
-  const apiUrl = new URL(urlFromPathname);
-
-  // Add query parameters that should be passed through
-  if (params.omitFirstSegment) {
-    apiUrl.searchParams.append("omitFirstSegment", "true");
-  }
-
-  if (params.rawUrlPrefix) {
-    apiUrl.searchParams.append("rawUrlPrefix", params.rawUrlPrefix);
-  }
-
-  return apiUrl.toString();
-}
-
-/**
  * Create a search pattern from the search parameters
  */
 function createSearchPattern(params: RequestParams): RegExp | null {
@@ -280,8 +234,7 @@ const prependSlash = (path: string) =>
   path.startsWith("/") ? path : "/" + path;
 const surroundSlash = (path: string) =>
   path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
-const withoutSlash = (path: string) =>
-  path.startsWith("/") ? path.slice(1) : path;
+
 /**
  * Filter function for multipart parts
  */
@@ -301,8 +254,6 @@ function filterPart(
     return { ok: false, stop: true };
   }
 
-  const filename = part.filename || "";
-
   // Check file size limit
   if (params.maxFileSize && part["content-length"]) {
     const size = parseInt(part["content-length"], 10);
@@ -311,106 +262,8 @@ function filterPart(
     }
   }
 
-  // Check base path filter
-  if (params.basePath && params.basePath.length > 0) {
-    const matchesBasePath = params.basePath.some((base) => {
-      // e.g. public/, /public and /public/ all becomes /public/
-      const normalizedBase = surroundSlash(base);
-
-      // e.g. public/index.html becomes /public/index.html/
-
-      const normalizedFilename = surroundSlash(filename);
-
-      // NB: The normalization ensures only entire folders are seen as basepaths
-      const isInBasePath = normalizedFilename.startsWith(normalizedBase);
-      return isInBasePath;
-    });
-
-    if (!matchesBasePath) {
-      return { ok: false };
-    }
-  }
-
-  let included = true;
-  // Apply pathPatterns (inclusion patterns)
-  if (params.pathPatterns && params.pathPatterns.length > 0) {
-    const matchesPattern = params.pathPatterns.some((pattern) => {
-      if (pattern.startsWith("*")) {
-        const basename = filename.split("/").pop() || "";
-        if (minimatch(basename, pattern, { dot: true })) {
-          return true;
-        }
-      }
-      // Original pattern matching
-      if (minimatch(withoutSlash(filename), pattern, { dot: true })) {
-        return true;
-      }
-
-      // VSCode-like behavior: treat patterns without glob characters as directory prefixes
-      if (!pattern.includes("*") && !pattern.includes("?")) {
-        // Also try with the ** glob
-        return minimatch(withoutSlash(filename), `${pattern}/**`, {
-          dot: true,
-        });
-      }
-
-      return false;
-    });
-
-    // console.log({
-    //   pathPatterns: params.pathPatterns,
-    //   filename,
-    //   matchesPattern,
-    // });
-
-    if (!matchesPattern) {
-      included = false;
-    }
-  }
-
-  let excluded = false;
-  // Apply excludePathPatterns
-  if (params.excludePathPatterns && params.excludePathPatterns.length > 0) {
-    const matchesExcludePattern = params.excludePathPatterns.some((pattern) => {
-      if (pattern.startsWith("*")) {
-        const basename = filename.split("/").pop() || "";
-        if (minimatch(basename, pattern, { dot: true })) {
-          return true;
-        }
-      }
-
-      // Original pattern matching
-      if (minimatch(withoutSlash(filename), pattern, { dot: true })) {
-        return true;
-      }
-
-      // VSCode-like behavior: treat patterns without glob characters as directory prefixes
-      if (!pattern.includes("*") && !pattern.includes("?")) {
-        // Also try with the ** glob
-        return minimatch(withoutSlash(filename), `${pattern}/**`, {
-          dot: true,
-        });
-      }
-
-      return false;
-    });
-
-    console.log({
-      exclude: params.excludePathPatterns,
-      filename,
-      matchesExcludePattern,
-    });
-    if (matchesExcludePattern) {
-      excluded = true;
-    }
-  }
-
-  if (!included) {
-    return { ok: false };
-  }
-
   // if files are included but also excluded, they must be excluded
-  return { ok: !excluded };
+  return { ok: true };
 }
 
 /**

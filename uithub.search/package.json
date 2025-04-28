@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250327.0",
-    "minimatch": "^10.0.1",
     "multipart-formdata-stream-js": "^0.0.10"
   }
 }
