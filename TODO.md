@@ -19,16 +19,11 @@
 
 - ✅ Clean up `ingestzip`; Added proper binary filter on paths as well as content.
 - ✅ Added `omitBinary` to `uithub` requests for non-zip responses. For zip responses, binary is not omitted anymore.
-- ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted. Let's make this good.
+- ✅ Added custom `x-filter` FormData header that provides information about files that got filtered out
+- ✅ should include entire file structure, including files where content got omitted
 - ❗️ Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 
 Let's focus on this, making uuithub actually better than the v1.
-
-# Improving the markdown output
-
-What's the perfect markdown output?
-
-- should include entire file structure, including files where content got omitted
 
 # UI Enhancements 
 
@@ -40,7 +35,6 @@ What's the perfect markdown output?
 
 It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
 
-- ❗️ Fix genignore in old uithub so I can make PRs for it. 🔥 Important for adoption. Huge boost to SEO.
 - ❗️ `?genignore` can be empty to disable, a URL to get from there, or a genignore content string to overwrite
 - Use https://uithub.com/OAI/OpenAPI-Specification?genignore=https://genignore.forgithub.com/custom/oai__openapi-specification/.genignore and confirm that works.
 - Put a badge onthere with a nice message.
@@ -65,3 +59,9 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 # Get response
 
 Could be big; https://github.com/refined-github/refined-github/issues/8423#issuecomment-2834412514 https://x.com/fregante
+
+# Improving the markdown output
+
+- Add `x-filter` and `x-error` type safety to `multipart-formdata-stream-js`
+- Add `maxTokens` filter and `basePath` content-filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still.
+- Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.

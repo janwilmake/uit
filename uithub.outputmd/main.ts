@@ -71,6 +71,11 @@ async function processPartsToMarkdown(
     for await (const part of iterateMultipart(body, boundary)) {
       if (!part.name) continue;
 
+      if (part["x-error"]) {
+        // Error should be somehow visible
+        continue;
+      }
+
       count++;
 
       const isBinary = part["content-transfer-encoding"] === "binary";
@@ -123,6 +128,14 @@ async function processPartsToMarkdown(
       lastPath = [...pathParts];
 
       // Prepare file content section
+
+      if (part["x-filter"]) {
+        const [plugin, status, message] = part["x-filter"]
+          .split(";")
+          .map((x) => x.trim());
+
+        continue;
+      }
       let fileMarkdown = `\n## ${filename}\n\n`;
 
       if (isBinary) {
@@ -151,7 +164,7 @@ async function processPartsToMarkdown(
       } else {
         isCapped = true;
         // Stop processing if token limit reached
-        break;
+        // break;
       }
     }
 
@@ -167,8 +180,11 @@ async function processPartsToMarkdown(
       await writeText(fileContents);
 
       if (isCapped) {
+        const maxFileSizeText = maxFileSize
+          ? `, and files over ${maxFileSize} bytes have been omitted`
+          : "";
         await writeText(
-          `\n\nThe content has been capped at ${maxTokens} tokens, and files over ${maxFileSize} bytes have been omitted. The user could consider applying other filters to refine the result. `,
+          `\n\nThe content has been capped at ${maxTokens} tokens${maxFileSizeText}. The user could consider applying other filters to refine the result. `,
         );
       } else {
         await writeText(`\n\n`);

@@ -34,7 +34,7 @@ export default {
     const requestStartTime = Date.now();
 
     const params = parseRequest(request);
-    const { zipUrl, filterOptions, responseOptions } = params;
+    const { zipUrl, responseOptions } = params;
     // Include timing info in response headers
     const responseHeaders = new Headers({
       "Content-Type": responseOptions.isBrowser
@@ -347,14 +347,9 @@ async function processZipToMultipart(
     // Process the ZIP entries
     await zipReader.readEntries(async (entry) => {
       try {
-        // Process file path if needed
         const processedPath = processFilePath(entry.fileName, omitFirstSegment);
-
         const ext = entry.fileName.split("/").pop()?.split(".").pop() || "";
-
-        // Detect content type
         const contentType = (map[ext] || "application/octet-stream") as string;
-
         // Start multipart section
         await writer.write(encoder.encode(`--${boundary}\r\n`));
         await writer.write(
@@ -362,7 +357,6 @@ async function processZipToMultipart(
             `Content-Disposition: form-data; name="${processedPath}"; filename="${processedPath}"\r\n`,
           ),
         );
-
         // Add content type header
         await writer.write(encoder.encode(`Content-Type: ${contentType}\r\n`));
 
@@ -376,6 +370,17 @@ async function processZipToMultipart(
         if (rawUrlPrefix) {
           const rawUrl = `${rawUrlPrefix}${processedPath}`;
           await writer.write(encoder.encode(`x-url: ${rawUrl}\r\n`));
+        }
+
+        if (entry.filter?.filter && entry.filter.status) {
+          const PLUGIN_NAME = "ingestzip";
+          await writer.write(
+            encoder.encode(
+              `x-filter: ${PLUGIN_NAME};${entry.filter.status || "404"};${
+                entry.filter.message || ""
+              }\r\n`,
+            ),
+          );
         }
 
         const writeEmptyBinary = async () => {
@@ -424,6 +429,7 @@ async function processZipToMultipart(
         if (content) {
           await writer.write(content);
         }
+
         await writer.write(encoder.encode("\r\n"));
       } catch (error) {
         console.error(`Error processing file ${entry.fileName}:`, error);
@@ -516,8 +522,10 @@ class ZipStreamReader {
     callback: (entry: {
       fileName: string;
       isDirectory: boolean;
-      fileData: ReadableStream;
+      fileData?: ReadableStream;
       uncompressedSize?: number;
+      error?: string;
+      filter?: { filter?: boolean; status?: string; message?: string };
     }) => Promise<void>,
   ): Promise<void> {
     const reader = this.stream.getReader();
@@ -613,11 +621,29 @@ class ZipStreamReader {
             const isDirectory = fileName.endsWith("/");
 
             // Apply filtering
-            if (
-              !this.shouldProcessFile(fileName, isDirectory, uncompressedSize)
-            ) {
+            const filter = this.shouldFilter(
+              fileName,
+              isDirectory,
+              uncompressedSize,
+            );
+
+            if (filter?.filter) {
               position += totalEntrySize;
               processedEntries = true;
+
+              if (filter?.noCallback) {
+                continue;
+              }
+
+              // we will process the file without content!
+              await callback({
+                fileName,
+                isDirectory,
+                uncompressedSize,
+                filter,
+              });
+
+              // still continue after that
               continue;
             }
 
@@ -731,12 +757,17 @@ class ZipStreamReader {
     }
   }
 
-  private shouldProcessFile(
+  private shouldFilter(
     fileName: string,
     isDirectory: boolean,
     size?: number,
-  ): boolean {
-    if (isDirectory) return false; // Skip directories
+  ): {
+    filter: boolean;
+    noCallback?: boolean;
+    status?: string;
+    message?: string;
+  } {
+    if (isDirectory) return { filter: true, noCallback: true }; // Skip directories
 
     const {
       omitFirstSegment,
@@ -756,14 +787,18 @@ class ZipStreamReader {
 
     // Check maxFileSize filter
     if (maxFileSize !== undefined && size !== undefined && size > maxFileSize) {
-      return false;
+      return { filter: true, status: "413", message: "Content too large" };
     }
 
     const ext = processedPath.split(".").pop()!;
 
     if (omitBinary && !rawUrlPrefix && binaryExtensions.includes(ext)) {
       // First, most efficient way, to exclude binaries
-      return false;
+      return {
+        filter: true,
+        status: "415",
+        message: "File has binary extension",
+      };
     }
 
     // Check base path filter
@@ -776,7 +811,7 @@ class ZipStreamReader {
       });
 
       if (!matchesBasePath) {
-        return false;
+        return { filter: true, status: "404", message: "No basePath matched" };
       }
     }
 
@@ -820,7 +855,11 @@ class ZipStreamReader {
 
     // If not included, no need to check exclusion
     if (!included) {
-      return false;
+      return {
+        filter: true,
+        status: "404",
+        message: "Not included in path patterns",
+      };
     }
 
     // Apply exclusion patterns
@@ -862,11 +901,15 @@ class ZipStreamReader {
 
       // If excluded, it takes precedence over inclusion
       if (excluded) {
-        return false;
+        return {
+          filter: true,
+          status: "404",
+          message: "Excluded by excludePathPatterns",
+        };
       }
     }
 
     // If we reach this point, the file should be processed
-    return true;
+    return { filter: false };
   }
 }

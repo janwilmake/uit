@@ -3,11 +3,11 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["attribution"],
-  "description": "FAQ.json can be used to allow people to more easily understand the codebase through uithub and other context exploration interfaces. This schema format is designed to work with the Universal Information Terminal Hub (uithub).",
+  "description": "context.json can be used to allow people to more easily understand the codebase through uithub and other context exploration interfaces. This schema format is designed to work with the Universal Information Terminal Hub (uithub).",
   "properties": {
     "$schema": {
       "type": "string",
-      "default": "https://uuithub.com/faq.schema.json"
+      "default": "https://uuithub.com/context.schema.json"
     },
     "extends": {
       "oneOf": [

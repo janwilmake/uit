@@ -154,6 +154,7 @@ export default {
           return result;
         },
       });
+
       const resultContentType = request.headers
         .get("accept")
         ?.includes("text/html")
@@ -229,11 +230,6 @@ function createSearchPattern(params: RequestParams): RegExp | null {
     return null;
   }
 }
-
-const prependSlash = (path: string) =>
-  path.startsWith("/") ? path : "/" + path;
-const surroundSlash = (path: string) =>
-  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
 
 /**
  * Filter function for multipart parts

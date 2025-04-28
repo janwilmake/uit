@@ -7,7 +7,7 @@ async function testZipProcessor() {
 
   const CREDENTIALS = process.env.CREDENTIALS;
   // Local server URL
-  const serverUrl = "https://ingestzip.uithub.com"; // "http://localhost:3000";
+  const serverUrl = "http://localhost:3000"; //"https://ingestzip.uithub.com"; //
 
   // Path we want to extract from the ZIP
   const targetPath = "alchemy-web/docs";
