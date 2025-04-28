@@ -55,7 +55,6 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
 - ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
 
-
 # Get response
 
 Could be big; https://github.com/refined-github/refined-github/issues/8423#issuecomment-2834412514 https://x.com/fregante

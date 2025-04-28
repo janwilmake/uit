@@ -31,8 +31,18 @@ interface RequestParams {
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
     // Parse the request parameters
+    const requestStartTime = Date.now();
+
     const params = parseRequest(request);
     const { zipUrl, filterOptions, responseOptions } = params;
+    // Include timing info in response headers
+    const responseHeaders = new Headers({
+      "Content-Type": responseOptions.isBrowser
+        ? `text/plain; boundary=${responseOptions.boundary}; charset=utf-8`
+        : `multipart/form-data; boundary=${responseOptions.boundary}`,
+      "Transfer-Encoding": "chunked",
+    });
+
     // Validate the ZIP URL
     if (!zipUrl) {
       return new Response("No ZIP URL provided", { status: 400 });
@@ -50,7 +60,15 @@ export default {
 
     try {
       // Fetch the ZIP file with proper headers
+      const zipFetchStartTime = Date.now();
       const zipResponse = await fetchZipFile(params);
+
+      const initialResponseTime = Date.now() - zipFetchStartTime;
+      console.log({ initialResponseTime });
+      responseHeaders.set(
+        "X-Initial-Response-Time-Ms",
+        initialResponseTime.toString(),
+      );
 
       if (!zipResponse.ok || !zipResponse.body) {
         return createErrorResponse(zipResponse, params.zipUrl);
@@ -65,18 +83,11 @@ export default {
         writable,
         params.filterOptions,
         params.responseOptions,
+        requestStartTime,
       );
 
-      // Return the streaming response
-      const contentType = responseOptions.isBrowser
-        ? `text/plain; boundary=${responseOptions.boundary}; charset=utf-8`
-        : `multipart/form-data; boundary=${responseOptions.boundary}`;
-
       return new Response(readable, {
-        headers: {
-          "Content-Type": contentType,
-          "Transfer-Encoding": "chunked",
-        },
+        headers: responseHeaders,
       });
     } catch (error) {
       return new Response(`Error processing ZIP: ${error.message}`, {
@@ -304,6 +315,8 @@ async function processZipToMultipart(
   output: WritableStream,
   filterOptions: FilterOptions,
   responseOptions: ResponseOptions,
+
+  requestStartTime: number,
 ): Promise<void> {
   const {
     omitFirstSegment,
@@ -414,6 +427,9 @@ async function processZipToMultipart(
 
     // End the multipart form data
     await writer.write(encoder.encode(`--${boundary}--\r\n`));
+
+    const totalProcessingTime = Date.now() - requestStartTime;
+    console.log({ totalProcessingTime });
   } catch (error) {
     console.error("Error processing ZIP:", error);
   } finally {

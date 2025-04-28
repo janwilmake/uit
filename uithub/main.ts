@@ -522,8 +522,8 @@ const pipeResponse = async (context: {
   }
 
   const rawUrlPrefixPart = rawUrlPrefix ? `&rawUrlPrefix=${rawUrlPrefix}` : "";
-
-  const ingestUrl = `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${rawUrlPrefixPart}`;
+  const omitBinaryPart = responseType === "zip" ? "" : `&omitBinary=true`;
+  const ingestUrl = `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${rawUrlPrefixPart}${omitBinaryPart}`;
 
   const outputUrl = {
     zip: "https://outputzip.uithub.com",
