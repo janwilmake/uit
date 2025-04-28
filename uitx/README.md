@@ -1,11 +1,15 @@
 # UITX
 
+> [!IMPORTANT]
+> Work in Progress
+
 UITX makes `uit` available as a library. Use it as CLI and for programmatic use.
 
 Usage:
 
 - As CLI:`npx uitx .`
-- Programmatic: `npm i --save-dev uitx` and add `{ "scripts": { "llms": "uitx ." } }` to your package.json
+- As script: `npm i --save-dev uitx` and add `{ "scripts": { "llms": "uitx ." } }` to your package.json
+- Programmatically: `npm i uitx` and `import { pipe } from "uitx";`
 
 [Critics](https://x.com/samgoodwin89/status/1916638156776198340) wanted the context exploration as package manager installable library so they can use it without API key in their own projects running the code on their own servers. They have a point!
 
