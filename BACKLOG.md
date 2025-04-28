@@ -1,5 +1,7 @@
 # creating sha-cached basePath-based inferences (big on performance)
 
+❗️ Found that `initialResponseTime` for `ingestzip` service is often in the ballpark of: 1750-2250ms. Caching the zip into KV or R2 makes a ton of sense to reduce this to 100s of ms.
+
 1. the url + query is the unique identifier
 2. we can destructure the url and make it incrementally more generic, the source being the most generic
 3. when something needs generating, we can find the closest generation first, then generate from there to save on compute

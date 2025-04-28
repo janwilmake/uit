@@ -17,7 +17,8 @@
 
 # Critical stuff
 
-- ✅ Clean up `ingestzip`; Needs proper binary filter on paths as well as content. May need a few more minor improvements.
+- ✅ Clean up `ingestzip`; Added proper binary filter on paths as well as content. May need a few more minor improvements.
+- ✅ Added `omitBinary` to `uithub` requests for non-zip responses. For zip responses, binary is not omitted anymore.
 - ❗️ Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 - ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted. Let's make this good.
 

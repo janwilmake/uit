@@ -373,10 +373,13 @@ async function processZipToMultipart(
           );
         }
 
-        const writeWithUrl = async () => {
-          // For binary files with rawUrlPrefix, add x-url header instead of content
+        if (rawUrlPrefix) {
           const rawUrl = `${rawUrlPrefix}${processedPath}`;
           await writer.write(encoder.encode(`x-url: ${rawUrl}\r\n`));
+        }
+
+        const writeEmptyBinary = async () => {
+          // For binary files with rawUrlPrefix, add x-url header instead of content
           await writer.write(
             encoder.encode(`Content-Transfer-Encoding: binary\r\n\r\n`),
           );
@@ -386,9 +389,10 @@ async function processZipToMultipart(
 
         if (omitBinary && binaryExtensions.includes(ext)) {
           // Second, more efficient way, to filter out binary files, while still responding with raw url but not with content.
-          await writeWithUrl();
+          await writeEmptyBinary();
           // NB: started the entry.fileData so also need to cancel it.
           await entry.fileData.cancel();
+          return;
         }
 
         // Get content and hash
@@ -399,27 +403,23 @@ async function processZipToMultipart(
         const isBinaryContent = !isUtf8(content);
 
         // Skip binary files if omitBinary is true
-        if (omitBinary && isBinaryContent && !rawUrlPrefix) {
+        if (omitBinary && isBinaryContent) {
+          await writeEmptyBinary();
           return;
         }
 
-        // Check if we should use raw URL for binary content
-        if (rawUrlPrefix && isBinaryContent) {
-          await writeWithUrl();
-        } else {
-          // Regular handling: include content
-          await writer.write(
-            encoder.encode(
-              `Content-Transfer-Encoding: ${
-                isBinaryContent ? "binary" : "8bit"
-              }\r\n\r\n`,
-            ),
-          );
+        // Regular handling: include content
+        await writer.write(
+          encoder.encode(
+            `Content-Transfer-Encoding: ${
+              isBinaryContent ? "binary" : "8bit"
+            }\r\n\r\n`,
+          ),
+        );
 
-          // Write the file content
-          await writer.write(content);
-          await writer.write(encoder.encode("\r\n"));
-        }
+        // Write the file content
+        await writer.write(content);
+        await writer.write(encoder.encode("\r\n"));
       } catch (error) {
         console.error(`Error processing file ${entry.fileName}:`, error);
       }
