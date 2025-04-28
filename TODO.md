@@ -17,7 +17,7 @@
 
 # Critical stuff
 
-- Clean up `ingestzip`; needs proper binary filter on paths as well as content. May need a few more minor improvements.
+- ✅ Clean up `ingestzip`; needs proper binary filter on paths as well as content. May need a few more minor improvements.
 - ❗️ Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 - ❗️ `outputmd` needs the whole file-tree in the md result with info on tokensize and what was omitted. Let's make this good.
 
@@ -55,3 +55,7 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
 - ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
 
+
+# Get response
+
+Could be big; https://github.com/refined-github/refined-github/issues/8423#issuecomment-2834412514 https://x.com/fregante

@@ -1,30 +1,44 @@
 // Import picomatch for glob pattern matching
 import picomatch from "picomatch";
 import map from "./public/ext-to-mime.json";
-
-// Helper functions for path normalization
-const prependSlash = (path: string) =>
-  path.startsWith("/") ? path : "/" + path;
-const surroundSlash = (path: string) =>
-  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
-const withoutSlash = (path: string) =>
-  path.startsWith("/") ? path.slice(1) : path;
-
-// Define a FilterOptions interface
-interface FilterOptions {
-  omitFirstSegment?: boolean;
-  basePath?: string[];
-  pathPatterns?: string[];
-  excludePathPatterns?: string[];
-  maxFileSize?: number;
-  omitBinary?: boolean;
-  enableFuzzyMatching?: boolean;
-}
+import binaryExtensions from "binary-extensions";
 
 type Env = { CREDENTIALS: string };
+
+interface FilterOptions {
+  omitFirstSegment: boolean;
+  omitBinary: boolean;
+  enableFuzzyMatching: boolean;
+  rawUrlPrefix: string | null;
+  basePath: string[];
+  pathPatterns: string[];
+  excludePathPatterns: string[];
+  maxFileSize: number | undefined;
+}
+
+interface ResponseOptions {
+  boundary: string;
+  isBrowser: boolean;
+  authHeader: string | null;
+}
+
+interface RequestParams {
+  zipUrl: string;
+  filterOptions: FilterOptions;
+  responseOptions: ResponseOptions;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
-    // Check for authentication
+    // Parse the request parameters
+    const params = parseRequest(request);
+    const { zipUrl, filterOptions, responseOptions } = params;
+    // Validate the ZIP URL
+    if (!zipUrl) {
+      return new Response("No ZIP URL provided", { status: 400 });
+    }
+
+    // Check authentication
     if (!isAuthenticated(request, env.CREDENTIALS)) {
       return new Response("Authentication required", {
         status: 401,
@@ -34,74 +48,30 @@ export default {
       });
     }
 
-    // Parse URL and query parameters
-    const url = new URL(request.url);
-    const zipUrl = decodeURIComponent(url.pathname.slice(1));
-    if (!zipUrl) {
-      return new Response("No ZIP URL provided", { status: 400 });
-    }
-
-    // Get query parameters
-    const omitFirstSegment =
-      url.searchParams.get("omitFirstSegment") === "true";
-    const rawUrlPrefix = url.searchParams.get("rawUrlPrefix");
-    const enableFuzzyMatching =
-      url.searchParams.get("enableFuzzyMatching") === "true";
-    const omitBinary = url.searchParams.get("omitBinary") === "true";
-    const basePath = url.searchParams.getAll("basePath");
-    const pathPatterns = url.searchParams.getAll("pathPatterns");
-    const excludePathPatterns = url.searchParams.getAll("excludePathPatterns");
-    const maxFileSizeQuery = url.searchParams.get("maxFileSize");
-    const maxFileSize =
-      maxFileSizeQuery && !isNaN(Number(maxFileSizeQuery))
-        ? Number(maxFileSizeQuery)
-        : undefined;
-
     try {
-      const headers = new Headers({ "User-Agent": "Cloudflare-Worker" });
-      const authHeader = request.headers.get("x-source-authorization");
-      if (authHeader) {
-        headers.set("Authorization", authHeader);
+      // Fetch the ZIP file with proper headers
+      const zipResponse = await fetchZipFile(params);
+
+      if (!zipResponse.ok || !zipResponse.body) {
+        return createErrorResponse(zipResponse, params.zipUrl);
       }
 
-      const archiveResponse = await fetch(zipUrl, { headers });
-
-      if (!archiveResponse.ok || !archiveResponse.body) {
-        return new Response(
-          `----\nIngestzip: Failed to fetch ZIP: URL=${zipUrl}\n\n${
-            archiveResponse.status
-          } ${
-            archiveResponse.statusText
-          }\n\n${await archiveResponse.text()}\n\n-----`,
-          { status: archiveResponse.status },
-        );
-      }
-
-      // Generate a unique boundary for the multipart form data
-      const boundary = `----WebKitFormBoundary${generateRandomString(16)}`;
-
-      // Determine if request is from a browser
-      const isBrowser = isBrowserRequest(request);
-      const contentType = isBrowser
-        ? `text/plain; boundary=${boundary}; charset=utf-8`
-        : `multipart/form-data; boundary=${boundary}`;
-
-      // Process ZIP and create multipart stream
+      // Process and stream the ZIP contents
       const { readable, writable } = new TransformStream();
 
-      processZipToMultipart(archiveResponse.body, writable, {
-        boundary,
-        omitFirstSegment,
-        rawUrlPrefix,
-        basePath,
-        enableFuzzyMatching,
-        omitBinary,
-        maxFileSize,
-        excludePathPatterns,
-        pathPatterns,
-      });
+      // Start processing the ZIP file in the background
+      processZipToMultipart(
+        zipResponse.body,
+        writable,
+        params.filterOptions,
+        params.responseOptions,
+      );
 
-      // Return the multipart stream response
+      // Return the streaming response
+      const contentType = responseOptions.isBrowser
+        ? `text/plain; boundary=${responseOptions.boundary}; charset=utf-8`
+        : `multipart/form-data; boundary=${responseOptions.boundary}`;
+
       return new Response(readable, {
         headers: {
           "Content-Type": contentType,
@@ -115,6 +85,95 @@ export default {
     }
   },
 };
+
+function parseRequest(request: Request): RequestParams {
+  const url = new URL(request.url);
+
+  // Extract the ZIP URL from the path
+  const zipUrl = decodeURIComponent(url.pathname.slice(1));
+
+  // Parse filter options
+  const filterOptions: FilterOptions = {
+    omitFirstSegment: url.searchParams.get("omitFirstSegment") === "true",
+    omitBinary: url.searchParams.get("omitBinary") === "true",
+    enableFuzzyMatching: url.searchParams.get("enableFuzzyMatching") === "true",
+    rawUrlPrefix: url.searchParams.get("rawUrlPrefix"),
+    basePath: url.searchParams.getAll("basePath"),
+    pathPatterns: url.searchParams.getAll("pathPatterns"),
+    excludePathPatterns: url.searchParams.getAll("excludePathPatterns"),
+    maxFileSize: parseMaxFileSize(url.searchParams.get("maxFileSize")),
+  };
+
+  // Prepare response options
+  const responseOptions: ResponseOptions = {
+    boundary: `----WebKitFormBoundary${generateRandomString(16)}`,
+    isBrowser: isBrowserRequest(request),
+    authHeader: request.headers.get("x-source-authorization"),
+  };
+
+  return { zipUrl, filterOptions, responseOptions };
+}
+
+async function fetchZipFile(params: RequestParams): Promise<Response> {
+  const headers = new Headers({ "User-Agent": "Cloudflare-Worker" });
+
+  if (params.responseOptions.authHeader) {
+    headers.set("Authorization", params.responseOptions.authHeader);
+  }
+
+  return fetch(params.zipUrl, { headers });
+}
+
+function createErrorResponse(response: Response, zipUrl: string): Response {
+  return new Response(
+    `----\nIngestzip: Failed to fetch ZIP: URL=${zipUrl}\n\n${
+      response.status
+    } ${response.statusText}\n\n${response.text()}\n\n-----`,
+    { status: response.status },
+  );
+}
+
+// Helper functions for path normalization
+const prependSlash = (path: string) =>
+  path.startsWith("/") ? path : "/" + path;
+const surroundSlash = (path: string) =>
+  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
+const withoutSlash = (path: string) =>
+  path.startsWith("/") ? path.slice(1) : path;
+
+/**
+ * Simple fuzzy matching function that works similarly to VS Code's fuzzy search
+ */
+function fuzzyMatch(pattern: string, str: string): boolean {
+  // Convert both strings to lowercase for case-insensitive matching
+  const lowerPattern = pattern.toLowerCase();
+  const lowerStr = str.toLowerCase();
+
+  let patternIdx = 0;
+  let strIdx = 0;
+
+  // Try to match all characters in the pattern in sequence
+  while (patternIdx < lowerPattern.length && strIdx < lowerStr.length) {
+    // If characters match, advance pattern index
+    if (lowerPattern[patternIdx] === lowerStr[strIdx]) {
+      patternIdx++;
+    }
+    // Always advance string index
+    strIdx++;
+  }
+
+  // If we've gone through the entire pattern, it's a match
+  return patternIdx === lowerPattern.length;
+}
+
+function parseMaxFileSize(maxFileSizeParam: string | null): number | undefined {
+  if (!maxFileSizeParam) {
+    return undefined;
+  }
+
+  const parsedSize = Number(maxFileSizeParam);
+  return !isNaN(parsedSize) ? parsedSize : undefined;
+}
 
 // Check if the request is authenticated
 function isAuthenticated(request: Request, credentials: string): boolean {
@@ -243,20 +302,10 @@ interface CompiledMatchers {
 async function processZipToMultipart(
   zipStream: ReadableStream,
   output: WritableStream,
-  config: {
-    boundary: string;
-    omitFirstSegment: boolean;
-    rawUrlPrefix: string | null;
-    basePath: string[] | undefined;
-    pathPatterns: string[] | undefined;
-    excludePathPatterns: string[] | undefined;
-    enableFuzzyMatching: boolean;
-    omitBinary: boolean;
-    maxFileSize: number | undefined;
-  },
+  filterOptions: FilterOptions,
+  responseOptions: ResponseOptions,
 ): Promise<void> {
   const {
-    boundary,
     omitFirstSegment,
     rawUrlPrefix,
     basePath,
@@ -265,14 +314,15 @@ async function processZipToMultipart(
     omitBinary,
     pathPatterns,
     maxFileSize,
-  } = config;
-
+  } = filterOptions;
+  const { boundary } = responseOptions;
   const writer = output.getWriter();
 
   // Pass filter options to ZipStreamReader for early filtering
   const zipReader = new ZipStreamReader(zipStream, {
     omitFirstSegment,
     basePath,
+    rawUrlPrefix,
     pathPatterns,
     excludePathPatterns,
     maxFileSize,
@@ -310,20 +360,7 @@ async function processZipToMultipart(
           );
         }
 
-        // Get content and hash
-        const { content, hash } = await getContentAndHash(entry.fileData);
-        await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
-
-        // Determine if content is binary
-        const isBinary = !isUtf8(content);
-
-        // Skip binary files if omitBinary is true
-        if (omitBinary && isBinary) {
-          return;
-        }
-
-        // Check if we should use raw URL for binary content
-        if (rawUrlPrefix && isBinary) {
+        const writeWithUrl = async () => {
           // For binary files with rawUrlPrefix, add x-url header instead of content
           const rawUrl = `${rawUrlPrefix}${processedPath}`;
           await writer.write(encoder.encode(`x-url: ${rawUrl}\r\n`));
@@ -332,12 +369,36 @@ async function processZipToMultipart(
           );
           // Omit content for binary files when rawUrlPrefix is specified
           await writer.write(encoder.encode("\r\n"));
+        };
+
+        if (omitBinary && binaryExtensions.includes(ext)) {
+          // Second, more efficient way, to filter out binary files, while still responding with raw url but not with content.
+          await writeWithUrl();
+          // NB: started the entry.fileData so also need to cancel it.
+          await entry.fileData.cancel();
+        }
+
+        // Get content and hash
+        const { content, hash } = await getContentAndHash(entry.fileData);
+        await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
+
+        // Determine if content is binary
+        const isBinaryContent = !isUtf8(content);
+
+        // Skip binary files if omitBinary is true
+        if (omitBinary && isBinaryContent && !rawUrlPrefix) {
+          return;
+        }
+
+        // Check if we should use raw URL for binary content
+        if (rawUrlPrefix && isBinaryContent) {
+          await writeWithUrl();
         } else {
           // Regular handling: include content
           await writer.write(
             encoder.encode(
               `Content-Transfer-Encoding: ${
-                isBinary ? "binary" : "8bit"
+                isBinaryContent ? "binary" : "8bit"
               }\r\n\r\n`,
             ),
           );
@@ -416,9 +477,9 @@ class ZipStreamReader {
   private filterOptions: FilterOptions;
   private matchers: CompiledMatchers;
 
-  constructor(stream: ReadableStream, filterOptions?: FilterOptions) {
+  constructor(stream: ReadableStream, filterOptions: FilterOptions) {
     this.stream = stream;
-    this.filterOptions = filterOptions || {};
+    this.filterOptions = filterOptions;
 
     // Precompile all matchers once during initialization
     this.matchers = compileMatchers(this.filterOptions);
@@ -500,7 +561,6 @@ class ZipStreamReader {
               extraFieldLength < 0 ||
               compressedSize < 0
             ) {
-              console.log("Invalid entry");
               // Invalid entry, skip forward
               position++;
               continue;
@@ -582,7 +642,6 @@ class ZipStreamReader {
             buffer[position + 3] === 0x02
           ) {
             foundCentralDirectory = true;
-            console.log("FOUND CENTRAL DIRECtORY");
             // We've reached the central directory, which means we're done with file data
             // You might want to break out of the processing loop or handle accordingly
             break;
@@ -652,7 +711,16 @@ class ZipStreamReader {
   ): boolean {
     if (isDirectory) return false; // Skip directories
 
-    const { omitFirstSegment, basePath, maxFileSize } = this.filterOptions;
+    const {
+      omitFirstSegment,
+      basePath,
+      maxFileSize,
+      omitBinary,
+      rawUrlPrefix,
+      enableFuzzyMatching,
+      pathPatterns,
+      excludePathPatterns,
+    } = this.filterOptions;
 
     // Process the path with omitFirstSegment if needed
     const processedPath = omitFirstSegment
@@ -664,7 +732,13 @@ class ZipStreamReader {
       return false;
     }
 
-    // console.log({ processedPath });
+    const ext = processedPath.split(".").pop()!;
+
+    if (omitBinary && !rawUrlPrefix && binaryExtensions.includes(ext)) {
+      // First, most efficient way, to exclude binaries
+      return false;
+    }
+
     // Check base path filter
     if (basePath && basePath.length > 0) {
       const matchesBasePath = basePath.some((base) => {
@@ -674,7 +748,6 @@ class ZipStreamReader {
         return normalizedFilename.startsWith(normalizedBase);
       });
 
-      console.log(processedPath, { matchesBasePath });
       if (!matchesBasePath) {
         return false;
       }
@@ -686,20 +759,36 @@ class ZipStreamReader {
 
     // Apply inclusion patterns if defined
     let included = true;
-    if (this.matchers.hasInclusion) {
-      // Check normal patterns
+    if (
+      this.matchers.hasInclusion ||
+      (enableFuzzyMatching && pathPatterns && pathPatterns.length > 0)
+    ) {
+      // Check normal patterns from picomatch
       const matchesNormalPattern = this.matchers.inclusionMatchers.normal.some(
         (matcher) => matcher(normalizedPath),
       );
 
-      // Check basename patterns
+      // Check basename patterns from picomatch
       const matchesBasenamePattern =
         this.matchers.inclusionMatchers.basename.some((matcher) =>
           matcher(basename),
         );
 
-      // File is included if it matches either type of pattern
-      included = matchesNormalPattern || matchesBasenamePattern;
+      // Apply fuzzy matching directly to path patterns if enabled
+      const matchesFuzzyPattern =
+        enableFuzzyMatching && pathPatterns
+          ? pathPatterns.some((pattern) => {
+              // Only apply fuzzy matching to non-glob patterns
+              if (!pattern.includes("*") && !pattern.includes("?")) {
+                return fuzzyMatch(pattern, normalizedPath);
+              }
+              return false;
+            })
+          : false;
+
+      // File is included if it matches any pattern
+      included =
+        matchesNormalPattern || matchesBasenamePattern || matchesFuzzyPattern;
     }
 
     // If not included, no need to check exclusion
@@ -708,22 +797,41 @@ class ZipStreamReader {
     }
 
     // Apply exclusion patterns
-    if (this.matchers.hasExclusion) {
-      // Check normal patterns
+    if (
+      this.matchers.hasExclusion ||
+      (enableFuzzyMatching &&
+        excludePathPatterns &&
+        excludePathPatterns.length > 0)
+    ) {
+      // Check normal patterns from picomatch
       const matchesNormalExcludePattern =
         this.matchers.exclusionMatchers.normal.some((matcher) =>
           matcher(normalizedPath),
         );
 
-      // Check basename patterns
+      // Check basename patterns from picomatch
       const matchesBasenameExcludePattern =
         this.matchers.exclusionMatchers.basename.some((matcher) =>
           matcher(basename),
         );
 
-      // File is excluded if it matches either type of exclusion pattern
+      // Apply fuzzy matching directly to exclude path patterns if enabled
+      const matchesFuzzyExcludePattern =
+        enableFuzzyMatching && excludePathPatterns
+          ? excludePathPatterns.some((pattern) => {
+              // Only apply fuzzy matching to non-glob patterns
+              if (!pattern.includes("*") && !pattern.includes("?")) {
+                return fuzzyMatch(pattern, normalizedPath);
+              }
+              return false;
+            })
+          : false;
+
+      // File is excluded if it matches any exclusion pattern
       const excluded =
-        matchesNormalExcludePattern || matchesBasenameExcludePattern;
+        matchesNormalExcludePattern ||
+        matchesBasenameExcludePattern ||
+        matchesFuzzyExcludePattern;
 
       // If excluded, it takes precedence over inclusion
       if (excluded) {

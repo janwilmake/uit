@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "binary-extensions": "^3.0.0",
     "fflate": "^0.8.2",
     "picomatch": "^4.0.2"
   },
