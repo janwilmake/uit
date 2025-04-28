@@ -35,14 +35,14 @@ Let's focus on this, making uuithub actually better than the v1.
 
 It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
 
-- ❗️ `?genignore` can be empty to disable, a URL to get from there, or a genignore content string to overwrite
+- ❗️ `?genignore` can be empty to disable, a URL to get from there
 - Use https://uithub.com/OAI/OpenAPI-Specification?genignore=https://genignore.forgithub.com/custom/oai__openapi-specification/.genignore and confirm that works.
 - Put a badge onthere with a nice message.
 - Add UI to edit .genignore parameter in old version.
 - In this modal you should be able click through to add the `.genignore` to the repo. There should be a comment inthere refering to uithub
 - ❗️ Fix 'add to readme' button default branch (should be added into context!)
 
-# `FAQ.json`
+# `context.json`
 
 - uithub should always look for `FAQ.json` and `.genignore` and if they exist, push to the HTML
 - In uithub interface, FAQs should be easily accessible if the file is present (probably in search tab)

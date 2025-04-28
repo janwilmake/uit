@@ -1,9 +1,15 @@
 {
-  "$schema": "https://uuithub.com/faq.schema.json",
+  "$schema": "https://uuithub.com/context.schema.json",
   "attribution": "Powered by Universal Information Terminal (UIT) by Jan Wilmake - https://github.com/janwilmake/uit",
   "items": [
-    { "title": "ELI5", "question": "Explain like I'm 5", "filter": "?ext=md" },
     {
+      "slug": "eli5",
+      "title": "ELI5",
+      "question": "Explain like I'm 5",
+      "filter": "?ext=md"
+    },
+    {
+      "slug": "nutshell",
       "title": "Nutshell summary",
       "question": "What is this all about, in a nutshell?",
       "filter": "?ext=md",

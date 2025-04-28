@@ -1,5 +1,5 @@
 {
-  "$schema": "https://uuithub.com/faq.schema.json",
+  "$schema": "https://uuithub.com/context.schema.json",
   "extends": "https://raw.githubusercontent.com/janwilmake/uit/refs/heads/main/default-faq.json",
   "attribution": "Powered by Universal Information Terminal (UIT) by Jan Wilmake - https://github.com/janwilmake/uit",
   "items": []

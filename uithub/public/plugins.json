@@ -64,7 +64,7 @@
 
     "swc": {
       "title": "SWC",
-      "type": "formdata-transformer",
+      "type": "transform-formdata",
       "endpoint": "https://swc.uithub.com",
       "source": "https://github.com/janwilmake/uithub.swc",
       "description": "Uses SWC to parse TypeScript/JavaScript into types, functions, imports/exports, and variables."
