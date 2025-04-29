@@ -48,6 +48,7 @@ export default {
         responseOptions,
       );
 
+      console.log({ genignore: updatedFilterOptions.excludePathPatterns });
       const initialResponseTime = Date.now() - requestStartTime;
       console.log({ initialResponseTime });
 

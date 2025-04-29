@@ -46,10 +46,27 @@
             "description": "Optional: a more extensive prompt to use instead of the question itself.",
             "maxLength": 16000
           },
+          "basePath": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "pathPatterns": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "One or more glob patterns to include filepaths"
+          },
+          "excludePathPatterns": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "One or more glob patterns to exclude filepaths"
+          },
+          "maxFileSize": {
+            "items": { "type": "number" },
+            "description": "Maximum file size in bytes for files to include."
+          },
           "filter": {
             "type": "string",
-            "description": "Pathname and/or querystring to apply to get trimmed down context.\n\nStart with ? to only include queryString. The string before '?' is considered the pathname. \n\nPlease do not include the hostname.",
-            "examples": [],
+            "description": "querystring to apply to get trimmed down context. May include pathPatterns, excludePathPatterns, maxFileSize, along with other conventional params the client interface supports.",
             "maxLength": 16000
           },
           "preferredModel": {

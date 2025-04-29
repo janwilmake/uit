@@ -12,7 +12,15 @@
 10. Implement `uithub.otp` and use it in `uithub.ingestzip`
 11. Implement `monetaryurl` and use it everywhere
 
-# `.genignore` & `context.json`
+# Getting config files, fast.
+
+How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files?
+
+How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore.
+
+Also `context.json` may ultimately be used for a default context. Generally I just need a way to get all config files from any zip, beforehand, without making it slower.
+
+# Make them work: `.genignore` & `context.json`
 
 It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
 
@@ -33,7 +41,7 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 - ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
 - Implement useful plugins!!! Make the footprint of a plugin as simple as possible without loosing capability. E.g. also allow file=>file.
 - Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
-- Most interesting plugins: 
+- Most interesting plugins:
   - 1. typedoc or similar
   - 2. llms.txt plugin (just taking markdown)
 
@@ -56,7 +64,7 @@ It'd be a great way to get a better default filter. It's hard though as we want 
 
 Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
 
-# UI Enhancements 
+# UI Enhancements
 
 - In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not. Then, In uithub UI (`vscode.html`), add filter warning if tokens were capped that says "apply filters for better results".
 - `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
