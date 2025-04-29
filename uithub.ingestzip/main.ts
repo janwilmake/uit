@@ -2,31 +2,8 @@
 import picomatch from "picomatch";
 import map from "./public/ext-to-mime.json";
 import binaryExtensions from "binary-extensions";
-
-type Env = { CREDENTIALS: string };
-
-interface FilterOptions {
-  omitFirstSegment: boolean;
-  omitBinary: boolean;
-  enableFuzzyMatching: boolean;
-  rawUrlPrefix: string | null;
-  basePath: string[];
-  pathPatterns: string[];
-  excludePathPatterns: string[];
-  maxFileSize: number | undefined;
-}
-
-interface ResponseOptions {
-  boundary: string;
-  isBrowser: boolean;
-  authHeader: string | null;
-}
-
-interface RequestParams {
-  zipUrl: string;
-  filterOptions: FilterOptions;
-  responseOptions: ResponseOptions;
-}
+import { Env, FilterOptions, RequestParams, ResponseOptions } from "./types";
+import { processWithGenIgnore } from "./genignore";
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -34,7 +11,12 @@ export default {
     const requestStartTime = Date.now();
 
     const params = parseRequest(request);
-    const { zipUrl, responseOptions } = params;
+    const {
+      zipUrl,
+      filterOptions: initialFilterOptions,
+      responseOptions,
+    } = params;
+
     // Include timing info in response headers
     const responseHeaders = new Headers({
       "Content-Type": responseOptions.isBrowser
@@ -59,12 +41,16 @@ export default {
     }
 
     try {
-      // Fetch the ZIP file with proper headers
-      const zipFetchStartTime = Date.now();
-      const zipResponse = await fetchZipFile(params);
+      // Process with GenIgnore - this does the first pass if needed
+      const { updatedFilterOptions, zipResponse } = await processWithGenIgnore(
+        zipUrl,
+        initialFilterOptions,
+        responseOptions,
+      );
 
-      const initialResponseTime = Date.now() - zipFetchStartTime;
+      const initialResponseTime = Date.now() - requestStartTime;
       console.log({ initialResponseTime });
+
       responseHeaders.set(
         "X-Initial-Response-Time-Ms",
         initialResponseTime.toString(),
@@ -77,11 +63,11 @@ export default {
       // Process and stream the ZIP contents
       const { readable, writable } = new TransformStream();
 
-      // Start processing the ZIP file in the background
+      // Start processing the ZIP file in the background with updated filter options
       processZipToMultipart(
         zipResponse.body,
         writable,
-        params.filterOptions,
+        updatedFilterOptions, // Use the updated filter options with .genignore patterns
         params.responseOptions,
         requestStartTime,
       );

@@ -1,0 +1,113 @@
+# Package manager locks and metadata
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-shrinkwrap.json
+node_modules
+.pnp.*
+.yarn/*
+.npm
+
+# Build artifacts and output directories
+dist/
+build/
+out/
+.output
+.nuxt
+.next
+.cache
+.parcel-cache
+.webpack
+.serverless
+.gradle
+target/
+bin/
+
+# Dependency directories
+bower_components/
+jspm_packages/
+web_modules/
+
+# Environment and local configuration files
+.env
+.env.*
+.envrc
+.vercel
+.venv
+env/
+venv/
+ENV/
+.local
+
+# Editor directories and files
+.idea/
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+._*
+Thumbs.db
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+debug.log
+
+# Test coverage
+coverage/
+.nyc_output
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+.hypothesis/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+.temp/
+.tmp/
+
+# IDE and tooling configuration
+.eslintcache
+.stylelintcache
+.prettierignore
+.commitlintrc
+.editorconfig
+.circleci/
+.github/workflows/
+.gitlab-ci.yml
+.travis.yml
+.codeclimate.yml
+.dependabot/
+renovate.json
+
+# Documentation artifacts
+docs/_build/
+site/
+.docusaurus
+storybook-static/
+
+# Minified files (often not useful for context)
+*.min.js
+*.min.css
+
+# Generated assets & maps
+*.map
+*.d.ts
+*.tsbuildinfo
+
+# Auto-generated files
+CHANGELOG.md
+LICENSE
+.gitattributes

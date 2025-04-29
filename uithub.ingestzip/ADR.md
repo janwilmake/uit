@@ -1,3 +1,41 @@
+# genignore
+
+https://claude.ai/share/6e7287e2-72ce-496d-b4f7-88d12d8ea0ed
+
+Prompt: I want to extend this with the firstPass idea.
+
+1. if `excludePathPatterns` wasn't provided (also not an empty string), it should do the first pass. otherwise, excludePathPatterns provided in query are enough.
+2. the first pass should only look in the root directory, stop when it finds .genignore, or stop if it finds a non-dot file (meaning we passed all dot files)
+3. all comments and blank lines for genignore are removed, now we end up with the excludePathPatterns[] to use.
+4. if `.genignore` wasn't found, should use `default.genignore` imported using `import defaultGenignore from "./default.genignore";. the file is there.
+
+Please create the utility functions I need so I can embed it in this code.
+
+```mermaid
+flowchart TD
+    A[Request Received] --> B{Exclude patterns\nin request?}
+    B -- Yes --> E[Skip .genignore search]
+    B -- No --> C[First pass:\nSearch for .genignore in root]
+    C --> D{.genignore found?}
+    D -- Yes --> F[Parse .genignore patterns]
+    D -- No --> G[Use default.genignore]
+    E --> H[Second pass:\nProcess ZIP with patterns]
+    F --> H
+    G --> H
+    H --> I[Return multipart response]
+
+    subgraph "First Pass"
+        C
+        D
+        F
+        G
+    end
+
+    subgraph "Second Pass"
+        H
+    end
+```
+
 # Glob filtering
 
 I'm using https://github.com/isaacs/minimatch/tree/main/src
