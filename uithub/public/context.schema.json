@@ -17,12 +17,12 @@
       "description": "URI to base configuration file to inherit from",
       "default": "https://raw.githubusercontent.com/janwilmake/uit/refs/heads/main/default-faq.json"
     },
-    "items": {
-      "description": "Array of questions and filters. Only slug is required, and at least either question or filter.",
+
+    "context": {
+      "description": "Array of context; questions and filters. Only slug is required, and at least either question or filter.",
       "type": "array",
       "items": {
         "type": "object",
-        "description": "",
         "additionalProperties": false,
         "required": ["slug"],
         "properties": {
@@ -51,6 +51,20 @@
             "description": "Pathname and/or querystring to apply to get trimmed down context.\n\nStart with ? to only include queryString. The string before '?' is considered the pathname. \n\nPlease do not include the hostname.",
             "examples": [],
             "maxLength": 16000
+          },
+          "preferredModel": {
+            "type": "object",
+            "description": "",
+            "additionalProperties": false,
+            "required": ["model", "endpoint", "key"],
+            "properties": {
+              "endpoint": { "type": "string" },
+              "model": { "type": "string" },
+              "key": {
+                "type": "string",
+                "description": "the environment variable key name to authorize usage of this model."
+              }
+            }
           }
         }
       }

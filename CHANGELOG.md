@@ -777,3 +777,8 @@ Sha url can't be used for edit link, must be branch!
 - ✅ Takes 2 minutes for bun. speed can likely be improved down to about 15-40s. see https://claude.ai/share/d4059e61-7ab8-404a-b5cd-f4dc2823101c
 
 # 2025-04-28
+
+- ✅ Clean up `ingestzip`; Added proper binary filter on paths as well as content.
+- ✅ Added `omitBinary` to `uithub` requests for non-zip responses. For zip responses, binary is not omitted anymore.
+- ✅ Added custom `x-filter` FormData header that provides information about files that got filtered out
+- ✅ should include entire file structure, including files where content got omitted
