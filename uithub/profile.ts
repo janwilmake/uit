@@ -1,4 +1,4 @@
-import profileHtml from "./public/profile.html";
+import profileHtml from "./static/profile.html";
 /** To be replaced with actual uithub page */
 export const respondProfilePage = async (
   originUrl: string,

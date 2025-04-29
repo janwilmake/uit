@@ -1,7 +1,7 @@
 name = "janwilmake_uithub"
 main = "main.ts"
 compatibility_date = "2024-12-05"
-assets = { directory= "./public" }
+assets = { directory= "./static" }
 dev.port = 3000
 
 routes = [
@@ -9,10 +9,17 @@ routes = [
   { pattern = "www.uuithub.com", custom_domain = true }
 ]
 
+triggers.crons = ["0 4 * * *"]
+
 [vars]
 GITHUB_REDIRECT_URI = "https://uuithub.com/callback"
 LOGIN_REDIRECT_URI = "/"
 COOKIE_DOMAIN_SHARING = "true"
+
+
+[[kv_namespaces]]
+binding = "ASSETS_KV"
+id = "c0ddffa3d6eb419d95573bc335f62245"
 
 [[durable_objects.bindings]]
 name = "SPONSOR_DO"

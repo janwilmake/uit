@@ -119,7 +119,7 @@ export const escapeHTML = (str: string) => {
     .replace(/\u2029/g, "\\u2029"); // Paragraph separator
 };
 
-export const getIndex = async () => {
+export const updateIndex = async (env: { ASSETS_KV: KVNamespace }) => {
   try {
     // Check if the HTML contains the placeholder
     if (html.includes("{TOP_REPOS}")) {
@@ -144,26 +144,12 @@ export const getIndex = async () => {
 
       // Replace the placeholder with the generated HTML
       const finalHtml = html.replace("{TOP_REPOS}", topReposHtml);
-
-      // Create a new response with the modified HTML
-      return new Response(finalHtml, {
-        headers: {
-          "Content-Type": "text/html",
-          "Cache-Control": "public, max-age=3600",
-        },
-      });
+      await env.ASSETS_KV.put("uithub/index.html", finalHtml);
     }
 
-    // If no placeholder is found, return the original response
-    return new Response(html, {
-      status: 200,
-      headers: { "content-type": "text/html" },
-    });
+    await env.ASSETS_KV.put("uithub/index.html", html);
   } catch (error) {
     console.error("Error processing request:", error);
-    return new Response(html, {
-      status: 200,
-      headers: { "content-type": "text/html" },
-    });
+    await env.ASSETS_KV.put("uithub/index.html", html);
   }
 };
