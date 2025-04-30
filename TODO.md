@@ -44,11 +44,13 @@
 
 # https://genignore.com
 
-Research the `.gitignore` specification and compare that to VSCode specification for `files to include/exclude`. Determine how `.genignore` should work, and write that into a spec at `uit/specification/genignore.md`
+✅ Research the `.gitignore` specification and compare that to VSCode specification for `files to include/exclude`. Determine how `.genignore` should work, and write that into a spec at `uit/specification/genignore.md`
+
+✅ Besides the issue, DM them. This should be enough to make `.genignore` succeed as a standard!
 
 Create a nice landing for genignore.com that explains the concept using that file. Also include the fact that repomix and gitingest also had introduced/discussed similar concepts, but a universal one is more desirable.
 
-Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`. Besides the issue, also DM them. This should be enough to make `.genignore` succeed as a standard!
+Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`.
 
 After confirmation from both parties, create a launch thread for `genignore` on X.
 
