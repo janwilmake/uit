@@ -18,8 +18,8 @@ COOKIE_DOMAIN_SHARING = "true"
 
 
 [[kv_namespaces]]
-binding = "ASSETS_KV"
-id = "c0ddffa3d6eb419d95573bc335f62245"
+binding = "UITHUB_ASSETS_KV"
+id = "782785454eac450aba2f0904fa5de087"
 
 [[durable_objects.bindings]]
 name = "SPONSOR_DO"

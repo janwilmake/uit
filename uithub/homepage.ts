@@ -1,4 +1,4 @@
-import html from "./index.html";
+import html from "./public/index.html";
 
 interface Repository {
   name: string;
@@ -119,7 +119,7 @@ export const escapeHTML = (str: string) => {
     .replace(/\u2029/g, "\\u2029"); // Paragraph separator
 };
 
-export const updateIndex = async (env: { ASSETS_KV: KVNamespace }) => {
+export const updateIndex = async (ASSETS_KV: KVNamespace) => {
   try {
     // Check if the HTML contains the placeholder
     if (html.includes("{TOP_REPOS}")) {
@@ -144,12 +144,12 @@ export const updateIndex = async (env: { ASSETS_KV: KVNamespace }) => {
 
       // Replace the placeholder with the generated HTML
       const finalHtml = html.replace("{TOP_REPOS}", topReposHtml);
-      await env.ASSETS_KV.put("uithub/index.html", finalHtml);
+      await ASSETS_KV.put("index.html", finalHtml);
     }
 
-    await env.ASSETS_KV.put("uithub/index.html", html);
+    await ASSETS_KV.put("index.html", html);
   } catch (error) {
     console.error("Error processing request:", error);
-    await env.ASSETS_KV.put("uithub/index.html", html);
+    await ASSETS_KV.put("index.html", html);
   }
 };

@@ -1,3 +1,18 @@
+# Plugins
+
+❗️ Before i start with plugins, I want to nail the basics for file hierarchy exploration. Everything must work super smoothly. Maybe I shoul decide doing this later, if there are more improvements to be made for optimal smoothness. It's super obvious plugins are gonna be epic, but lets do the things in the right order.
+
+- Make `ingestjson.uithub.com` so all the apis make sense!
+- Also try the "api" datatype which just passes each file that fits the mediatype to the endpoint according to some convention. ActionSchema!
+- Make `domains.json` function
+- Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
+- ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
+- Implement useful plugins!!! Make the footprint of a plugin as simple as possible without loosing capability. E.g. also allow file=>file.
+- Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
+- Most interesting plugins:
+  - 1. typedoc or similar
+  - 2. llms.txt plugin (just taking markdown)
+
 # creating sha-cached basePath-based inferences (big on performance)
 
 ❗️ Found that `initialResponseTime` for `ingestzip` service is often in the ballpark of: 1750-2250ms. Caching the zip into KV or R2 makes a ton of sense to reduce this to 100s of ms.
@@ -16,11 +31,11 @@ Only do the above for public repos with permissive lisence allowing commercial r
 
 # X plugin
 
-1) give context of x threads found in the data
-2) determine the key keyword or keywords that identify this repo
-3) Find the X account(s) linked to the owner (and if that's an organisation, at least the core contributor, but if not, also look at top 50% contributors or so).
-4) Use keywords within context of posts of X accounts to filter out threads that are relevant (without duplication).
-5) Run a search on x with results of people mentioning the keyword(s) to find other mentions about this repo.
+1. give context of x threads found in the data
+2. determine the key keyword or keywords that identify this repo
+3. Find the X account(s) linked to the owner (and if that's an organisation, at least the core contributor, but if not, also look at top 50% contributors or so).
+4. Use keywords within context of posts of X accounts to filter out threads that are relevant (without duplication).
+5. Run a search on x with results of people mentioning the keyword(s) to find other mentions about this repo.
 
 All of this should be done respecing privacy and with an xymake configuration in the repo. This will be a challenge, but very cool nonetheless!
 

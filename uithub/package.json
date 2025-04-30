@@ -1,5 +1,8 @@
 {
   "type": "module",
+  "scripts": {
+    "upload": "npx uploadkv && wrangler deploy"
+  },
   "dependencies": {
     "cloudflare-assets-kv": "^0.0.2",
     "sponsorflare": "^0.2.5",

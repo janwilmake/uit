@@ -22,7 +22,7 @@ interface Env {
   RATELIMIT_DO: DurableObjectNamespace<RatelimitDO>;
   GITHUB_PAT: string;
   CREDENTIALS: string;
-  ASSETS_KV: KVNamespace;
+  UITHUB_ASSETS_KV: KVNamespace;
   UITHUB_ZIPTREE: { fetch: typeof fetch };
 }
 
@@ -35,7 +35,7 @@ const fillTemplate = (html: string, template: { [key: string]: any }) => {
 
 export default {
   scheduled: async (event: any, env: Env, ctx: any) => {
-    await updateIndex(env);
+    await updateIndex(env.UITHUB_ASSETS_KV);
   },
   fetch: withAssetsKV(
     async (request: Request, env: Env, context: any) => {
@@ -432,7 +432,7 @@ export default {
         },
       });
     },
-    { pathPrefix: "uithub/" },
+    { kvNamespace: "UITHUB_ASSETS_KV" },
   ),
 };
 
@@ -528,7 +528,11 @@ const pipeResponse = async (context: {
 
   const rawUrlPrefixPart = rawUrlPrefix ? `&rawUrlPrefix=${rawUrlPrefix}` : "";
   const omitBinaryPart = responseType === "zip" ? "" : `&omitBinary=true`;
-  const ingestUrl = `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${rawUrlPrefixPart}${omitBinaryPart}`;
+  const genignorePart = `&genignore=${
+    url.searchParams.get("genignore") === "false" ? false : true
+  }`;
+
+  const ingestUrl = `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`;
 
   const outputUrl = {
     zip: "https://outputzip.uithub.com",
@@ -539,6 +543,9 @@ const pipeResponse = async (context: {
   }[responseType];
 
   const searchParams = new URLSearchParams(url.searchParams);
+
+  // genignore is customised
+  searchParams.delete("genignore");
 
   if (basePath) {
     searchParams.append("basePath", "/" + basePath);

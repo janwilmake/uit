@@ -9,6 +9,7 @@ export interface FilterOptions {
   pathPatterns: string[];
   excludePathPatterns: string[];
   maxFileSize: number | undefined;
+  genignore: boolean;
 }
 
 export interface ResponseOptions {

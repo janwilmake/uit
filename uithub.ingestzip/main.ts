@@ -92,6 +92,7 @@ function parseRequest(request: Request): RequestParams {
 
   // Parse filter options
   const filterOptions: FilterOptions = {
+    genignore: url.searchParams.get("genignore") !== "false",
     omitFirstSegment: url.searchParams.get("omitFirstSegment") === "true",
     omitBinary: url.searchParams.get("omitBinary") === "true",
     enableFuzzyMatching: url.searchParams.get("enableFuzzyMatching") === "true",
@@ -302,33 +303,14 @@ async function processZipToMultipart(
   output: WritableStream,
   filterOptions: FilterOptions,
   responseOptions: ResponseOptions,
-
   requestStartTime: number,
 ): Promise<void> {
-  const {
-    omitFirstSegment,
-    rawUrlPrefix,
-    basePath,
-    enableFuzzyMatching,
-    excludePathPatterns,
-    omitBinary,
-    pathPatterns,
-    maxFileSize,
-  } = filterOptions;
+  const { omitFirstSegment, rawUrlPrefix, omitBinary } = filterOptions;
   const { boundary } = responseOptions;
   const writer = output.getWriter();
 
   // Pass filter options to ZipStreamReader for early filtering
-  const zipReader = new ZipStreamReader(zipStream, {
-    omitFirstSegment,
-    basePath,
-    rawUrlPrefix,
-    pathPatterns,
-    excludePathPatterns,
-    maxFileSize,
-    omitBinary,
-    enableFuzzyMatching,
-  });
+  const zipReader = new ZipStreamReader(zipStream, filterOptions);
 
   try {
     // Process the ZIP entries

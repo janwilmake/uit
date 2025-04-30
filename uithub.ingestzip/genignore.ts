@@ -259,11 +259,6 @@ export async function processWithGenIgnore(
   updatedFilterOptions: FilterOptions;
   zipResponse: Response;
 }> {
-  // Skip first pass if excludePathPatterns was explicitly provided
-  const shouldCheckGenIgnore =
-    !initialFilterOptions.excludePathPatterns ||
-    initialFilterOptions.excludePathPatterns.length === 0;
-
   // Prepare headers for fetching the ZIP
   const headers = new Headers({ "User-Agent": "Cloudflare-Worker" });
   if (responseOptions.authHeader) {
@@ -272,9 +267,8 @@ export async function processWithGenIgnore(
 
   // Make a clone of the initial filter options
   const updatedFilterOptions = { ...initialFilterOptions };
-
   // If we don't need to check for .genignore, just fetch the ZIP once
-  if (!shouldCheckGenIgnore) {
+  if (!initialFilterOptions.genignore) {
     const zipResponse = await fetch(zipUrl, { headers });
     return { updatedFilterOptions, zipResponse };
   }
@@ -299,16 +293,15 @@ export async function processWithGenIgnore(
 
   try {
     // Look for .genignore in the ZIP
-    const genIgnorePatterns = await findGenIgnoreInZip(firstPassStream);
+    const genIgnorePatterns =
+      (await findGenIgnoreInZip(firstPassStream)) ||
+      parseGenIgnore(defaultGenignore);
 
-    // If .genignore was found, use those patterns
-    if (genIgnorePatterns) {
-      updatedFilterOptions.excludePathPatterns = genIgnorePatterns;
-    } else {
-      // Otherwise use default genignore patterns
-      updatedFilterOptions.excludePathPatterns =
-        parseGenIgnore(defaultGenignore);
-    }
+    updatedFilterOptions.excludePathPatterns = Array.from(
+      new Set(
+        genIgnorePatterns.concat(updatedFilterOptions.excludePathPatterns),
+      ),
+    );
   } catch (error) {
     console.error("Error during .genignore processing:", error);
     // Fall back to default genignore patterns on error

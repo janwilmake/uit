@@ -5,64 +5,76 @@
 3. ✅ Let's show some ppl/ais and figure out what to do next! (did this until april 20, 2025)
 4. ✅ Deploy to uuithub.com
 5. ✅ Announcement (Friday, april 25th, 6PM)
-6. `.genignore` and `context.json`
-7. Plugins
-8. Critical stuff
-9. UI enhancement
-10. Implement `uithub.otp` and use it in `uithub.ingestzip`
-11. Implement `monetaryurl` and use it everywhere
+6. `.genignore` and `context.json` launches
+7. Critical stuff
+8. UI enhancement
+9. Nailing omni-compatible navigation
+10. Improving markdown output
 
-# Getting config files, fast.
+^^^ DEADLINE: May 10th = FOCUS ^^^
 
-How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files?
+1.  packagedocs plugin
+2.  uitx cli
+3.  forgithub.lists source
+4.  Cross-domain plugin system
+5.  Implement `uithub.otp` and use it in `uithub.ingestzip`
+6.  Implement `monetaryurl`, pluggable into `sponsorflare` and `stripeflare`, and use it everywhere
 
-How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore.
+^^^ This can still take several weeks to make good. Target: end of may ^^^
 
-Also `context.json` may ultimately be used for a default context. Generally I just need a way to get all config files from any zip, beforehand, without making it slower.
+# `.genignore`
 
-# Make them work: `.genignore` & `context.json`
+🤔 How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files? How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore. Generally I just need a way to get config files from any zip, beforehand, without making it slower.
 
-It'd be a great way to get a better default filter. It's hard though as we want not to cache too fast.
+✅ I've added `genignore.ts` to `ingestzip` so it always first finds genignore or uses the default.
 
-- uithub should always look for `context.json` and `.genignore` and if they exist, push to the HTML
-- By default, `.genignore` file is taken from root of project OR `https://uuithub.com/default.genignore`. This is fetched beforehand in the backend of `uithub` and send along as `?excludePathPatterns`. It is then also provided as `data.excludePathPatternsContent`.
-- In the search panel, you should be able click through to add the `.genignore` to the repo. There should be a comment inthere refering to uithub.
-- In uithub interface, context options should be easily accessible if the file is present (probably in search tab).
-- try contents from https://genignore.forgithub.com/custom/oai__openapi-specification/.genignore and see if that works.
-- `uitx .` should take into account `.genignore` and run without internet connection.
+✅ If `genignore=false` is provided, should disable default or configured genignore.
 
-# Plugins
+✅ If `excludePathPatterns` is provided, these are added to the patterns (duplicates removed)
 
-- Make `ingestjson.uithub.com` so all the apis make sense!
-- Also figure out how to nail navigation.
-- Also try the "api" datatype which just passes each file that fits the mediatype to the endpoint according to some convention. ActionSchema!
-- Make `domains.json` function
-- Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
-- ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
-- Implement useful plugins!!! Make the footprint of a plugin as simple as possible without loosing capability. E.g. also allow file=>file.
-- Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
-- Most interesting plugins:
-  - 1. typedoc or similar
-  - 2. llms.txt plugin (just taking markdown)
+✅ Update OpenAPI spec
 
-# LATER
+In frontend add `genignore=false` checkbox titled `disable genignore`.
 
-- Nav highlights: make it possible to see search filters in tree as well by moving this logic to the backend.
-- Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
-- Bug with spaces: https://x.com/janwilmake/status/1898753253988253946
+In frontend, add button `Create .genignore` that does the same as README.md, but for `.genignore`
 
-# `explore.js` search examples:
+In frontend, exclude patterns should not include ones starting with # or if its an empty string, trimmed.
 
-- (If too much code, make this an external HTML page) - Below the search inputs, list a few examples that would change the value of the inputs:
-  - only md,mdx
-  - omit package-lock.json
-  - only ts,js,tsx but omit build
-  - regex: only files with hardcoded URLs
-  - regex: `import ... from "react"`
+Try to improve the excludePathPatterns so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Now we can also create specific includes when generating something with just genignore!
+
+# `context.json`
+
+Separate requests in `filter.js` that looks for `context.json` in current branch and if it exists, render questions. Add `filter.js` tab!
+
+In uithub, magic filter that creates path filters, and fills into search and localStorage.
+
+From filter page, if filter is applied, add button `Add to context.json` that adds copies full `context.json` or one item into clipboard, then navigates to edit/create that file (depending if it pre-existed).
+
+If no filter is applied, add button to generate custom `context.json`
+
+# genignore.com and contextjson.com
+
+Create a nice landing for genignore.com/owner/repo in which you can easily create a custom `.genignore` more suitable to your project.
+
+https://contextjson.com/owner/repo: Separate tool to generate a new `context.json` based on tree+README (https://uuithub.com/owner/repo?pathPatterns=README.md), and add to your project via github.
+
+Put sponsorflare in front of both so it won't be abused.
+
+Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`. This is enough to make `.genignore` succeed as a standard!
+
+For early compatibility, maybe also look for `.repomixignore` and `.gitingestignore` in the first zipingest pass.
+
+Create a launch thread for `genignore` first.
 
 # Critical stuff
 
 Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
+
+Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
+
+Bug with spaces: https://x.com/janwilmake/status/1898753253988253946
+
+Could be big; https://github.com/refined-github/refined-github/issues/8423#issuecomment-2834412514 https://x.com/fregante
 
 # UI Enhancements
 
@@ -70,12 +82,21 @@ Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix
 - `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
 - `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.
 
-# Get response
+# Nailing omni-compatible navigation
 
-Could be big; https://github.com/refined-github/refined-github/issues/8423#issuecomment-2834412514 https://x.com/fregante
+Make it possible to see search filters in tree as well by moving this logic to the backend. It's likely best to stream the formdata after search to `uithub` directly so i can build/return the tree instead of `ziptree`. This way I know which files got filtered using `x-filter`.
+
+The `output*` service should be called using `repsonse.body.tee()` in `uithub`. We use the structured FormData output to generate the tree in a helper utility function.
+
+Ultimately, the tree datastructure would be `{ [segment]: { size: number;filtered: boolean, children: this }}`
+
+This is super critical to make uithub nice to use... including for other domains and ingesttypes.
+
+Ensure we use the `domain.json` setup and request parsing to navigate!
 
 # Improving the markdown output
 
+- When generating full markdowntree, also get token size for each file/folder, and show the size on folders
 - Add `x-filter` and `x-error` type safety to `multipart-formdata-stream-js`
 - Add `maxTokens` filter and `basePath` content-filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still.
 - Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.

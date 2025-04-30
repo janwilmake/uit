@@ -1,6 +1,6 @@
 # Package manager locks and metadata
 package-lock.json
-yarn.lock
+*.lock
 pnpm-lock.yaml
 npm-shrinkwrap.json
 node_modules

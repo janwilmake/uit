@@ -120,6 +120,13 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "genignore",
+            "in": "query",
+            "description": "If 'false', will not apply default or found genignore file",
+            "required": false,
+            "schema": { "type": "boolean" }
           }
         ],
         "security": [

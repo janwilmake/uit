@@ -18,6 +18,18 @@
       "default": "https://raw.githubusercontent.com/janwilmake/uit/refs/heads/main/default-faq.json"
     },
 
+    "apiDependencies": {
+      "description": "API Dependencies are dependencies on external APIs. Useful to keep track for context.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "scopes": { "type": "string" },
+          "operationIds": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+
     "context": {
       "description": "Array of context; questions and filters. Only slug is required, and at least either question or filter.",
       "type": "array",
