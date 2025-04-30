@@ -1,6 +1,6 @@
 # file filter params
 
-UIT modules are incentivized to stay as close to the base params as possible when possible. The following filter params are proposed to be standardized as filter parameters:
+UIT plugins are incentivized to stay as close to the base params as possible when possible. The following filter params are proposed to be standardized as filter parameters:
 
 - `pathPatterns:string[]` - glob pattern(s) of paths to be included
 - `excludePathPatterns:string[]` - glob pattern(s) of paths to be excluded
