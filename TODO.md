@@ -34,13 +34,29 @@
 
 ✅ Update OpenAPI spec
 
-In frontend add `genignore=false` checkbox titled `disable genignore`.
+✅ exclude patterns should not include ones starting with # or if its an empty string, trimmed.
 
-In frontend, add button `Create .genignore` that does the same as README.md, but for `.genignore`
+✅ In frontend, for some reason. it is rendering it as html. improved escape functionality
 
-In frontend, exclude patterns should not include ones starting with # or if its an empty string, trimmed.
+✅ In frontend add `genignore=false` checkbox titled `disable genignore`.
 
-Try to improve the excludePathPatterns so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Now we can also create specific includes when generating something with just genignore!
+✅ In frontend, add button `Create .genignore` that does the same as README button, but for `.genignore`
+
+# https://genignore.com
+
+Research the `.gitignore` specification and compare that to VSCode specification for `files to include/exclude`. Determine how `.genignore` should work, and write that into a spec at `uit/specification/genignore.md`
+
+Create a nice landing for genignore.com that explains the concept using that file. Also include the fact that repomix and gitingest also had introduced/discussed similar concepts, but a universal one is more desirable.
+
+Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`. Besides the issue, also DM them. This should be enough to make `.genignore` succeed as a standard!
+
+After confirmation from both parties, create a launch thread for `genignore` on X.
+
+Confirm that `.genignore` works like desired.
+
+Try to improve the excludePathPatterns so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Potentially, people wanna have only a few specific files in their context, which should be specified like `*.*\n!README.md`.
+
+Now we can also create specific includes when generating something with just genignore!
 
 # `context.json`
 
@@ -52,19 +68,11 @@ From filter page, if filter is applied, add button `Add to context.json` that ad
 
 If no filter is applied, add button to generate custom `context.json`
 
-# genignore.com and contextjson.com
-
-Create a nice landing for genignore.com/owner/repo in which you can easily create a custom `.genignore` more suitable to your project.
+# contextjson.com
 
 https://contextjson.com/owner/repo: Separate tool to generate a new `context.json` based on tree+README (https://uuithub.com/owner/repo?pathPatterns=README.md), and add to your project via github.
 
-Put sponsorflare in front of both so it won't be abused.
-
-Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`. This is enough to make `.genignore` succeed as a standard!
-
-For early compatibility, maybe also look for `.repomixignore` and `.gitingestignore` in the first zipingest pass.
-
-Create a launch thread for `genignore` first.
+Put sponsorflare in front
 
 # Critical stuff
 

@@ -101,30 +101,56 @@ document.addEventListener("DOMContentLoaded", function () {
               placeholder="e.g. 5000">
           </div>
         </div>
+        
+        <!-- Add genignore checkbox -->
+        <div class="mb-3 flex items-center">
+          <input type="checkbox" id="disable-genignore" class="mr-2">
+          <label for="disable-genignore" class="text-xs text-gray-600 dark:text-gray-400">
+            disable genignore
+          </label>
+        </div>
       </div>
 
-      <div class="mb-3">
-      <p class="mb-1 text-xs text-gray-600 dark:text-gray-400">Add this filter to your README?<p>
-  <button onclick="addBadgeToReadme()"
-      class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
-      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
-          <path d="M12 5v14M5 12h14"></path>
-      </svg>
-      Create README Badge
-
-  </button></div>
+      <div class="mb-3 flex flex-wrap gap-2">
+        <div>
+          <p class="mb-1 text-xs text-gray-600 dark:text-gray-400">Add this filter to your README?</p>
+          <button onclick="addBadgeToReadme()"
+              class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                  <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              Create README Badge
+          </button>
+        </div>
+        
+        <!-- Add Create .genignore button -->
+        <div>
+          <p class="mb-1 text-xs text-gray-600 dark:text-gray-400">Create ignore file?</p>
+          <button onclick="addGenignore()"
+              class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                  <path d="M12 5v14M5 12h14"></path>
+              </svg>
+              Create .genignore
+          </button>
+        </div>
+      </div>
 
       <!-- Add this button next to the "Create README Badge" button -->
-<button id="copy-as-curl-btn"
-    class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
-        <polyline points="16 18 22 12 16 6"></polyline>
-        <polyline points="8 6 2 12 8 18"></polyline>
-    </svg>
-    Copy as cURL
-</button>
+
+                <p class="mb-1 text-xs text-gray-600 dark:text-gray-400">Use uithub as API</p>
+
+      <button id="copy-as-curl-btn"
+          class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          Copy as cURL
+      </button>
     `;
 
     // Get DOM elements
@@ -138,6 +164,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const regexBtn = document.getElementById("regex-btn");
     const clearFiltersBtn = document.getElementById("clear-filters-btn");
     const applySearchBtn = document.getElementById("apply-search-btn");
+    const disableGenignoreCheckbox =
+      document.getElementById("disable-genignore");
 
     // State variables
     let pendingChanges = false;
@@ -150,6 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
       excludePathPatterns: [],
       maxTokens: "",
       maxFileSize: "",
+      genignore: false,
     };
 
     // Load parameters from URL
@@ -174,11 +203,13 @@ document.addEventListener("DOMContentLoaded", function () {
       searchParams.isMatchWholeWord =
         urlParams.get("isMatchWholeWord") === "true";
       searchParams.isRegex = urlParams.get("isRegex") === "true";
+      searchParams.genignore = urlParams.get("genignore") === "false";
 
       // Update toggle buttons
       if (searchParams.isCaseSensitive) toggleActiveButton(matchCaseBtn);
       if (searchParams.isMatchWholeWord) toggleActiveButton(matchWordBtn);
       if (searchParams.isRegex) toggleActiveButton(regexBtn);
+      disableGenignoreCheckbox.checked = searchParams.genignore;
 
       // Path patterns (could be arrays)
       if (urlParams.has("pathPatterns")) {
@@ -191,7 +222,9 @@ document.addEventListener("DOMContentLoaded", function () {
           "excludePathPatterns",
         );
         // For textarea, join with newlines instead of commas
-        filesExcludeInput.value = searchParams.excludePathPatterns.join("\n");
+        filesExcludeInput.value = searchParams.excludePathPatterns
+          .join("\n")
+          .filter((x) => x.trim() !== "" && !x.trim().startsWith("#"));
       }
 
       // Max tokens and max file size
@@ -214,7 +247,8 @@ document.addEventListener("DOMContentLoaded", function () {
         searchParams.pathPatterns.length > 0 ||
         searchParams.excludePathPatterns.length > 0 ||
         searchParams.maxTokens ||
-        searchParams.maxFileSize
+        searchParams.maxFileSize ||
+        searchParams.genignore
       ) {
         clearFiltersBtn.classList.remove("hidden");
       }
@@ -242,6 +276,10 @@ document.addEventListener("DOMContentLoaded", function () {
         urlParams.set("isRegex", "true");
       }
 
+      if (searchParams.genignore) {
+        urlParams.set("genignore", "false");
+      }
+
       // Clear existing pathPatterns and excludePathPatterns
       urlParams.delete("pathPatterns");
       urlParams.delete("excludePathPatterns");
@@ -256,6 +294,10 @@ document.addEventListener("DOMContentLoaded", function () {
       // Add excludePathPatterns array if it exists
       if (searchParams.excludePathPatterns.length > 0) {
         searchParams.excludePathPatterns.forEach((pattern) => {
+          if (pattern.trim() === "" || pattern.trim().startsWith("#")) {
+            return;
+          }
+
           urlParams.append("excludePathPatterns", pattern);
         });
       }
@@ -393,6 +435,12 @@ document.addEventListener("DOMContentLoaded", function () {
       updateURL();
     });
 
+    // Event handler for genignore checkbox
+    disableGenignoreCheckbox.addEventListener("change", function () {
+      searchParams.genignore = this.checked;
+      updateURL();
+    });
+
     // Clear all filters
     clearFiltersBtn.addEventListener("click", function () {
       // Reset all search params
@@ -405,6 +453,7 @@ document.addEventListener("DOMContentLoaded", function () {
         excludePathPatterns: [],
         maxTokens: "",
         maxFileSize: "",
+        genignore: false,
       };
 
       // Reset UI
@@ -413,6 +462,7 @@ document.addEventListener("DOMContentLoaded", function () {
       filesExcludeInput.value = "";
       maxTokensInput.value = "";
       maxFileSizeInput.value = "";
+      disableGenignoreCheckbox.checked = false;
 
       // Reset toggle buttons
       if (matchCaseBtn.classList.contains("text-blue-500")) {
@@ -445,6 +495,7 @@ document.addEventListener("DOMContentLoaded", function () {
       );
       searchParams.maxTokens = maxTokensInput.value.trim();
       searchParams.maxFileSize = maxFileSizeInput.value.trim();
+      searchParams.genignore = disableGenignoreCheckbox.checked;
 
       // Update URL and refresh page
       updateURL(true);

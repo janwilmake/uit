@@ -102,7 +102,7 @@ export const escapeHTML = (str: string) => {
     return "";
   }
 
-  return str
+  let escaped = str
     .replace(
       /[&<>'"]/g,
       (tag: string) =>
@@ -117,6 +117,19 @@ export const escapeHTML = (str: string) => {
     .replace(/\u0000/g, "\uFFFD") // Replace null bytes
     .replace(/\u2028/g, "\\u2028") // Line separator
     .replace(/\u2029/g, "\\u2029"); // Paragraph separator
+
+  // Additional special handling for regex patterns with template literals
+  // This is the critical fix for your specific issue
+  escaped = escaped
+    // The specific pattern that's causing problems: backtick-$-closing parenthesis
+    .replace(/`\s*\$\s*\)/g, "`&#36;)") // Escape $ in template literals before closing )
+    .replace(/`\s*\$\s*`/g, "`&#36;`") // Escape $ between backticks
+
+    // Additional safeguards for similar patterns
+    .replace(/\$(?=\s*`)/g, "&#36;") // $ before a backtick
+    .replace(/\$(?=\s*\))/g, "&#36;"); // $ before a closing parenthesis
+
+  return escaped;
 };
 
 export const updateIndex = async (ASSETS_KV: KVNamespace) => {

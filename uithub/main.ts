@@ -388,7 +388,7 @@ export default {
         balance,
       };
 
-      const finalHtml = fillTemplate(viewHtml, template)
+      const replacedHtml = viewHtml
         .replace(
           "</body>",
           `<script>window.data = ${JSON.stringify(data)};</script></body>`,
@@ -396,31 +396,32 @@ export default {
         .replace(
           "<title></title>",
           `<title>${title}</title>
-          <meta name="description" content="${description}" />
-          <meta name="keywords" content="GitHub, LLM, context, code, developer tools" />
-          <meta name="author" content="Code From Anywhere" />
-          <meta name="robots" content="index, follow" />
-          
-          <!-- Facebook Meta Tags -->
-      <meta property="og:url" content="${url.toString()}" />
-      <meta property="og:type" content="website" />
-      <meta property="og:title" content="${title}" />
-      <meta property="og:description" content="${description}" />
-          <meta property="og:image" content="${ogImageUrl}" />
-          <meta property="og:image:alt" content="${description}"/>
-          <meta property="og:image:width" content="1200"/>
-          <meta property="og:image:height" content="600"/>
-      
-      
-      <!-- Twitter Meta Tags -->
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta property="twitter:domain" content="uithub.com" />
-      <meta property="twitter:url" content="${url.toString()}" />
-      <meta name="twitter:title" content="${title}" />
-      <meta name="twitter:description" content="${description}" />
-      <meta name="twitter:image" content="${ogImageUrl}" />`,
+        <meta name="description" content="${description}" />
+        <meta name="keywords" content="GitHub, LLM, context, code, developer tools" />
+        <meta name="author" content="Code From Anywhere" />
+        <meta name="robots" content="index, follow" />
+        
+        <!-- Facebook Meta Tags -->
+    <meta property="og:url" content="${url.toString()}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+        <meta property="og:image" content="${ogImageUrl}" />
+        <meta property="og:image:alt" content="${description}"/>
+        <meta property="og:image:width" content="1200"/>
+        <meta property="og:image:height" content="600"/>
+    
+    
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:domain" content="uithub.com" />
+    <meta property="twitter:url" content="${url.toString()}" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${ogImageUrl}" />`,
         );
 
+      const finalHtml = fillTemplate(replacedHtml, template);
       return new Response(finalHtml, {
         status: 200,
         headers: {
@@ -429,6 +430,9 @@ export default {
           "X-XSS-Protection": "1; mode=block",
           "X-Content-Type-Options": "nosniff",
           "X-Frame-Options": "DENY",
+          // Strong Content Security Policy to prevent any script execution
+          //  "Content-Security-Policy":
+          //    "default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none'; form-action 'self'; base-uri 'self';",
         },
       });
     },

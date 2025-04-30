@@ -2,6 +2,21 @@
 <html lang="en">
 
 <head>
+
+    <!-- 100% privacy-first analytics -->
+    <script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+
+    <!-- to prevent xss -->
+    <meta http-equiv="Content-Security-Policy" content="
+     default-src 'self'; 
+     script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; 
+     style-src 'self' 'unsafe-inline';
+     img-src  https://queue.simpleanalyticscdn.com https://avatars.githubusercontent.com 'self' data:;
+     font-src 'self';
+     connect-src 'self' https://queue.simpleanalyticscdn.com;
+   ">
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
@@ -289,7 +304,7 @@
 
         <!-- Main content - independently scrollable with horizontal scroll only -->
         <div class="p-4 flex-1 content-container">
-            <pre id="textToCopy">{{contextString}}</pre>
+            <pre id="textToCopy" aria-readonly="true">{{contextString}}</pre>
         </div>
     </div>
 
@@ -302,7 +317,7 @@
         Copied!
     </div>
 
-    <script src="/badge.js"></script>
+    <script src="/buttons.js"></script>
     <script src="/explore.js"></script>
     <script src="/search.js"></script>
     <script src="/filter.js"></script>
@@ -414,8 +429,9 @@
             window.getSelection().removeAllRanges();
             window.getSelection().addRange(range);
 
-            // Copy the text
+            // Execute the copy command
             document.execCommand('copy');
+
 
             // Deselect
             window.getSelection().removeAllRanges();
