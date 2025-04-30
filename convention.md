@@ -1,4 +1,4 @@
-# file filter params
+# File filter params
 
 UIT plugins are incentivized to stay as close to the base params as possible when possible. The following filter params are proposed to be standardized as filter parameters. any `ingest` plugin should implement them:
 
