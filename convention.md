@@ -12,11 +12,11 @@ UIT plugins are incentivized to stay as close to the base params as possible whe
 
 # `.genignore`
 
-Genignore is an proposal to standardardize how to specify which files are to be ignored for generative AI. Any implementation of genignore should follow the same spec as gitignore: https://git-scm.com/docs/gitignore
+`.genignore` is a proposal to standardardize how to specify which files are to be ignored for generative AI. Any implementation of genignore should follow the same spec as gitignore: https://git-scm.com/docs/gitignore
 
-Repomix [uses](https://github.com/yamadashy/repomix/blob/main/src/core/file/fileSearch.ts) `.repomixignore`, gitingest [has considered](https://github.com/cyclotruc/gitingest/issues/147) `.gitingestignore`, repoprompt [uses](https://repoprompt.com/docs#s=file-selection&ss=filtering-files) `.repo_ignore`.
+Repomix [uses](https://github.com/yamadashy/repomix/blob/main/src/core/file/fileSearch.ts) `.repomixignore`, gitingest [has considered](https://github.com/cyclotruc/gitingest/issues/147) `.gitingestignore`, repoprompt [uses](https://repoprompt.com/docs#s=file-selection&ss=filtering-files) `.repo_ignore`, cursor [uses](https://docs.cursor.com/context/ignore-files) `.cursorignore`.
 
-uithub implements a slightly simplified version of `.genignore`: only the `.genignore` at the root is applied. I hope other context selection tools will do the same.
+uithub implements a slightly simplified version of `.genignore`: only the `.genignore` at the root is applied. I hope other context selection tools will do the same. Everyone can just add support for `.genignore` besides their own way, to give maintainers the choice to immediately support all tools.
 
 # context.json
 
