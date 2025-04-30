@@ -1,9 +1,12 @@
 # file filter params
 
-UIT plugins are incentivized to stay as close to the base params as possible when possible. The following filter params are proposed to be standardized as filter parameters:
+UIT plugins are incentivized to stay as close to the base params as possible when possible. The following filter params are proposed to be standardized as filter parameters. any `ingest` plugin should implement them:
 
+- `basePath:string[]` - only include files in these basePath(s)
 - `pathPatterns:string[]` - glob pattern(s) of paths to be included
 - `excludePathPatterns:string[]` - glob pattern(s) of paths to be excluded
+- `enableFuzzyMatching` - use fuzzy matching (a la VSCode) if provided
+- `omitBinary:boolean` - omit binary files if true
 - `maxFileSize:number`
 - `genignore:boolean` - whether or not to apply (default) `.genignore`
 
