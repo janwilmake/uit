@@ -1,3 +1,5 @@
 package-lock.json
-*.html
 old
+*.html
+ext-to-mime.json
+*.svg

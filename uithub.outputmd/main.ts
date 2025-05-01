@@ -88,6 +88,16 @@ async function processPartsToMarkdown(
           : ""; // Handle case where data might be AsyncIterableIterator
 
       const fileSize = fileContent.length;
+
+      const tokenCount = Math.round(fileSize / 5 / 100) * 100;
+
+      const tokenCountText =
+        tokenCount === 0
+          ? ""
+          : fileSize < 10000
+          ? ` (${tokenCount} tokens)`
+          : ` (${tokenCount / 1000}k tokens)`;
+
       const isFileTooLarge = fileSize > maxFileSize;
       // Process file path for tree view
       const pathParts = filename.split("/").filter((p) => p.trim() !== "");
@@ -127,9 +137,9 @@ async function processPartsToMarkdown(
         ? ` (omited due to size)`
         : "";
 
-      treeStructure += `${" ".repeat(
+      const tokenText = (treeStructure += `${" ".repeat(
         depth * INDENTATION_PER_LEVEL,
-      )}${treeString}${currentFilename}${filteredText}\n`;
+      )}${treeString}${currentFilename}${tokenCountText}${filteredText}\n`);
 
       // Update last path
       lastPath = [...pathParts];

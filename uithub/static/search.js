@@ -223,8 +223,8 @@ document.addEventListener("DOMContentLoaded", function () {
         );
         // For textarea, join with newlines instead of commas
         filesExcludeInput.value = searchParams.excludePathPatterns
-          .join("\n")
-          .filter((x) => x.trim() !== "" && !x.trim().startsWith("#"));
+          .filter((x) => x.trim() !== "" && !x.trim().startsWith("#"))
+          .join("\n");
       }
 
       // Max tokens and max file size
