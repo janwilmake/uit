@@ -64,6 +64,7 @@ export default {
       // Process and stream the ZIP contents
       const { readable, writable } = new TransformStream();
 
+      console.log({ updatedFilterOptions });
       // Start processing the ZIP file in the background with updated filter options
       processZipToMultipart(
         zipResponse.body,

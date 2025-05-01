@@ -530,10 +530,13 @@ const pipeResponse = async (context: {
     );
   }
 
+  const genignoreQuery = url.searchParams.get("genignore");
+
+  console.log({ genignoreQuery });
   const rawUrlPrefixPart = rawUrlPrefix ? `&rawUrlPrefix=${rawUrlPrefix}` : "";
   const omitBinaryPart = responseType === "zip" ? "" : `&omitBinary=true`;
   const genignorePart = `&genignore=${
-    url.searchParams.get("genignore") === "false" ? false : true
+    genignoreQuery === "false" ? false : true
   }`;
 
   const ingestUrl = `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`;

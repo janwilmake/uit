@@ -169,6 +169,7 @@ export async function findGenIgnoreInZip(
           // If we found a non-dot file, we can stop looking for .genignore
           // because GitHub sorts files alphabetically, and dot files come first
           if (!isDotFile) {
+            console.log({ filename: pathParts[1] });
             foundNonDotFile = true;
             break;
           }
@@ -269,6 +270,7 @@ export async function processWithGenIgnore(
   const updatedFilterOptions = { ...initialFilterOptions };
   // If we don't need to check for .genignore, just fetch the ZIP once
   if (!initialFilterOptions.genignore) {
+    console.log("Genignore not desired");
     const zipResponse = await fetch(zipUrl, { headers });
     return { updatedFilterOptions, zipResponse };
   }
@@ -297,6 +299,9 @@ export async function processWithGenIgnore(
       (await findGenIgnoreInZip(firstPassStream)) ||
       parseGenIgnore(defaultGenignore);
 
+    console.log({ genIgnorePatterns });
+
+    // unique and concatenate with provided ones
     updatedFilterOptions.excludePathPatterns = Array.from(
       new Set(
         genIgnorePatterns.concat(updatedFilterOptions.excludePathPatterns),

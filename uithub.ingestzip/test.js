@@ -2,21 +2,24 @@ async function testZipProcessor() {
   console.time("Total execution time");
 
   // GitHub ZIP URL for the alchemy repo
+  //  const githubZipUrl =    "https://github.com/sam-goodwin/alchemy/archive/refs/heads/main.zip";
   const githubZipUrl =
-    "https://github.com/sam-goodwin/alchemy/archive/refs/heads/main.zip";
+    "https://github.com/janwilmake/uit/archive/refs/heads/main.zip";
 
   const CREDENTIALS = process.env.CREDENTIALS;
   // Local server URL
   const serverUrl = "http://localhost:3000"; //"https://ingestzip.uithub.com"; //
 
   // Path we want to extract from the ZIP
-  const targetPath = "alchemy-web/docs";
-
+  //const targetPath = "alchemy-web/docs";
+  const targetPath = undefined;
   // Construct the full URL with parameters
   const url = new URL(serverUrl);
   url.pathname = encodeURIComponent(githubZipUrl);
   url.searchParams.append("omitFirstSegment", "true");
-  url.searchParams.append("basePath", targetPath);
+  if (targetPath) {
+    url.searchParams.append("basePath", targetPath);
+  }
 
   console.log(`Fetching ZIP archive and processing '${targetPath}' folder...`);
   console.time("Fetch and process time");
