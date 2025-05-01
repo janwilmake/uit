@@ -18,6 +18,7 @@ export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
 import { Plugin, ResponseTypeEnum, router, StandardURL } from "./router.js";
 import { escapeHTML, updateIndex } from "./homepage.js";
+import { buildTree, TreeObject } from "./buildTree.js";
 interface Env {
   RATELIMIT_DO: DurableObjectNamespace<RatelimitDO>;
   GITHUB_PAT: string;
@@ -180,70 +181,29 @@ export default {
       const { domain, plugin, standardUrl, responseType, needHtml } = result;
 
       const {
+        // To load source
         sourceUrl,
         sourceType,
-        primarySourceSegment,
-        basePath,
-        ext,
-        pluginId,
-        secondarySourceSegment,
+
+        // FOR HTML
+        title,
         description,
         ogImageUrl,
-        title,
+
+        // URL BUILDUP
+        primarySourceSegment,
+        pluginId,
+        ext,
+        secondarySourceSegment,
+        basePath,
       } = standardUrl;
       if (!sourceType || !sourceUrl || sourceType !== "zip") {
         return new Response("Source not found", { status: 404 });
       }
 
-      const treeUrl = `https://ziptree.uithub.com/tree/${sourceUrl}?type=token-tree&omitFirstSegment=true`;
+      //   const treeUrl = `https://ziptree.uithub.com/tree/${sourceUrl}?type=token-tree&omitFirstSegment=true`;
 
       const t3 = Date.now();
-
-      const ziptreeFetcher = env.UITHUB_ZIPTREE || {
-        fetch: (url, init) => fetch(url, init),
-      };
-
-      // only get tree if we show HTML
-      const treePromise = needHtml
-        ? ziptreeFetcher
-            .fetch(
-              new Request(treeUrl, {
-                headers: {
-                  ...headers,
-                  "Cache-Control": `max-age=86400, stale-while-revalidate=2592000, ${
-                    access_token ? "private" : "public"
-                  }`,
-                },
-              }),
-            )
-            .then(async (res) => {
-              if (!res.ok) {
-                return {
-                  status: res.status,
-                  error: await res.text(),
-                  realBranch: undefined,
-                };
-              }
-
-              // This didn't work in
-              const firstSegment = res.headers.get("x-first-segment");
-
-              const realBranch = domain
-                ? "main"
-                : firstSegment?.slice(
-                    // NB: This is a bit annoying, but the first segment actually differs for authenticated repos via the authenticated api
-                    access_token
-                      ? primarySourceSegment.length + 2
-                      : primarySourceSegment.split("/")[0].length + 1,
-                  );
-
-              return {
-                tree: (await res.json()) as { __size: number },
-                realBranch,
-                status: res.status,
-              };
-            })
-        : undefined;
 
       const maxTokens = url.searchParams.get("maxTokens") || undefined;
       const maxFileSize = url.searchParams.get("maxFileSize") || undefined;
@@ -288,16 +248,23 @@ export default {
         searchParams.append("basePath", basePath);
       }
 
-      const response = await pipeResponse({
+      const {
+        response,
+        outputUrl,
+        headers: outputHeaders,
+      } = await pipeResponse({
         url,
         plugin,
         standardUrl,
         responseType,
         CREDENTIALS: env.CREDENTIALS,
         sourceAuthorization: access_token ? `token ${access_token}` : undefined,
-      });
 
-      if (!response.ok || !response.body) {
+        // whether or not to immediately include piping output
+        pipeOutput: responseType === "zip" || !needHtml,
+      });
+      const contentType = response.headers.get("content-type");
+      if (!response.ok || !response.body || !contentType) {
         const message = access_token
           ? `Pipe Not OK ${response.status} ${
               response.statusText
@@ -323,41 +290,53 @@ export default {
             },
           );
         }
+
         return new Response(`${response.status} - ${message}`, {
           status: response.status,
         });
       }
 
-      if (responseType === "zip") {
-        // special output: zip
-        return new Response(response.body, {
-          headers: {
-            "Content-Type": "application/zip",
-            "Content-Disposition": 'attachment; filename="formdata.zip"',
-          },
-        });
+      if (!outputUrl) {
+        // directly output response if no further processing is required
+
+        // either zip or non-html
+        return response;
       }
 
-      const contextString = await response.text();
+      /**
+       * We need HTML!
+       * 1. tee repsonse.body
+       * 3. use first copy + outputUrl to get output format
+       * 2. use second copy to build tree
+       */
+      const [formDataBody, treeBody] = response.body.tee();
 
-      console.log("Content", Date.now() - t3, "ms");
-      // we need the HTML for crawlers and the HTML for accept html.
-      // Or if we still don't need json/yaml, we need raw text.
-      if (!needHtml) {
-        return new Response(contextString);
-      }
+      // use first copy and outputUrl to get output format
+      const contextStringPromise = fetch(outputUrl, {
+        body: formDataBody,
+        headers: outputHeaders,
+        method: "POST",
+      }).then(async (response) => {
+        if (!response.ok) {
+          return `Not ok (${response.status}) - ${await response.text()}`;
+        }
+        return response.text();
+      });
 
-      const treeResult = await treePromise;
+      console.log("Initial formData response", Date.now() - t3, "ms");
+
+      const treePromise = buildTree(treeBody, contentType);
+
+      const [contextString, treeResult]: [string, TreeObject] =
+        await Promise.all([contextStringPromise, treePromise]);
+
       console.log("Tree", Date.now() - t3, "ms");
 
-      if (!treeResult?.tree) {
-        return new Response(
-          "Tree error: " + (treeResult?.error || "Tree not provided"),
-          { status: treeResult?.status || 500 },
-        );
+      if (!treeResult) {
+        return new Response("Tree error: Tree not provided", { status: 500 });
       }
-      const tree = treeResult.tree;
 
+      console.log({ treeResult });
       // Gather the data
 
       const currentTokens = Math.round(contextString.length / 500) * 100;
@@ -367,7 +346,7 @@ export default {
         currentTokens,
         baseLink: `https://${domain}/${primarySourceSegment}`,
         baseName: primarySourceSegment,
-        baseTokens: tree.__size,
+        baseTokens: treeResult["/"]?.tokens,
         moreToolsLink: domain
           ? "#"
           : `https://forgithub.com/${primarySourceSegment}`,
@@ -379,14 +358,26 @@ export default {
 
       const data = {
         isPaymentRequired: false,
-        realBranch: treeResult.realBranch,
         isTokensCapped,
-        tree,
+        tree: treeResult,
         is_authenticated,
         owner_login,
         avatar_url,
         balance,
+
+        primarySourceSegment,
+        pluginId,
+        ext,
+        secondarySourceSegment,
+        basePath,
       };
+
+      // this is it
+      const pathname = `/${primarySourceSegment}/${pluginId || "tree"}${
+        ext ? `.${ext}` : ""
+      }${secondarySourceSegment ? `/${secondarySourceSegment}` : ""}${
+        basePath ? `/${basePath}` : ""
+      }`;
 
       const replacedHtml = viewHtml
         .replace(
@@ -489,6 +480,7 @@ const pipeResponse = async (context: {
   responseType: ResponseTypeEnum;
   CREDENTIALS: string;
   sourceAuthorization?: string;
+  pipeOutput?: boolean;
 }) => {
   const {
     url,
@@ -496,6 +488,7 @@ const pipeResponse = async (context: {
     CREDENTIALS,
     plugin,
     responseType,
+    pipeOutput,
     standardUrl: {
       primarySourceSegment,
       basePath,
@@ -509,30 +502,34 @@ const pipeResponse = async (context: {
   } = context;
 
   if (sourceType !== "zip") {
-    return new Response("Source type not supported yet: " + sourceType, {
-      status: 400,
-    });
+    const response = new Response(
+      "Source type not supported yet: " + sourceType,
+      {
+        status: 400,
+      },
+    );
+    return { response };
   }
 
   if (plugin?.type === "ingest") {
-    return new Response(
+    const response = new Response(
       `\n\nIngest plugins use should use ingestjson.uithub.com so we need to make that (plugin = ${plugin.title})`,
       {
         status: 400,
       },
     );
+    return { response };
   }
 
   if (plugin?.type === "api") {
-    return new Response(
+    const response = new Response(
       `API plugins should transform every file that fits the description. Sicko!`,
       { status: 400 },
     );
+    return { response };
   }
 
   const genignoreQuery = url.searchParams.get("genignore");
-
-  console.log({ genignoreQuery });
   const rawUrlPrefixPart = rawUrlPrefix ? `&rawUrlPrefix=${rawUrlPrefix}` : "";
   const omitBinaryPart = responseType === "zip" ? "" : `&omitBinary=true`;
   const genignorePart = `&genignore=${
@@ -569,13 +566,14 @@ const pipeResponse = async (context: {
     // formdata -> formdata
     shadowTransformUrl,
     // formdata -> any
-    outputUrl,
+    pipeOutput ? outputUrl : undefined,
   ]
     .filter((x) => !!x)
     .map((x) => x!);
 
   if (!urls || urls.length === 0) {
-    return new Response("No base paths provided", { status: 400 });
+    const response = new Response("No base paths provided", { status: 400 });
+    return { response };
   }
 
   const fullUrl = processUrls(urls);
@@ -601,13 +599,25 @@ const pipeResponse = async (context: {
   const response = await fetch(fullUrl, { headers });
 
   if (!response.ok) {
-    return new Response(
+    const finalResponse = new Response(
       `URL Pipe request failed with status: ${
         response.status
       }\n\n${await response.text()}`,
       { status: response.status },
     );
+    return { response: finalResponse };
   }
 
-  return response;
+  if (pipeOutput) {
+    return { response };
+  }
+
+  return {
+    response,
+    outputUrl,
+    headers: {
+      ...headers,
+      "content-type": response.headers.get("content-type")!,
+    },
+  };
 };

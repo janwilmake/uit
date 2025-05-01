@@ -20,32 +20,16 @@ document.addEventListener("DOMContentLoaded", function () {
     return String(Math.round(count / 100000) / 10) + "M";
   };
 
-  // Extract repository path information from URL
-  function getRepoPathInfo() {
-    const path = window.location.pathname;
-    // const pathRegex = /^\/([^\/]+)\/([^\/]+)(?:\/tree\/([^\/]+))?(?:\/(.*))?$/;
-    const pathRegex =
-      /^\/([^\/]+)\/([^\/]+)(?:\/(tree|blob)\/([^\/]+))?(?:\/(.*))?$/;
-    const match = path.match(pathRegex);
+  // Get the current base path from window.data
+  function getCurrentBasePath() {
+    return window.data.basePath || "";
+  }
 
-    if (match) {
-      return {
-        owner: match[1],
-        repo: match[2],
-        branch: match[4] || window.data.realBranch || "main",
-        path: match[5] || "",
-        isBlob: path.includes("/blob/"),
-      };
-    }
-
-    // Default fallback if URL doesn't match expected pattern
-    return {
-      owner: "",
-      repo: "",
-      branch: window.data.realBranch || "main",
-      path: "",
-      isBlob: false,
-    };
+  // Get the root folder name
+  function getRootFolderName() {
+    return `${
+      window.data.primarySourceSegment
+    }${window.data.secondarySourceSegment ? `/${window.data.secondarySourceSegment}` : ""}`;
   }
 
   // Calculate default expansion level based on current path
@@ -55,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Create and populate the explorer content
   function loadExplorerContent() {
-    const repoInfo = getRepoPathInfo();
+    const currentBasePath = getCurrentBasePath();
     const defaultExpandLevel = getDefaultExpansionLevel();
 
     filesContent.innerHTML = `
@@ -84,12 +68,12 @@ document.addEventListener("DOMContentLoaded", function () {
         <!-- Folder structure -->
         <div class="folder-structure overflow-x-auto">
           ${renderTree(
-            window.data.tree,
+            processTreeData(window.data.tree),
             "project-root",
             0,
             "",
             defaultExpandLevel,
-            repoInfo,
+            currentBasePath,
             showFiles,
           )}
         </div>
@@ -161,14 +145,25 @@ document.addEventListener("DOMContentLoaded", function () {
       item.addEventListener("click", function (e) {
         e.stopPropagation();
         const path = this.dataset.path;
-        const repoInfo = getRepoPathInfo();
 
         // Preserve query parameters when navigating
         const queryParams = window.location.search;
-        const url = `/${repoInfo.owner}/${repoInfo.repo}/tree/${repoInfo.branch}/${path}${queryParams}`;
-        window.location.href =
-          url.replace(/\/+/g, "/").replace(/\/+$/, "") +
-          (queryParams ? "" : queryParams);
+
+        // Build URL with the primary and secondary segments
+        let url = `/${window.data.primarySourceSegment}/${
+          window.data.pluginId || "tree"
+        }`;
+        if (window.data.ext) {
+          url += `.${window.data.ext}`;
+        }
+        if (window.data.secondarySourceSegment) {
+          url += `/${window.data.secondarySourceSegment}`;
+        }
+        if (path) {
+          url += `/${path}`;
+        }
+
+        window.location.href = url + queryParams;
       });
     });
 
@@ -177,16 +172,79 @@ document.addEventListener("DOMContentLoaded", function () {
       item.addEventListener("click", function (e) {
         e.stopPropagation();
         const path = this.dataset.path;
-        const repoInfo = getRepoPathInfo();
 
         // Preserve query parameters when navigating
         const queryParams = window.location.search;
-        const url = `/${repoInfo.owner}/${repoInfo.repo}/blob/${repoInfo.branch}/${path}${queryParams}`;
-        window.location.href =
-          url.replace(/\/+/g, "/").replace(/\/+$/, "") +
-          (queryParams ? "" : queryParams);
+
+        // Build URL with the primary and secondary segments
+        // For files, we typically use "blob" or similar instead of "tree"
+        let url = `/${window.data.primarySourceSegment}/blob`;
+        if (window.data.ext) {
+          url += `.${window.data.ext}`;
+        }
+        if (window.data.secondarySourceSegment) {
+          url += `/${window.data.secondarySourceSegment}`;
+        }
+        if (path) {
+          url += `/${path}`;
+        }
+
+        window.location.href = url + queryParams;
       });
     });
+  }
+
+  // Process tree data into hierarchical structure
+  function processTreeData(treeData) {
+    if (!treeData || typeof treeData !== "object") return {};
+
+    const processedTree = { __size: 0 };
+
+    for (const path in treeData) {
+      if (!treeData.hasOwnProperty(path)) continue;
+
+      const item = treeData[path];
+      const tokens = item.tokens || 0;
+      const filtered = item.filtered || false;
+
+      const isFolder = path.endsWith("/");
+      const pathParts = path.split("/").filter((part) => part !== "");
+
+      let current = processedTree;
+
+      // For folders, process each part of the path
+      if (isFolder) {
+        for (let i = 0; i < pathParts.length; i++) {
+          const part = pathParts[i];
+          if (!current[part]) {
+            current[part] = { __size: 0 };
+          }
+          current = current[part];
+        }
+        current.__size = tokens;
+        current.__filtered = filtered;
+      } else {
+        // For files, add them to their parent folder
+        if (pathParts.length === 0) {
+          // This is a root file
+          processedTree[path] = { tokens, filtered };
+        } else {
+          // Navigate to the parent folder
+          for (let i = 0; i < pathParts.length - 1; i++) {
+            const part = pathParts[i];
+            if (!current[part]) {
+              current[part] = { __size: 0 };
+            }
+            current = current[part];
+          }
+          // Add the file to its parent folder
+          const fileName = pathParts[pathParts.length - 1];
+          current[fileName] = { tokens, filtered };
+        }
+      }
+    }
+
+    return processedTree;
   }
 
   // Check if a tree node has subdirectories
@@ -194,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!tree || typeof tree !== "object") return false;
 
     for (const key in tree) {
-      if (key === "__size") continue;
+      if (key === "__size" || key === "__filtered") continue;
       if (typeof tree[key] === "object" && tree[key].__size !== undefined) {
         return true;
       }
@@ -207,8 +265,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!tree || typeof tree !== "object") return false;
 
     for (const key in tree) {
-      if (key === "__size") continue;
-      if (typeof tree[key] === "number") {
+      if (key === "__size" || key === "__filtered") continue;
+      if (typeof tree[key] === "object" && tree[key].__size === undefined) {
         return true;
       }
     }
@@ -249,7 +307,7 @@ document.addEventListener("DOMContentLoaded", function () {
     level,
     currentPath,
     defaultExpandLevel,
-    repoInfo,
+    activePath,
     showFiles,
   ) {
     if (!tree || typeof tree !== "object") return "";
@@ -271,7 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Only expand if:
     // 1. It's a top-level folder (level < defaultExpandLevel) OR
     // 2. It's in the current path
-    const isInCurrentPath = isInActivePath(path, repoInfo.path);
+    const isInCurrentPath = isInActivePath(path, activePath);
     const shouldExpandByDefault = level < defaultExpandLevel || isInCurrentPath;
 
     // Get the current expanded state class
@@ -284,12 +342,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const isExpandable = hasSubfolders || (showFiles && hasOnlyFiles);
 
     // Determine if this folder is active or relevant to current path
-    const isActive = isInActivePath(path, repoInfo.path);
-    const isRelevant = isRelevantPath(path, repoInfo.path);
-    // Apply styling based on active state
+    const isActive = isInActivePath(path, activePath);
+    const isRelevant = isRelevantPath(path, activePath);
+    const isFiltered = tree.__filtered === true;
+
+    // Apply styling based on active state and filtered status
     const activeFolderClass = isActive ? "text-purple-600 font-medium" : "";
+    const filteredClass = isFiltered ? "text-gray-500" : "";
     const inactiveFolderClass = !isRelevant ? "text-gray-500" : "";
-    const folderClass = activeFolderClass || inactiveFolderClass;
+    const folderClass =
+      activeFolderClass || filteredClass || inactiveFolderClass;
 
     // Choose the appropriate icon based on expandability
     let folderIcon;
@@ -314,7 +376,7 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="flex items-center p-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded ${folderClass}">
             ${folderIcon}
             <span class="whitespace-nowrap folder-item cursor-pointer ${folderClass}" data-path="${path}">${
-      name === "project-root" ? repoInfo.repo : name
+      name === "project-root" ? getRootFolderName() : name
     }</span>
             ${
               tree.__size === 0
@@ -331,7 +393,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // First process directories
     for (const key in tree) {
-      if (key === "__size") continue;
+      if (key === "__size" || key === "__filtered") continue;
 
       const child = tree[key];
       // Only render if it's a directory (has __size property)
@@ -343,7 +405,7 @@ document.addEventListener("DOMContentLoaded", function () {
               level + 1,
               path,
               defaultExpandLevel,
-              repoInfo,
+              activePath,
               showFiles,
             )}
           </div>`;
@@ -353,21 +415,25 @@ document.addEventListener("DOMContentLoaded", function () {
     // Then process files (if showFiles is true)
     if (showFiles) {
       for (const key in tree) {
-        if (key === "__size") continue;
+        if (key === "__size" || key === "__filtered") continue;
 
         const child = tree[key];
-        // Render files (values that are numbers)
-        if (typeof child === "number") {
+        // Render files (values that are objects without __size)
+        if (typeof child === "object" && child.__size === undefined) {
           const filePath = path ? `${path}/${key}` : key;
 
           // Determine if this file is the currently active one
-          const isActiveFile = repoInfo.isBlob && repoInfo.path === filePath;
-          const isRelevantFile = isRelevantPath(filePath, repoInfo.path);
+          const isActiveFile = activePath === filePath;
+          const isRelevantFile = isRelevantPath(filePath, activePath);
+          const isFileFiltered = child.filtered === true;
+
           const fileActiveClass = isActiveFile
             ? "text-purple-600 font-medium"
             : "";
+          const fileFilteredClass = isFileFiltered ? "text-gray-500" : "";
           const fileInactiveClass = !isRelevantFile ? "text-gray-500" : "";
-          const fileClass = fileActiveClass || fileInactiveClass;
+          const fileClass =
+            fileActiveClass || fileFilteredClass || fileInactiveClass;
 
           children += `
             <div class="ml-4 mt-1">
@@ -379,10 +445,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 </svg>
                 <span class="whitespace-nowrap file-item cursor-pointer ${fileClass}" data-path="${filePath}">${key}</span>
                 ${
-                  child === 0
+                  child.tokens === 0
                     ? ""
                     : `<span class="ml-2 text-gray-500 text-sm whitespace-nowrap flex-shrink-0">(${prettyTokens(
-                        child,
+                        child.tokens,
                       )})</span>`
                 }
               </div>

@@ -22,48 +22,61 @@
 
 ^^^ This can still take several weeks to make good. Target: end of may ^^^
 
-# https://genignore.com
-
-✅ Research the `.gitignore` specification and compare that to VSCode specification for `files to include/exclude`. Determine how `.genignore` should work, and write that into a spec at `uit/specification/genignore.md`
-
-✅ Create a nice landing for genignore.com that explains the concept using that file. Also include the fact that repomix and gitingest also had introduced/discussed similar concepts, but a universal one is more desirable.
-
-✅ DM them. This should be enough to make `.genignore` succeed as a standard!
-
-⏳ Target: issue in gitingest and repomix to also support `.genignore` rather than just `.{platform}ignore`. ✔️ repoprompt. 🟠 repomix. 🟠 gitingest. 🟠 cursor.
-
-🤔 How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files? How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore. Generally I just need a way to get config files from any zip, beforehand, without making it slower.
-
-Confirm that `.genignore` works like desired (or fix) including the early returning in the right moment.
-
-Try to improve the `excludePathPatterns` so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Potentially, people wanna have only a few specific files in their context, which should be specified like `*.*\n!README.md`.
-
-🎉 Now we can also create specific includes when generating something with just genignore!
-
 # Nailing omni-compatible navigation
 
-Make it possible to see search filters in tree as well by moving this logic to the backend. It's likely best to stream the formdata after search to `uithub` directly so i can build/return the tree instead of `ziptree`. This way I know which files got filtered using `x-filter`.
+🤔 Make it possible to see search filters in tree as well by moving this logic to the backend. It's likely best to stream the formdata after search to `uithub` directly so i can build/return the tree instead of `ziptree`. This way I know which files got filtered using `x-filter`.
 
-The `output*` service should be called using `repsonse.body.tee()` in `uithub`. We use the structured FormData output to generate the tree in a helper utility function.
+✅ `outputmd` should take FormData from body rather than just from URL
 
-Ultimately, the tree datastructure would be `{ [segment]: { size: number; filtered: boolean, children: this }}`
+✅ The `output*` service should be called using `repsonse.body.tee()` in `uithub`. We use the structured FormData output to generate the tree in a helper utility function.
 
-This is super critical to make uithub nice to use... including for other domains and ingesttypes.
+✅ Ultimately, the tree datastructure would be `{ [segment]: { size: number; filtered: boolean, children: this }}`
 
-Ensure we use the `domain.json` setup and request parsing to navigate!
+✅ Pass StandardURL data to HTML `window.data`.
+
+✅ Add `x-filter` and `x-error` type safety to `multipart-formdata-stream-js`
+
+✅ Create `buildTree` (take inspiration from: `uithub.ziptree`)
+
+Get `defaultBranch` in another way. This is github specific, so maybe should be done in the `github.ts` router?
+
+Apply `StandardURL` data and new tree datastructure in frontend. Ensure we use it to navigate!
+
+# Critical stuff
+
+Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
+
+Bug with spaces: https://x.com/janwilmake/status/1898753253988253946
+
+# UI Enhancements
+
+- In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not. Then, In uithub UI (`vscode.html`), add filter warning if tokens were capped that says "apply filters for better results".
+- `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
+- `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.
 
 # Improving the markdown output
 
-- When generating full markdowntree, also get token size for each file/folder, and show the size on folders
-- Add `x-filter` and `x-error` type safety to `multipart-formdata-stream-js`
-- Add `maxTokens` filter and `basePath` content-filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still.
+- Add `maxTokens` filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still. **🤔 Not sure! maybe its better to do this after we built up the tree. For formats other than markdown, maxTokens isn't that important. Maybe the tree should also be something that we always append/prepend as a file. Pretty useful**
+
+- When filtering out files in `ingestzip`, ensure original filesize is preserved.
+
+- When generating full markdown-tree, also get token size for each file/folder, and show the size on folders
+
 - Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.
 
-🤔 This needs to be there to make a sensible `.genignore` for big repos
+# Performance check-up
 
-# generate genignore files
+Figure out how I can nicely benchmark speeds in different ways of the different plugins and the time for estabilishing the connection between the different workers. Do another deepdive on how to make this as fast as the original uithub on vercel.
+
+# generate `.genignore` files
 
 Can be done based on filetree and the default genignore with max certain maxtokens. Can be done using deepseek or cloudflare-based model. Can be done on-demand, stored in KV.
+
+Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
+
+Put sponsorflare in front, require signin, require balance > -1.
+
+⏳ **Ongoing**: response and/or issue/pr for other providers to also support `.genignore` rather than just `.{platform}ignore`. ✔️ repoprompt. 🟠 repomix. 🟠 gitingest. 🟠 cursor. (RESEARCH OTHERS)
 
 # `context.json`
 
@@ -75,24 +88,4 @@ From filter page, if filter is applied, add button `Add to context.json` that ad
 
 If no filter is applied, add button to generate custom `context.json`
 
-# contextjson.com
-
 https://contextjson.com/owner/repo: Separate tool to generate a new `context.json` based on tree+README (https://uuithub.com/owner/repo?pathPatterns=README.md), and add to your project via github.
-
-Put sponsorflare in front
-
-# Critical stuff
-
-Fix paymentflow. ❌ Sponsorflare Sponsoring isn't working for new sponsors. Fix this by looking at changes too (or let's move to Stripe?)
-
-Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
-
-Bug with spaces: https://x.com/janwilmake/status/1898753253988253946
-
-Could be big; https://github.com/refined-github/refined-github/issues/8423#issuecomment-2834412514 https://x.com/fregante
-
-# UI Enhancements
-
-- In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not. Then, In uithub UI (`vscode.html`), add filter warning if tokens were capped that says "apply filters for better results".
-- `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
-- `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.

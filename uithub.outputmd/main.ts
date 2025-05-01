@@ -219,62 +219,68 @@ async function processPartsToMarkdown(
   }
 }
 
+const getResponse = async (request: Request, env: any) => {
+  const url = new URL(request.url);
+  const formDataUrl = url.pathname.substring(1) + url.search; // Remove leading slash
+
+  if (!formDataUrl) {
+    return new Response("No form data URL provided", { status: 400 });
+  }
+
+  // Parse query parameters
+
+  const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
+
+  const sourceAuthorization = request.headers.get("x-source-authorization");
+  if (sourceAuthorization) {
+    headers["x-source-authorization"] = sourceAuthorization;
+  }
+  // Fetch the form data
+  const response = await fetch(formDataUrl, { headers });
+  if (!response.ok) {
+    return new Response(
+      `outputmd - Failed to fetch form data: ${response.status} ${
+        response.statusText
+      }\n${await response.text()}`,
+      { status: 500 },
+    );
+  }
+
+  return response;
+};
+
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request: Request, env: any, ctx) {
     const url = new URL(request.url);
-    const formDataUrl = url.pathname.substring(1) + url.search; // Remove leading slash
-
-    if (!formDataUrl) {
-      return new Response("No form data URL provided", { status: 400 });
-    }
-
-    // Parse query parameters
     const maxTokens =
       parseInt(url.searchParams.get("maxTokens") || "", 10) ||
       DEFAULT_MAX_TOKENS;
     const maxFileSize = parseInt(url.searchParams.get("maxFileSize") || "", 10);
 
+    const req = request.body ? request : await getResponse(request, env);
+
+    const body = req.body;
+
+    if (!body) {
+      return new Response("Empty response body", { status: 500 });
+    }
+
+    const contentType = req.headers.get("content-type");
+    if (!contentType || !contentType.includes("multipart/form-data")) {
+      return new Response(`No formdata content-type`, { status: 400 });
+    }
+
+    // Extract boundary from content-type
+    const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
+    if (!boundaryMatch) {
+      return new Response("Could not find boundary in content-type header", {
+        status: 400,
+      });
+    }
+
+    const boundary = boundaryMatch[1] || boundaryMatch[2];
+
     try {
-      const headers = { Authorization: `Basic ${btoa(env.CREDENTIALS)}` };
-
-      const sourceAuthorization = request.headers.get("x-source-authorization");
-      if (sourceAuthorization) {
-        headers["x-source-authorization"] = sourceAuthorization;
-      }
-      // Fetch the form data
-      const response = await fetch(formDataUrl, { headers });
-      if (!response.ok) {
-        return new Response(
-          `outputmd - Failed to fetch form data: ${response.status} ${
-            response.statusText
-          }\n${await response.text()}`,
-          { status: 500 },
-        );
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("multipart/form-data")) {
-        return new Response(
-          `The provided URL (${formDataUrl}) does not contain multipart form data `,
-          { status: 400 },
-        );
-      }
-
-      // Extract boundary from content-type
-      const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
-      if (!boundaryMatch) {
-        return new Response("Could not find boundary in content-type header", {
-          status: 400,
-        });
-      }
-
-      const boundary = boundaryMatch[1] || boundaryMatch[2];
-      const body = response.body;
-
-      if (!body) {
-        return new Response("Empty response body", { status: 500 });
-      }
-
       // Create a transform stream for processing parts
       const { readable, writable } = new TransformStream();
       const writer = writable.getWriter();

@@ -5,6 +5,7 @@
   },
   "dependencies": {
     "cloudflare-assets-kv": "^0.0.2",
+    "multipart-formdata-stream-js": "^0.0.11",
     "sponsorflare": "^0.2.5",
     "yaml": "^2.7.0"
   },

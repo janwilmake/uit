@@ -800,3 +800,17 @@ Sha url can't be used for edit link, must be branch!
 ✅ In frontend add `genignore=false` checkbox titled `disable genignore`.
 
 ✅ In frontend, add button `Create .genignore` that does the same as README button, but for `.genignore`
+
+# `.genignore` again (2025-05-01)
+
+✅ Research the `.gitignore` specification and compare that to VSCode specification for `files to include/exclude`. Determine how `.genignore` should work, and write that into a spec at `uit/specification/genignore.md`
+
+✅ Create a nice landing for genignore.com that explains the concept using that file. Also include the fact that repomix and gitingest also had introduced/discussed similar concepts, but a universal one is more desirable.
+
+✅ DM them. This should be enough to make `.genignore` succeed as a standard!
+
+🤔 How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files? How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore. Generally I just need a way to get config files from any zip, beforehand, without making it slower.
+
+✅ Confirm that `.genignore` works like desired (or fix) including the early returning in the right moment.
+
+❌ Try to improve the `excludePathPatterns` so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Potentially, people wanna have only a few specific files in their context, which should be specified like `*.*\n!README.md`. **It's hard. Let's think about this.**

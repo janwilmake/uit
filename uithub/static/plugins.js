@@ -51,19 +51,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return false;
   }
 
-  // Extract owner and repo from current URL
-  function getOwnerAndRepo() {
-    const path = window.location.pathname.split("/");
-    // Check if we have at least two segments after the leading slash
-    if (path.length >= 3) {
-      return {
-        owner: path[1],
-        repo: path[2],
-      };
-    }
-    return { owner: "", repo: "" };
-  }
-
   // Create a plugin card with icon, title, description, and pin/unpin button
   function createPluginCard(pluginId, plugin, isPinned) {
     const card = document.createElement("div");
@@ -86,10 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const visitPlugin = function (e) {
       e.stopPropagation(); // Prevent event bubbling
 
-      const { owner, repo } = getOwnerAndRepo();
-      if (owner && repo) {
-        window.location.href = `/${owner}/${repo}/${pluginId}`;
-      }
+      window.location.href = `/${window.data.primarySourceSegment}/${pluginId}`;
     };
     // Plugin title
     const title = document.createElement("h3");

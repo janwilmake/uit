@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "multipart-formdata-stream-js": "^0.0.10"
+    "multipart-formdata-stream-js": "^0.0.11"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250406.0"

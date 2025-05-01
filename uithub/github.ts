@@ -38,12 +38,14 @@ export default {
 
       const ogImageUrl = undefined;
 
+      // TODO
+      const defaultBranch = "main";
       const json: StandardURL = {
         pluginId,
         ext,
         basePath,
         primarySourceSegment,
-        secondarySourceSegment: branchName,
+        secondarySourceSegment: branchName || defaultBranch,
         ogImageUrl,
         description,
         title,
@@ -83,12 +85,14 @@ export default {
 
     const rawUrlPrefix = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}`;
 
+    // TODO
+    const defaultBranch = "main";
     const json: StandardURL = {
       pluginId,
       ext,
       basePath,
       primarySourceSegment,
-      secondarySourceSegment: branch,
+      secondarySourceSegment: branch || defaultBranch,
       ogImageUrl,
       description,
       title,
