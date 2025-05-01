@@ -1,5 +1,5 @@
 package-lock.json
-**/old
+uithub.ziptree/old
 *.html
 **/ext-to-mime.json
 *.svg
