@@ -1,0 +1,238 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Ingesttar API",
+    "description": "An API service that fetches and processes tar files, converting them to multipart/form-data streams with various filtering options.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "UIThub",
+      "url": "https://ingesttar.uithub.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://ingesttar.uithub.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/{tarUrl}": {
+      "get": {
+        "summary": "Fetch and process a TAR.gz file",
+        "description": "Fetches a TAR.gz file from the provided URL, processes its contents, and returns a multipart/form-data stream with the filtered files.",
+        "parameters": [
+          {
+            "name": "tarUrl",
+            "in": "path",
+            "description": "URL-encoded path to the tar file to fetch and process",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "omitFirstSegment",
+            "in": "query",
+            "description": "Remove the first segment from file paths in the tar archive",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "omitBinary",
+            "in": "query",
+            "description": "Skip binary files in the output",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "enableFuzzyMatching",
+            "in": "query",
+            "description": "Enable fuzzy matching for path patterns",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "rawUrlPrefix",
+            "in": "query",
+            "description": "Prefix to use for raw URLs for binary files (if set, binary files are referenced by URL instead of including content)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "basePath",
+            "in": "query",
+            "description": "Base path(s) to filter files by. Only files under these paths will be included",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "pathPatterns",
+            "in": "query",
+            "description": "Glob pattern(s) to include files matching these patterns. Supports picomatch syntax",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "excludePathPatterns",
+            "in": "query",
+            "description": "Glob pattern(s) to exclude files matching these patterns. Supports picomatch syntax",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "maxFileSize",
+            "in": "query",
+            "description": "Maximum file size in bytes to include",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "genignore",
+            "in": "query",
+            "description": "If 'false', will not apply default or found genignore file",
+            "required": false,
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "tar file successfully processed and streamed",
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request, missing tar URL",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, authentication required",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string",
+                  "example": "Basic realm=\"Archive Access\""
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error processing the tar file",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication with credentials"
+      }
+    },
+    "headers": {
+      "x-source-authorization": {
+        "description": "Optional authorization header to forward to the tar source",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "FormDataFile": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "format": "binary",
+            "description": "File content (or omitted if using rawUrlPrefix for binary files)"
+          },
+          "x-file-hash": {
+            "type": "string",
+            "description": "SHA-256 hash of the file content"
+          },
+          "x-url": {
+            "type": "string",
+            "description": "URL to access the raw file (only present for binary files when rawUrlPrefix is provided)"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "tar Processing",
+      "description": "Operations related to fetching and processing tar files"
+    }
+  ]
+}

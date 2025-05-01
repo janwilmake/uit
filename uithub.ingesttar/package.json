@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "binary-extensions": "^3.0.0",
+    "picomatch": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/picomatch": "^4.0.0"
+  }
+}
