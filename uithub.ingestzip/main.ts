@@ -74,9 +74,7 @@ export default {
         requestStartTime,
       );
 
-      return new Response(readable, {
-        headers: responseHeaders,
-      });
+      return new Response(readable, { headers: responseHeaders });
     } catch (error) {
       return new Response(`Error processing ZIP: ${error.message}`, {
         status: 500,
@@ -112,16 +110,6 @@ function parseRequest(request: Request): RequestParams {
   };
 
   return { zipUrl, filterOptions, responseOptions };
-}
-
-async function fetchZipFile(params: RequestParams): Promise<Response> {
-  const headers = new Headers({ "User-Agent": "Cloudflare-Worker" });
-
-  if (params.responseOptions.authHeader) {
-    headers.set("Authorization", params.responseOptions.authHeader);
-  }
-
-  return fetch(params.zipUrl, { headers });
 }
 
 function createErrorResponse(response: Response, zipUrl: string): Response {
@@ -310,101 +298,109 @@ async function processZipToMultipart(
   const { boundary } = responseOptions;
   const writer = output.getWriter();
 
-  // Pass filter options to ZipStreamReader for early filtering
-  const zipReader = new ZipStreamReader(zipStream, filterOptions);
-
   try {
     // Process the ZIP entries
-    await zipReader.readEntries(async (entry) => {
-      try {
-        const processedPath = processFilePath(entry.fileName, omitFirstSegment);
-        const ext = entry.fileName.split("/").pop()?.split(".").pop() || "";
-        const contentType = (map[ext] || "application/octet-stream") as string;
-        // Start multipart section
-        await writer.write(encoder.encode(`--${boundary}\r\n`));
-        await writer.write(
-          encoder.encode(
-            `Content-Disposition: form-data; name="${processedPath}"; filename="${processedPath}"\r\n`,
-          ),
-        );
-        // Add content type header
-        await writer.write(encoder.encode(`Content-Type: ${contentType}\r\n`));
-
-        // Calculate content length if available
-        if (entry.uncompressedSize !== undefined) {
-          await writer.write(
-            encoder.encode(`Content-Length: ${entry.uncompressedSize}\r\n`),
+    await readEntries(
+      zipStream,
+      filterOptions,
+      compileMatchers(filterOptions),
+      async (entry) => {
+        try {
+          const processedPath = processFilePath(
+            entry.fileName,
+            omitFirstSegment,
           );
-        }
-
-        if (rawUrlPrefix) {
-          const rawUrl = `${rawUrlPrefix}${processedPath}`;
-          await writer.write(encoder.encode(`x-url: ${rawUrl}\r\n`));
-        }
-
-        if (entry.filter?.filter && entry.filter.status) {
-          const PLUGIN_NAME = "ingestzip";
+          const ext = entry.fileName.split("/").pop()?.split(".").pop() || "";
+          const contentType = (map[ext] ||
+            "application/octet-stream") as string;
+          // Start multipart section
+          await writer.write(encoder.encode(`--${boundary}\r\n`));
           await writer.write(
             encoder.encode(
-              `x-filter: ${PLUGIN_NAME};${entry.filter.status || "404"};${
-                entry.filter.message || ""
-              }\r\n`,
+              `Content-Disposition: form-data; name="${processedPath}"; filename="${processedPath}"\r\n`,
             ),
           );
-        }
-
-        const writeEmptyBinary = async () => {
-          // For binary files with rawUrlPrefix, add x-url header instead of content
+          // Add content type header
           await writer.write(
-            encoder.encode(`Content-Transfer-Encoding: binary\r\n\r\n`),
+            encoder.encode(`Content-Type: ${contentType}\r\n`),
           );
-          // Omit content for binary files when rawUrlPrefix is specified
+
+          // Calculate content length if available
+          if (entry.uncompressedSize !== undefined) {
+            await writer.write(
+              encoder.encode(`Content-Length: ${entry.uncompressedSize}\r\n`),
+            );
+          }
+
+          if (rawUrlPrefix) {
+            const rawUrl = `${rawUrlPrefix}${processedPath}`;
+            await writer.write(encoder.encode(`x-url: ${rawUrl}\r\n`));
+          }
+
+          if (entry.filter?.filter && entry.filter.status) {
+            const PLUGIN_NAME = "ingestzip";
+            await writer.write(
+              encoder.encode(
+                `x-filter: ${PLUGIN_NAME};${entry.filter.status || "404"};${
+                  entry.filter.message || ""
+                }\r\n`,
+              ),
+            );
+          }
+
+          const writeEmptyBinary = async () => {
+            // For binary files with rawUrlPrefix, add x-url header instead of content
+            await writer.write(
+              encoder.encode(`Content-Transfer-Encoding: binary\r\n\r\n`),
+            );
+            // Omit content for binary files when rawUrlPrefix is specified
+            await writer.write(encoder.encode("\r\n"));
+          };
+
+          if (omitBinary && binaryExtensions.includes(ext)) {
+            // Second, more efficient way, to filter out binary files, while still responding with raw url but not with content.
+            await writeEmptyBinary();
+            // NB: started the entry.fileData so also need to cancel it.
+            await entry.fileData?.cancel();
+            return;
+          }
+
+          // Get content and hash
+          const { content, hash } = await getContentAndHash(entry.fileData);
+
+          if (hash) {
+            await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
+          }
+
+          // Determine if content is binary
+          const isBinaryContent = !isUtf8(content);
+
+          // Skip binary files if omitBinary is true
+          if (content && omitBinary && isBinaryContent) {
+            await writeEmptyBinary();
+            return;
+          }
+
+          // Regular handling: include content
+          await writer.write(
+            encoder.encode(
+              `Content-Transfer-Encoding: ${
+                isBinaryContent ? "binary" : "8bit"
+              }\r\n\r\n`,
+            ),
+          );
+
+          // Write the file content
+          if (content) {
+            await writer.write(content);
+          }
+
           await writer.write(encoder.encode("\r\n"));
-        };
-
-        if (omitBinary && binaryExtensions.includes(ext)) {
-          // Second, more efficient way, to filter out binary files, while still responding with raw url but not with content.
-          await writeEmptyBinary();
-          // NB: started the entry.fileData so also need to cancel it.
-          await entry.fileData?.cancel();
-          return;
+        } catch (error) {
+          console.error(`Error processing file ${entry.fileName}:`, error);
         }
-
-        // Get content and hash
-        const { content, hash } = await getContentAndHash(entry.fileData);
-
-        if (hash) {
-          await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
-        }
-
-        // Determine if content is binary
-        const isBinaryContent = !isUtf8(content);
-
-        // Skip binary files if omitBinary is true
-        if (content && omitBinary && isBinaryContent) {
-          await writeEmptyBinary();
-          return;
-        }
-
-        // Regular handling: include content
-        await writer.write(
-          encoder.encode(
-            `Content-Transfer-Encoding: ${
-              isBinaryContent ? "binary" : "8bit"
-            }\r\n\r\n`,
-          ),
-        );
-
-        // Write the file content
-        if (content) {
-          await writer.write(content);
-        }
-
-        await writer.write(encoder.encode("\r\n"));
-      } catch (error) {
-        console.error(`Error processing file ${entry.fileName}:`, error);
-      }
-    });
+      },
+    );
 
     // End the multipart form data
     await writer.write(encoder.encode(`--${boundary}--\r\n`));
@@ -474,412 +470,400 @@ async function getContentAndHash(
   return { content, hash: hashHex };
 }
 
-// ZipStreamReader class to process ZIP files with early filtering
-class ZipStreamReader {
-  private stream: ReadableStream;
-  private filterOptions: FilterOptions;
-  private matchers: CompiledMatchers;
+const readEntries = async (
+  stream: ReadableStream,
+  filterOptions: FilterOptions,
+  matchers: CompiledMatchers,
+  callback: (entry: {
+    fileName: string;
+    isDirectory: boolean;
+    fileData?: ReadableStream;
+    uncompressedSize?: number;
+    error?: string;
+    filter?: { filter?: boolean; status?: string; message?: string };
+  }) => Promise<void>,
+): Promise<void> => {
+  const reader = stream.getReader();
 
-  constructor(stream: ReadableStream, filterOptions: FilterOptions) {
-    this.stream = stream;
-    this.filterOptions = filterOptions;
+  // Pre-allocate a buffer but more conservatively
+  let buffer = new Uint8Array(32768); // 32KB initial size
+  let bufferSize = 0;
+  let foundCentralDirectory = false;
 
-    // Precompile all matchers once during initialization
-    this.matchers = compileMatchers(this.filterOptions);
-  }
+  const textDecoder = new TextDecoder();
 
-  async readEntries(
-    callback: (entry: {
-      fileName: string;
-      isDirectory: boolean;
-      fileData?: ReadableStream;
-      uncompressedSize?: number;
-      error?: string;
-      filter?: { filter?: boolean; status?: string; message?: string };
-    }) => Promise<void>,
-  ): Promise<void> {
-    const reader = this.stream.getReader();
+  try {
+    while (true) {
+      // Fetch more data if buffer is getting low
+      if (bufferSize < 30) {
+        const { done, value } = await reader.read();
+        if (done && bufferSize === 0) break; // No more data and buffer is empty
+        if (done) break;
 
-    // Pre-allocate a buffer but more conservatively
-    let buffer = new Uint8Array(32768); // 32KB initial size
-    let bufferSize = 0;
-    let foundCentralDirectory = false;
-
-    const textDecoder = new TextDecoder();
-
-    try {
-      while (true) {
-        // Fetch more data if buffer is getting low
-        if (bufferSize < 30) {
-          const { done, value } = await reader.read();
-          if (done && bufferSize === 0) break; // No more data and buffer is empty
-          if (done) break;
-
-          // Resize buffer if needed
-          if (bufferSize + value.length > buffer.length) {
-            const newBuffer = new Uint8Array(
-              Math.max(buffer.length * 2, bufferSize + value.length),
-            );
-            newBuffer.set(buffer.subarray(0, bufferSize));
-            buffer = newBuffer;
-          }
-
-          // Append new data
-          buffer.set(value, bufferSize);
-          bufferSize += value.length;
-          continue; // Re-evaluate with new data
+        // Resize buffer if needed
+        if (bufferSize + value.length > buffer.length) {
+          const newBuffer = new Uint8Array(
+            Math.max(buffer.length * 2, bufferSize + value.length),
+          );
+          newBuffer.set(buffer.subarray(0, bufferSize));
+          buffer = newBuffer;
         }
 
-        let position = 0;
-        let processedEntries = false;
+        // Append new data
+        buffer.set(value, bufferSize);
+        bufferSize += value.length;
+        continue; // Re-evaluate with new data
+      }
 
-        // Process entries while we have enough data
-        while (position + 30 <= bufferSize) {
-          // Check for local file header signature (0x04034b50)
+      let position = 0;
+      let processedEntries = false;
+
+      // Process entries while we have enough data
+      while (position + 30 <= bufferSize) {
+        // Check for local file header signature (0x04034b50)
+        if (
+          buffer[position] === 0x50 &&
+          buffer[position + 1] === 0x4b &&
+          buffer[position + 2] === 0x03 &&
+          buffer[position + 3] === 0x04
+        ) {
+          // Extract header information
+          const compressionMethod =
+            buffer[position + 8] | (buffer[position + 9] << 8);
+          const compressedSize =
+            buffer[position + 18] |
+            (buffer[position + 19] << 8) |
+            (buffer[position + 20] << 16) |
+            (buffer[position + 21] << 24);
+          const uncompressedSize =
+            buffer[position + 22] |
+            (buffer[position + 23] << 8) |
+            (buffer[position + 24] << 16) |
+            (buffer[position + 25] << 24);
+          const fileNameLength =
+            buffer[position + 26] | (buffer[position + 27] << 8);
+          const extraFieldLength =
+            buffer[position + 28] | (buffer[position + 29] << 8);
+
+          // Validate sizes to avoid overflow
           if (
-            buffer[position] === 0x50 &&
-            buffer[position + 1] === 0x4b &&
-            buffer[position + 2] === 0x03 &&
-            buffer[position + 3] === 0x04
+            fileNameLength < 0 ||
+            extraFieldLength < 0 ||
+            compressedSize < 0
           ) {
-            // Extract header information
-            const compressionMethod =
-              buffer[position + 8] | (buffer[position + 9] << 8);
-            const compressedSize =
-              buffer[position + 18] |
-              (buffer[position + 19] << 8) |
-              (buffer[position + 20] << 16) |
-              (buffer[position + 21] << 24);
-            const uncompressedSize =
-              buffer[position + 22] |
-              (buffer[position + 23] << 8) |
-              (buffer[position + 24] << 16) |
-              (buffer[position + 25] << 24);
-            const fileNameLength =
-              buffer[position + 26] | (buffer[position + 27] << 8);
-            const extraFieldLength =
-              buffer[position + 28] | (buffer[position + 29] << 8);
+            // Invalid entry, skip forward
+            position++;
+            continue;
+          }
 
-            // Validate sizes to avoid overflow
-            if (
-              fileNameLength < 0 ||
-              extraFieldLength < 0 ||
-              compressedSize < 0
-            ) {
-              // Invalid entry, skip forward
-              position++;
+          // Check if we have enough data for the complete entry
+          const totalEntrySize =
+            30 + fileNameLength + extraFieldLength + compressedSize;
+          if (position + totalEntrySize > bufferSize) {
+            break; // Wait for more data
+          }
+
+          // Extract filename
+          const fileNameStart = position + 30;
+          const fileNameEnd = fileNameStart + fileNameLength;
+          if (fileNameEnd > bufferSize) {
+            break; // Not enough data, wait for more
+          }
+
+          const fileName = textDecoder.decode(
+            buffer.subarray(fileNameStart, fileNameEnd),
+          );
+          const isDirectory = fileName.endsWith("/");
+
+          // Apply filtering
+          const filter = shouldFilter(
+            filterOptions,
+            matchers,
+            fileName,
+            isDirectory,
+            uncompressedSize,
+          );
+
+          if (filter?.filter) {
+            position += totalEntrySize;
+            processedEntries = true;
+
+            if (filter?.noCallback) {
               continue;
             }
 
-            // Check if we have enough data for the complete entry
-            const totalEntrySize =
-              30 + fileNameLength + extraFieldLength + compressedSize;
-            if (position + totalEntrySize > bufferSize) {
-              break; // Wait for more data
-            }
-
-            // Extract filename
-            const fileNameStart = position + 30;
-            const fileNameEnd = fileNameStart + fileNameLength;
-            if (fileNameEnd > bufferSize) {
-              break; // Not enough data, wait for more
-            }
-
-            const fileName = textDecoder.decode(
-              buffer.subarray(fileNameStart, fileNameEnd),
-            );
-            const isDirectory = fileName.endsWith("/");
-
-            // Apply filtering
-            const filter = this.shouldFilter(
-              fileName,
-              isDirectory,
-              uncompressedSize,
-            );
-
-            if (filter?.filter) {
-              position += totalEntrySize;
-              processedEntries = true;
-
-              if (filter?.noCallback) {
-                continue;
-              }
-
-              // we will process the file without content!
-              await callback({
-                fileName,
-                isDirectory,
-                uncompressedSize,
-                filter,
-              });
-
-              // still continue after that
-              continue;
-            }
-
-            // Calculate data position
-            const dataPosition =
-              position + 30 + fileNameLength + extraFieldLength;
-            if (dataPosition + compressedSize > bufferSize) {
-              break; // Not enough data, wait for more
-            }
-
-            // Extract the compressed data - we need to copy here to ensure data safety
-            const compressedData = new Uint8Array(compressedSize);
-            compressedData.set(
-              buffer.subarray(dataPosition, dataPosition + compressedSize),
-            );
-
-            // Create stream from the data
-            const compressedStream = new ReadableStream({
-              start(controller) {
-                controller.enqueue(compressedData);
-                controller.close();
-              },
-            });
-
-            // Determine final stream (decompress if needed)
-            let fileDataStream;
-            if (compressionMethod === 8) {
-              fileDataStream = compressedStream.pipeThrough(
-                new DecompressionStream("deflate-raw"),
-              );
-            } else {
-              fileDataStream = compressedStream;
-            }
-
-            // Process the entry
+            // we will process the file without content!
             await callback({
               fileName,
               isDirectory,
-              fileData: fileDataStream,
               uncompressedSize,
+              filter,
             });
 
-            position += totalEntrySize;
-            processedEntries = true;
-          } else if (
-            buffer[position] === 0x50 &&
-            buffer[position + 1] === 0x4b &&
-            buffer[position + 2] === 0x01 &&
-            buffer[position + 3] === 0x02
-          ) {
-            foundCentralDirectory = true;
-            // We've reached the central directory, which means we're done with file data
-            // You might want to break out of the processing loop or handle accordingly
-            break;
-          } else {
-            // Not a valid header, move forward
-            position++;
+            // still continue after that
+            continue;
           }
-        }
 
-        if (foundCentralDirectory) {
-          // Explicitly cancel the reader before releasing lock
-          try {
-            await reader.cancel();
-          } catch (e) {
-            console.log("Error canceling reader:", e);
+          // Calculate data position
+          const dataPosition =
+            position + 30 + fileNameLength + extraFieldLength;
+          if (dataPosition + compressedSize > bufferSize) {
+            break; // Not enough data, wait for more
           }
-          reader.releaseLock();
-          break;
-        }
 
-        // Compact the buffer if we processed any entries
-        if (position > 0) {
-          // Only copy remaining data if there's anything left
-          if (position < bufferSize) {
-            buffer.copyWithin(0, position, bufferSize);
-          }
-          bufferSize -= position;
-        }
+          // Extract the compressed data - we need to copy here to ensure data safety
+          const compressedData = new Uint8Array(compressedSize);
+          compressedData.set(
+            buffer.subarray(dataPosition, dataPosition + compressedSize),
+          );
 
-        // If we didn't process any entries and couldn't find a header,
-        // we might have incomplete data at the start, so get more data
-        if (!processedEntries && bufferSize >= 30) {
-          const { done, value } = await reader.read();
-          if (done) break;
+          // Create stream from the data
+          const compressedStream = new ReadableStream({
+            start(controller) {
+              controller.enqueue(compressedData);
+              controller.close();
+            },
+          });
 
-          // Ensure buffer is large enough
-          if (bufferSize + value.length > buffer.length) {
-            const newSize = Math.max(
-              buffer.length * 2,
-              bufferSize + value.length,
+          // Determine final stream (decompress if needed)
+          let fileDataStream;
+          if (compressionMethod === 8) {
+            fileDataStream = compressedStream.pipeThrough(
+              new DecompressionStream("deflate-raw"),
             );
-            console.log({ newSize });
-            const newBuffer = new Uint8Array(newSize);
-            newBuffer.set(buffer.subarray(0, bufferSize));
-            buffer = newBuffer;
+          } else {
+            fileDataStream = compressedStream;
           }
 
-          // Append new data
-          buffer.set(value, bufferSize);
-          bufferSize += value.length;
+          // Process the entry
+          await callback({
+            fileName,
+            isDirectory,
+            fileData: fileDataStream,
+            uncompressedSize,
+          });
+
+          position += totalEntrySize;
+          processedEntries = true;
+        } else if (
+          buffer[position] === 0x50 &&
+          buffer[position + 1] === 0x4b &&
+          buffer[position + 2] === 0x01 &&
+          buffer[position + 3] === 0x02
+        ) {
+          foundCentralDirectory = true;
+          // We've reached the central directory, which means we're done with file data
+          // You might want to break out of the processing loop or handle accordingly
+          break;
+        } else {
+          // Not a valid header, move forward
+          position++;
         }
       }
-    } catch (error) {
-      console.error("Error in readEntries:", error);
-      reader.releaseLock();
-      throw error;
-    } finally {
-      // Make sure to release the lock in all cases
-      reader.releaseLock();
+
+      if (foundCentralDirectory) {
+        // Explicitly cancel the reader before releasing lock
+        try {
+          await reader.cancel();
+        } catch (e) {
+          console.log("Error canceling reader:", e);
+        }
+        reader.releaseLock();
+        break;
+      }
+
+      // Compact the buffer if we processed any entries
+      if (position > 0) {
+        // Only copy remaining data if there's anything left
+        if (position < bufferSize) {
+          buffer.copyWithin(0, position, bufferSize);
+        }
+        bufferSize -= position;
+      }
+
+      // If we didn't process any entries and couldn't find a header,
+      // we might have incomplete data at the start, so get more data
+      if (!processedEntries && bufferSize >= 30) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Ensure buffer is large enough
+        if (bufferSize + value.length > buffer.length) {
+          const newSize = Math.max(
+            buffer.length * 2,
+            bufferSize + value.length,
+          );
+          console.log({ newSize });
+          const newBuffer = new Uint8Array(newSize);
+          newBuffer.set(buffer.subarray(0, bufferSize));
+          buffer = newBuffer;
+        }
+
+        // Append new data
+        buffer.set(value, bufferSize);
+        bufferSize += value.length;
+      }
+    }
+  } catch (error) {
+    console.error("Error in readEntries:", error);
+    reader.releaseLock();
+    throw error;
+  } finally {
+    // Make sure to release the lock in all cases
+    reader.releaseLock();
+  }
+};
+
+const shouldFilter = (
+  filterOptions: FilterOptions,
+  matchers: CompiledMatchers,
+  fileName: string,
+  isDirectory: boolean,
+  size?: number,
+): {
+  filter: boolean;
+  noCallback?: boolean;
+  status?: string;
+  message?: string;
+} => {
+  if (isDirectory) return { filter: true, noCallback: true }; // Skip directories
+
+  const {
+    omitFirstSegment,
+    basePath,
+    maxFileSize,
+    omitBinary,
+    rawUrlPrefix,
+    enableFuzzyMatching,
+    pathPatterns,
+    excludePathPatterns,
+  } = filterOptions;
+
+  // Process the path with omitFirstSegment if needed
+  const processedPath = omitFirstSegment
+    ? processFilePath(fileName, true)
+    : fileName;
+
+  // Check maxFileSize filter
+  if (maxFileSize !== undefined && size !== undefined && size > maxFileSize) {
+    return { filter: true, status: "413", message: "Content too large" };
+  }
+
+  const ext = processedPath.split(".").pop()!;
+
+  if (omitBinary && !rawUrlPrefix && binaryExtensions.includes(ext)) {
+    // First, most efficient way, to exclude binaries
+    return {
+      filter: true,
+      status: "415",
+      message: "File has binary extension",
+    };
+  }
+
+  // Check base path filter
+  if (basePath && basePath.length > 0) {
+    const matchesBasePath = basePath.some((base) => {
+      // Normalize base path and filename for directory matching
+      const normalizedBase = surroundSlash(base);
+      const normalizedFilename = surroundSlash(processedPath);
+      return normalizedFilename.startsWith(normalizedBase);
+    });
+
+    if (!matchesBasePath) {
+      return { filter: true, status: "404", message: "No basePath matched" };
     }
   }
 
-  private shouldFilter(
-    fileName: string,
-    isDirectory: boolean,
-    size?: number,
-  ): {
-    filter: boolean;
-    noCallback?: boolean;
-    status?: string;
-    message?: string;
-  } {
-    if (isDirectory) return { filter: true, noCallback: true }; // Skip directories
+  // Extract basename once for potential basename pattern matching
+  const basename = processedPath.split("/").pop() || "";
+  const normalizedPath = withoutSlash(processedPath);
 
-    const {
-      omitFirstSegment,
-      basePath,
-      maxFileSize,
-      omitBinary,
-      rawUrlPrefix,
-      enableFuzzyMatching,
-      pathPatterns,
-      excludePathPatterns,
-    } = this.filterOptions;
+  // Apply inclusion patterns if defined
+  let included = true;
+  if (
+    matchers.hasInclusion ||
+    (enableFuzzyMatching && pathPatterns && pathPatterns.length > 0)
+  ) {
+    // Check normal patterns from picomatch
+    const matchesNormalPattern = matchers.inclusionMatchers.normal.some(
+      (matcher) => matcher(normalizedPath),
+    );
 
-    // Process the path with omitFirstSegment if needed
-    const processedPath = omitFirstSegment
-      ? processFilePath(fileName, true)
-      : fileName;
+    // Check basename patterns from picomatch
+    const matchesBasenamePattern = matchers.inclusionMatchers.basename.some(
+      (matcher) => matcher(basename),
+    );
 
-    // Check maxFileSize filter
-    if (maxFileSize !== undefined && size !== undefined && size > maxFileSize) {
-      return { filter: true, status: "413", message: "Content too large" };
-    }
+    // Apply fuzzy matching directly to path patterns if enabled
+    const matchesFuzzyPattern =
+      enableFuzzyMatching && pathPatterns
+        ? pathPatterns.some((pattern) => {
+            // Only apply fuzzy matching to non-glob patterns
+            if (!pattern.includes("*") && !pattern.includes("?")) {
+              return fuzzyMatch(pattern, normalizedPath);
+            }
+            return false;
+          })
+        : false;
 
-    const ext = processedPath.split(".").pop()!;
+    // File is included if it matches any pattern
+    included =
+      matchesNormalPattern || matchesBasenamePattern || matchesFuzzyPattern;
+  }
 
-    if (omitBinary && !rawUrlPrefix && binaryExtensions.includes(ext)) {
-      // First, most efficient way, to exclude binaries
-      return {
-        filter: true,
-        status: "415",
-        message: "File has binary extension",
-      };
-    }
+  // If not included, no need to check exclusion
+  if (!included) {
+    return {
+      filter: true,
+      status: "404",
+      message: "Not included in path patterns",
+    };
+  }
 
-    // Check base path filter
-    if (basePath && basePath.length > 0) {
-      const matchesBasePath = basePath.some((base) => {
-        // Normalize base path and filename for directory matching
-        const normalizedBase = surroundSlash(base);
-        const normalizedFilename = surroundSlash(processedPath);
-        return normalizedFilename.startsWith(normalizedBase);
-      });
+  // Apply exclusion patterns
+  if (
+    matchers.hasExclusion ||
+    (enableFuzzyMatching &&
+      excludePathPatterns &&
+      excludePathPatterns.length > 0)
+  ) {
+    // Check normal patterns from picomatch
+    const matchesNormalExcludePattern = matchers.exclusionMatchers.normal.some(
+      (matcher) => matcher(normalizedPath),
+    );
 
-      if (!matchesBasePath) {
-        return { filter: true, status: "404", message: "No basePath matched" };
-      }
-    }
+    // Check basename patterns from picomatch
+    const matchesBasenameExcludePattern =
+      matchers.exclusionMatchers.basename.some((matcher) => matcher(basename));
 
-    // Extract basename once for potential basename pattern matching
-    const basename = processedPath.split("/").pop() || "";
-    const normalizedPath = withoutSlash(processedPath);
+    // Apply fuzzy matching directly to exclude path patterns if enabled
+    const matchesFuzzyExcludePattern =
+      enableFuzzyMatching && excludePathPatterns
+        ? excludePathPatterns.some((pattern) => {
+            // Only apply fuzzy matching to non-glob patterns
+            if (!pattern.includes("*") && !pattern.includes("?")) {
+              return fuzzyMatch(pattern, normalizedPath);
+            }
+            return false;
+          })
+        : false;
 
-    // Apply inclusion patterns if defined
-    let included = true;
-    if (
-      this.matchers.hasInclusion ||
-      (enableFuzzyMatching && pathPatterns && pathPatterns.length > 0)
-    ) {
-      // Check normal patterns from picomatch
-      const matchesNormalPattern = this.matchers.inclusionMatchers.normal.some(
-        (matcher) => matcher(normalizedPath),
-      );
+    // File is excluded if it matches any exclusion pattern
+    const excluded =
+      matchesNormalExcludePattern ||
+      matchesBasenameExcludePattern ||
+      matchesFuzzyExcludePattern;
 
-      // Check basename patterns from picomatch
-      const matchesBasenamePattern =
-        this.matchers.inclusionMatchers.basename.some((matcher) =>
-          matcher(basename),
-        );
-
-      // Apply fuzzy matching directly to path patterns if enabled
-      const matchesFuzzyPattern =
-        enableFuzzyMatching && pathPatterns
-          ? pathPatterns.some((pattern) => {
-              // Only apply fuzzy matching to non-glob patterns
-              if (!pattern.includes("*") && !pattern.includes("?")) {
-                return fuzzyMatch(pattern, normalizedPath);
-              }
-              return false;
-            })
-          : false;
-
-      // File is included if it matches any pattern
-      included =
-        matchesNormalPattern || matchesBasenamePattern || matchesFuzzyPattern;
-    }
-
-    // If not included, no need to check exclusion
-    if (!included) {
+    // If excluded, it takes precedence over inclusion
+    if (excluded) {
       return {
         filter: true,
         status: "404",
-        message: "Not included in path patterns",
+        message: "Excluded by excludePathPatterns",
       };
     }
-
-    // Apply exclusion patterns
-    if (
-      this.matchers.hasExclusion ||
-      (enableFuzzyMatching &&
-        excludePathPatterns &&
-        excludePathPatterns.length > 0)
-    ) {
-      // Check normal patterns from picomatch
-      const matchesNormalExcludePattern =
-        this.matchers.exclusionMatchers.normal.some((matcher) =>
-          matcher(normalizedPath),
-        );
-
-      // Check basename patterns from picomatch
-      const matchesBasenameExcludePattern =
-        this.matchers.exclusionMatchers.basename.some((matcher) =>
-          matcher(basename),
-        );
-
-      // Apply fuzzy matching directly to exclude path patterns if enabled
-      const matchesFuzzyExcludePattern =
-        enableFuzzyMatching && excludePathPatterns
-          ? excludePathPatterns.some((pattern) => {
-              // Only apply fuzzy matching to non-glob patterns
-              if (!pattern.includes("*") && !pattern.includes("?")) {
-                return fuzzyMatch(pattern, normalizedPath);
-              }
-              return false;
-            })
-          : false;
-
-      // File is excluded if it matches any exclusion pattern
-      const excluded =
-        matchesNormalExcludePattern ||
-        matchesBasenameExcludePattern ||
-        matchesFuzzyExcludePattern;
-
-      // If excluded, it takes precedence over inclusion
-      if (excluded) {
-        return {
-          filter: true,
-          status: "404",
-          message: "Excluded by excludePathPatterns",
-        };
-      }
-    }
-
-    // If we reach this point, the file should be processed
-    return { filter: false };
   }
-}
+
+  // If we reach this point, the file should be processed
+  return { filter: false };
+};

@@ -1,4 +1,4 @@
-declare module "*.genignore" {
+declare module "*.md" {
   const content: string;
   export default content;
 }

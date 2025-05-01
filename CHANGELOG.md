@@ -814,3 +814,25 @@ Sha url can't be used for edit link, must be branch!
 ✅ Confirm that `.genignore` works like desired (or fix) including the early returning in the right moment.
 
 ❌ Try to improve the `excludePathPatterns` so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Potentially, people wanna have only a few specific files in their context, which should be specified like `*.*\n!README.md`. **It's hard. Let's think about this.**
+
+# Nailing omni-compatible navigation (2025-05-01)
+
+🤔 Make it possible to see search filters in tree as well by moving this logic to the backend. It's likely best to stream the formdata after search to `uithub` directly so i can build/return the tree instead of `ziptree`. This way I know which files got filtered using `x-filter`.
+
+✅ `outputmd` should take FormData from body rather than just from URL
+
+✅ The `output*` service should be called using `repsonse.body.tee()` in `uithub`. We use the structured FormData output to generate the tree in a helper utility function.
+
+✅ Ultimately, the tree datastructure would be `{ [segment]: { size: number; filtered: boolean, children: this }}`
+
+✅ Pass StandardURL data to HTML `window.data`.
+
+✅ Add `x-filter` and `x-error` type safety to `multipart-formdata-stream-js`
+
+✅ Create `buildTree` (take inspiration from: `uithub.ziptree`)
+
+✅ Get `defaultBranch` in another way. This is github specific, so maybe should be done in the `github.ts` router?
+
+✅ Apply `StandardURL` data and new tree datastructure in frontend. Ensure we use it to navigate!
+
+✅ `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.

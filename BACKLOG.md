@@ -1,19 +1,14 @@
-# Plugins
+# Improving the markdown output
 
-❗️ Before i start with plugins, I want to nail the basics for file hierarchy exploration. Everything must work super smoothly. Maybe I shoul decide doing this later, if there are more improvements to be made for optimal smoothness. It's super obvious plugins are gonna be epic, but lets do the things in the right order.
+- Add `maxTokens` filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still. **🤔 Not sure! maybe its better to do this after we built up the tree. For formats other than markdown, maxTokens isn't that important. Maybe the tree should also be something that we always append/prepend as a file. Pretty useful**
 
-- Make `ingestjson.uithub.com` so all the apis make sense!
-- Also try the "api" datatype which just passes each file that fits the mediatype to the endpoint according to some convention. ActionSchema!
-- Make `domains.json` function
-- Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
-- ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
-- Implement useful plugins!!! Make the footprint of a plugin as simple as possible without loosing capability. E.g. also allow file=>file.
-- Add ability to configure a `dev` plugin with cookie for remote development with uithub as DX interface for testing.
-- Most interesting plugins:
-  - 1. typedoc or similar
-  - 2. llms.txt plugin (just taking markdown)
+- When generating full markdown-tree, also get token size for each file/folder, and show the size on folders
+
+- Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.
 
 # creating sha-cached basePath-based inferences (big on performance)
+
+Figure out how I can nicely benchmark speeds in different ways of the different plugins and the time for estabilishing the connection between the different workers. Do another deepdive on how to make this as fast as the original uithub on vercel.
 
 ❗️ Found that `initialResponseTime` for `ingestzip` service is often in the ballpark of: 1750-2250ms. Caching the zip into KV or R2 makes a ton of sense to reduce this to 100s of ms.
 
@@ -51,7 +46,7 @@ Keep watching ratelimiter speed. Sorta slow sometimes, maybe ratelimt resets too
 
 After this is there, this'd be a great thing to show to people, as a minimal example of how to build a paid API with Cloudflare.
 
-# Process .gitattributes
+# Process `.gitattributes`
 
 After some research I found that https://github.com/public-apis/public-apis doesn't give the README file (280kb) because of their .gitattributes setting
 
