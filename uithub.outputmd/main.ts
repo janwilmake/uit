@@ -76,6 +76,8 @@ async function processPartsToMarkdown(
         continue;
       }
 
+      const isFiltered = !!part["x-filter"];
+
       count++;
 
       const isBinary = part["content-transfer-encoding"] === "binary";
@@ -119,10 +121,15 @@ async function processPartsToMarkdown(
       // Add file to tree
       const treeString = isLastEntry ? "└── " : "├── ";
 
-      const tooLargeText = isFileTooLarge ? ` (omited due to size)` : "";
+      const filteredText = isFiltered
+        ? ` (omitted)`
+        : isFileTooLarge
+        ? ` (omited due to size)`
+        : "";
+
       treeStructure += `${" ".repeat(
         depth * INDENTATION_PER_LEVEL,
-      )}${treeString}${currentFilename}${tooLargeText}\n`;
+      )}${treeString}${currentFilename}${filteredText}\n`;
 
       // Update last path
       lastPath = [...pathParts];
@@ -130,6 +137,7 @@ async function processPartsToMarkdown(
       // Prepare file content section
 
       if (part["x-filter"]) {
+        // if filtered, don't add the markdown for the file itself
         const [plugin, status, message] = part["x-filter"]
           .split(";")
           .map((x) => x.trim());
