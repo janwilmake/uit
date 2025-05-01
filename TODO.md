@@ -22,43 +22,48 @@
 
 ^^^ This can still take several weeks to make good. Target: end of may ^^^
 
-# `.genignore`
-
-🤔 How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files? How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore. Generally I just need a way to get config files from any zip, beforehand, without making it slower.
-
-✅ I've added `genignore.ts` to `ingestzip` so it always first finds genignore or uses the default.
-
-✅ If `genignore=false` is provided, should disable default or configured genignore.
-
-✅ If `excludePathPatterns` is provided, these are added to the patterns (duplicates removed)
-
-✅ Update OpenAPI spec
-
-✅ exclude patterns should not include ones starting with # or if its an empty string, trimmed.
-
-✅ In frontend, for some reason. it is rendering it as html. improved escape functionality
-
-✅ In frontend add `genignore=false` checkbox titled `disable genignore`.
-
-✅ In frontend, add button `Create .genignore` that does the same as README button, but for `.genignore`
-
 # https://genignore.com
 
 ✅ Research the `.gitignore` specification and compare that to VSCode specification for `files to include/exclude`. Determine how `.genignore` should work, and write that into a spec at `uit/specification/genignore.md`
 
-✅ Besides the issue, DM them. This should be enough to make `.genignore` succeed as a standard!
+✅ Create a nice landing for genignore.com that explains the concept using that file. Also include the fact that repomix and gitingest also had introduced/discussed similar concepts, but a universal one is more desirable.
 
-Create a nice landing for genignore.com that explains the concept using that file. Also include the fact that repomix and gitingest also had introduced/discussed similar concepts, but a universal one is more desirable.
+✅ DM them. This should be enough to make `.genignore` succeed as a standard!
 
-Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`.
+⏳ Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`. After confirmation from both parties, create a launch thread for `genignore` on X.
 
-After confirmation from both parties, create a launch thread for `genignore` on X.
+🤔 How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files? How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore. Generally I just need a way to get config files from any zip, beforehand, without making it slower.
 
 Confirm that `.genignore` works like desired.
 
 Try to improve the excludePathPatterns so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Potentially, people wanna have only a few specific files in their context, which should be specified like `*.*\n!README.md`.
 
-Now we can also create specific includes when generating something with just genignore!
+🎉 Now we can also create specific includes when generating something with just genignore!
+
+# Nailing omni-compatible navigation
+
+Make it possible to see search filters in tree as well by moving this logic to the backend. It's likely best to stream the formdata after search to `uithub` directly so i can build/return the tree instead of `ziptree`. This way I know which files got filtered using `x-filter`.
+
+The `output*` service should be called using `repsonse.body.tee()` in `uithub`. We use the structured FormData output to generate the tree in a helper utility function.
+
+Ultimately, the tree datastructure would be `{ [segment]: { size: number; filtered: boolean, children: this }}`
+
+This is super critical to make uithub nice to use... including for other domains and ingesttypes.
+
+Ensure we use the `domain.json` setup and request parsing to navigate!
+
+# Improving the markdown output
+
+- When generating full markdowntree, also get token size for each file/folder, and show the size on folders
+- Add `x-filter` and `x-error` type safety to `multipart-formdata-stream-js`
+- Add `maxTokens` filter and `basePath` content-filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still.
+- Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.
+
+🤔 This needs to be there to make a sensible `.genignore` for big repos
+
+# generate genignore files
+
+Can be done based on filetree and the default genignore with max certain maxtokens. Can be done using deepseek or cloudflare-based model. Can be done on-demand, stored in KV.
 
 # `context.json`
 
@@ -91,22 +96,3 @@ Could be big; https://github.com/refined-github/refined-github/issues/8423#issue
 - In `uithub.search` expose whether or not tokens were capped with `maxTokens` or not. Then, In uithub UI (`vscode.html`), add filter warning if tokens were capped that says "apply filters for better results".
 - `search.js`: basepath should show up on search to easily remove (maybe should first ensure for a basePath in `window.data`)
 - `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.
-
-# Nailing omni-compatible navigation
-
-Make it possible to see search filters in tree as well by moving this logic to the backend. It's likely best to stream the formdata after search to `uithub` directly so i can build/return the tree instead of `ziptree`. This way I know which files got filtered using `x-filter`.
-
-The `output*` service should be called using `repsonse.body.tee()` in `uithub`. We use the structured FormData output to generate the tree in a helper utility function.
-
-Ultimately, the tree datastructure would be `{ [segment]: { size: number;filtered: boolean, children: this }}`
-
-This is super critical to make uithub nice to use... including for other domains and ingesttypes.
-
-Ensure we use the `domain.json` setup and request parsing to navigate!
-
-# Improving the markdown output
-
-- When generating full markdowntree, also get token size for each file/folder, and show the size on folders
-- Add `x-filter` and `x-error` type safety to `multipart-formdata-stream-js`
-- Add `maxTokens` filter and `basePath` content-filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still.
-- Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.

@@ -782,3 +782,21 @@ Sha url can't be used for edit link, must be branch!
 - ✅ Added `omitBinary` to `uithub` requests for non-zip responses. For zip responses, binary is not omitted anymore.
 - ✅ Added custom `x-filter` FormData header that provides information about files that got filtered out
 - ✅ should include entire file structure, including files where content got omitted
+
+# `.genignore` (2025-04-30)
+
+✅ I've added `genignore.ts` to `ingestzip` so it always first finds genignore or uses the default.
+
+✅ If `genignore=false` is provided, should disable default or configured genignore.
+
+✅ If `excludePathPatterns` is provided, these are added to the patterns (duplicates removed)
+
+✅ Update OpenAPI spec
+
+✅ exclude patterns should not include ones starting with # or if its an empty string, trimmed.
+
+✅ In frontend, for some reason. it is rendering it as html. improved escape functionality
+
+✅ In frontend add `genignore=false` checkbox titled `disable genignore`.
+
+✅ In frontend, add button `Create .genignore` that does the same as README button, but for `.genignore`

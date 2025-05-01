@@ -30,6 +30,50 @@
       }
     },
 
+    "rules": {
+      "type": "array",
+      "description": "Array of rule items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the rule"
+          },
+          "rule": {
+            "type": "string",
+            "description": "The rule content or identifier"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the rule's purpose"
+          },
+          "alwaysApply": {
+            "type": "boolean",
+            "description": "Whether the rule should always be applied regardless of context"
+          },
+          "globs": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "A single glob pattern to which this rule applies"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Multiple glob patterns to which this rule applies"
+              }
+            ],
+            "description": "File patterns to which this rule applies"
+          }
+        },
+        "required": ["name", "rule"],
+        "additionalProperties": false
+      }
+    },
+
     "context": {
       "description": "Array of context; questions and filters. Only slug is required, and at least either question or filter.",
       "type": "array",
