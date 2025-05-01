@@ -30,13 +30,13 @@
 
 ✅ DM them. This should be enough to make `.genignore` succeed as a standard!
 
-⏳ Target: issue in gitingest and repomix to also support `.genignore` rather than just `.repomixignore` and `.gitingestignore`. After confirmation from both parties, create a launch thread for `genignore` on X.
+⏳ Target: issue in gitingest and repomix to also support `.genignore` rather than just `.{platform}ignore`. ✔️ repoprompt. 🟠 repomix. 🟠 gitingest. 🟠 cursor.
 
 🤔 How are files in the zip sorted? How to get the `.genignore` asap, then use it to filter files? How will it work if I have multiple repos and am ingesting them as a single FormData stream? The `.genignore` won't be in the root anymore. Generally I just need a way to get config files from any zip, beforehand, without making it slower.
 
-Confirm that `.genignore` works like desired.
+Confirm that `.genignore` works like desired (or fix) including the early returning in the right moment.
 
-Try to improve the excludePathPatterns so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Potentially, people wanna have only a few specific files in their context, which should be specified like `*.*\n!README.md`.
+Try to improve the `excludePathPatterns` so negations work as expected, so https://uuithub.com/janwilmake/forgithub.popular?excludePathPatterns=*&excludePathPatterns=%21README.md works. Potentially, people wanna have only a few specific files in their context, which should be specified like `*.*\n!README.md`.
 
 🎉 Now we can also create specific includes when generating something with just genignore!
 

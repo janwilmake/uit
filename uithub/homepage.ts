@@ -135,7 +135,7 @@ export const escapeHTML = (str: string) => {
 export const updateIndex = async (ASSETS_KV: KVNamespace) => {
   try {
     // Check if the HTML contains the placeholder
-    if (html.includes("{TOP_REPOS}")) {
+    if (html.includes("{{TOP_REPOS}}")) {
       // Fetch popular repositories from the API
       const reposResponse = await fetch(
         "https://popular.forgithub.com/index.json",
@@ -156,11 +156,11 @@ export const updateIndex = async (ASSETS_KV: KVNamespace) => {
       const topReposHtml = generateReposHtml(topRepos);
 
       // Replace the placeholder with the generated HTML
-      const finalHtml = html.replace("{TOP_REPOS}", topReposHtml);
+      const finalHtml = html.replace("{{TOP_REPOS}}", topReposHtml);
       await ASSETS_KV.put("index.html", finalHtml);
+    } else {
+      await ASSETS_KV.put("index.html", html);
     }
-
-    await ASSETS_KV.put("index.html", html);
   } catch (error) {
     console.error("Error processing request:", error);
     await ASSETS_KV.put("index.html", html);
