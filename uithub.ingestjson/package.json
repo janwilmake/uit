@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "binary-extensions": "^3.0.0",
+    "fflate": "^0.8.2",
+    "picomatch": "^4.0.2"
+  },
+  "devDependencies": {
+    "@types/mime-db": "^1.43.5",
+    "@types/picomatch": "^4.0.0",
+    "mime-db": "^1.54.0"
+  }
+}

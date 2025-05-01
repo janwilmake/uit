@@ -58,22 +58,6 @@ function extractString(
 }
 
 /**
- * Check if a TAR header is valid
- * @param buffer The buffer containing the header
- * @returns True if the header is valid, false otherwise
- */
-function isValidTarHeader(buffer: Uint8Array): boolean {
-  // Check for "ustar" magic value at offset 257
-  return (
-    buffer[257] === 117 && // 'u'
-    buffer[258] === 115 && // 's'
-    buffer[259] === 116 && // 't'
-    buffer[260] === 97 && // 'a'
-    buffer[261] === 114
-  ); // 'r'
-}
-
-/**
  * Check if a TAR header indicates the end of the archive
  * @param buffer The buffer containing the header
  * @returns True if the header is an end marker, false otherwise

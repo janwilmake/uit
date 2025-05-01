@@ -16,7 +16,12 @@ import html429 from "./static/429.html";
 import { RatelimitDO } from "./ratelimiter.js";
 export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
-import { Plugin, ResponseTypeEnum, router, StandardURL } from "./router.js";
+import {
+  Plugin,
+  ResponseTypeEnum,
+  router,
+  StandardURL,
+} from "./routers/router.js";
 import { escapeHTML, updateIndex } from "./homepage.js";
 import { buildTree, TreeObject } from "./buildTree.js";
 interface Env {

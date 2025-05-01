@@ -21,6 +21,22 @@
 
 ^^^ This can still take several weeks to make good. Target: end of may ^^^
 
+# `npmjs.com` domain
+
+- ✅ create `ingesttar` and npmjs domain binding to `uithub`
+- add npmjs.com into domains; `npmjs.ts` should route to the appropriate package
+- Make `domains.json` function
+- confirm I can get packages by changing from npmjs url structure to uuithub.com/npmjs.com/...
+
+# `ingest` plugins
+
+- Make `ingestjson.uithub.com` so all the apis make sense! Make it adhere to `{files:{[path]:{content}}}` and if that format isn't found, take first key as `{key}.json`.
+- Make cache.forgithub.com plugins all work
+
+# `transform-file` plugins
+
+- Also try the `transform-file` datatype which just passes each file that fits the mediatype to the endpoint as long as its content match the schema (if present). ActionSchema!
+
 # Minor improvements
 
 In `outputmd`, add the params that were used to search as frontmatter. Also, add warning to the top if tokens were capped.
@@ -43,9 +59,6 @@ Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: 
 
 ❗️ Before i start with plugins, I want to nail the basics for file hierarchy exploration. Everything must work super smoothly. Maybe I should decide doing this later, if there are more improvements to be made for optimal smoothness. It's super obvious plugins are gonna be epic, but lets do the things in the right order.
 
-- Make `ingestjson.uithub.com` so all the apis make sense!
-- Also try the "api" datatype which just passes each file that fits the mediatype to the endpoint according to some convention. ActionSchema!
-- Make `domains.json` function
 - Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
 - ❗️ Plugins: at least the API ones from URL should work! But also the formdata=>formdata should be straightforward to add it in.
 - Implement useful plugins!!! Make the footprint of a plugin as simple as possible without loosing capability. E.g. also allow file=>file.

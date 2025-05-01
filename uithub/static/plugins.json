@@ -127,6 +127,7 @@
       "endpoint": "https://llms.uithub.com/{owner}/{repo}/llms.txt",
       "source": "https://github.com/janwilmake/uithub.llms"
     },
+
     "llms-full.txt": {
       "title": "llms-full.txt",
       "type": "ingest",

@@ -1,5 +1,5 @@
 import github from "./github.js";
-import plugins from "./static/plugins.json" assert { type: "json" };
+import plugins from "../static/plugins.json" assert { type: "json" };
 import { getAuthorization } from "sponsorflare";
 
 // todo: to be generated from plugin.schema.json

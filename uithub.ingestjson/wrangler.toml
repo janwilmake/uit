@@ -1,0 +1,9 @@
+name = "uithub_ingestjson"
+compatibility_date = "2025-04-01"
+dev.port = 3000
+route.pattern = "ingestjson.uithub.com"
+route.custom_domain = true
+main = "./main.ts"
+
+# my feature!
+limits.cpu_ms = 300000
