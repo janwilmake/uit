@@ -1,5 +1,9 @@
 import github from "./github.js";
+import npmjs from "./github.js";
+import x from "./github.js";
+
 import plugins from "../static/plugins.json" assert { type: "json" };
+import domains from "../static/domains.json" assert { type: "json" };
 import { getAuthorization } from "sponsorflare";
 
 // todo: to be generated from plugin.schema.json
@@ -47,6 +51,7 @@ const getCrawler = (userAgent: string | null) => {
 };
 
 export type ResponseTypeEnum = "zip" | "txt" | "json" | "yaml" | "md";
+
 /**
  * Router that takes a request and parses it to determine the URL structure
  *
@@ -77,19 +82,36 @@ export const router = async (
     ? url.pathname.split("/").slice(1).join("/")
     : url.pathname;
 
-  if (domain !== "github.com") {
-    // TODO: use `domains.json` as source of truth for this
+  const item = domains[domain as keyof typeof domains];
+
+  if (!item) {
     return { status: 404, error: "This domain isn't available yet" };
   }
 
-  const response = await github.fetch(
-    new Request("https://router.uithub.com" + pathname, {
+  const { mirrorBasePath } = item;
+
+  const fetcher =
+    domain === "github.com"
+      ? github.fetch
+      : domain === "npmjs.com"
+      ? npmjs.fetch
+      : domain === "x.com"
+      ? x.fetch
+      : undefined;
+
+  if (!fetcher) {
+    return { status: 404, error: "This domain isn't available yet" };
+  }
+  const response = await fetcher(
+    new Request(mirrorBasePath + pathname, {
       headers: { "X-IS-AUTHENTICATED": String(!!access_token) },
     }),
   );
+
   if (!response.ok) {
     return { status: response.status, error: await response.text() };
   }
+
   const standardUrl: StandardURL = await response.json();
 
   const acceptQuery = url.searchParams.get("accept");

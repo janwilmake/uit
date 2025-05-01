@@ -16,5 +16,5 @@ Usage:
 TODO:
 
 - Create `ingestfs.ts` that turns `fs` into a FormData stream (with appropriate filters on paths)
-- Make `uithub.outputmd` a package
+- Make `uithub.outputmd` a package (that also works with node)
 - create a single package `uitx` that combines both in a single end to end pipeline that turns a basePath into a context on a single machine. Needs to work by providing `fs` and `basePath`. Needs to run anywhere.
