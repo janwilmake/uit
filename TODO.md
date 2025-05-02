@@ -21,18 +21,22 @@
 
 # `ingest` plugins
 
-- make `ingestjson` work in simplest possible way
-- Make `ingestjson.uithub.com` so all the apis make sense! Make it adhere to `{files:{[path]:{content}}}` and if that format isn't found, take first key as `{key}.json`. Also, thinking about xymake, it makes sense adding $ref support, although maybe a simpler zip on xymake is a better idea.
-- make ingest apis work
+- ✅ Make `ingestjson.uithub.com` so all the apis make sense! Make it adhere to `{files:{[path]:{content}}}` and if that format isn't found, take first key as `{key}.json`
+- ✅ finalize routing logic for ingest plugins
+- ensure ingestjson has content-type + boundary such that it doesnt error out. test locally.
 - ensure npm.forgithub.com works
-- fix cache.forgithub.com
-- fix log.forgithub.com
+- ensure cache.forgithub.com works. add slug being `createdatdate+slugify(title)`.
+- fix log.forgithub.com making these paths available
 - fix actions.forgithub.com (or remove for now)
-- fix threads.forgithub.com
-- finalize routing logic for ingest plugins
+- improve threads.forgithub.com (one file per thread)
 - confirm all visible plugins are functional!!!
 
 Share with the world: node_modules, dependencies, issues, discussions, etc etc etc (Can pretty much do one, every day)
+
+# `transform-formdata` plugins
+
+- Should already work.
+- Make this work for swc + parsing as primary example.
 
 # `npmjs.com` domain
 
@@ -84,11 +88,11 @@ THIS IS HOW I MAKE MONEY.
 
 # `transform-file` plugins
 
-- Also try the `transform-file` datatype which just passes each file that fits the mediatype to the endpoint as long as its content match the schema (if present). ActionSchema!
+Also try the `transform-file` datatype which just passes each file that fits the mediatype to the endpoint as long as its content match the schema (if present). ActionSchema! This is tricky when doing this as a URL pipe, but can be done using `transformfile.uithub.com/{endpointurl}`. At some point we're gonna have to pass more parameters to it though, but this could be done using OTP.
 
-# `transform-formdata` plugins
+Maybe also needs to be https://transformfile.uithub.com/{openapiUrl}/{operationId}
 
-- Should be straightforward. Then make this work for swc + parsing as primary example.
+Similarly, maybe ingest plugins need openapi+operation (to know output type beforehand, to know if a plugin is another source)
 
 # Minor improvements
 

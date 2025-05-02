@@ -25,14 +25,25 @@ UIT cleverly modularizes filters and transformations on file hierarchies by prov
 
 So far, UIT provides the following modules that can be combined to create powerful file processing pipelines:
 
+**ingest modules**
+
 - [**uithub.ingestzip**](./uithub.ingestzip) - Ingests and processes ZIP files into normalized formdata format
-- [**uithub.merge**](./uithub.merge) - Combines multiple formdata streams into a single unified stream
+- [**uithub.ingesttar**](./uithub.ingesttar) - Ingests and processes gzipped tarfiles into normalized formdata format
+- [**uithub.ingestjson**](./uithub.ingestjson) - Ingests and processes JSON into normalized formdata format
+
+**transform modules**
+
+- [**uithub.search**](./uithub.search) - Provides search capabilities across file hierarchies
+
+**output modules**
+
 - [**uithub.outputmd**](./uithub.outputmd) - Transforms and outputs data as markdown files
 - [**uithub.outputzip**](./uithub.outputzip) - Packages processed data into downloadable ZIP archives
-- [**uithub.search**](./uithub.search) - Provides search capabilities across file hierarchies
-- [**uithub.ziptree**](./uithub.ziptree) - Highly performant zip file-hierarchy extractor
-- [**uithub.otp**](./uithub.otp) - Source proxy that generates an OTP to minimize secret exposure to other modules.
+
+**helpers**
+
 - [**uithub**](./uithub) - Brings several modules together, pipes through them, and shows in authenticated HTML interface.
+- [**uithub.otp**](./uithub.otp) - Source proxy that generates an OTP to minimize secret exposure to other modules.
 
 Each module is designed to perform a specific step in the UIT 4-step process (ingest, filter/transform, merge, output) while maintaining performance and low memory usage.
 
@@ -45,13 +56,10 @@ Please also note that above diagrams showcase many modules that haven't don't ex
 The UIT Protocol is the convention that characterizes any UIT module. As can be seen in the diagrams above, any UIT module must be one of these 4 module types:
 
 - **ingest module** - streams any datastructure into a FormData stream
-- **merge module** - streams several FormData sources into a single FormData stream
-- **filter/transform module** - applies filters and transformations on files in a streaming fashion while in the FormData 'modality'.
+- **formdata transform module** - applies filters and transformations on files in a streaming fashion while in the FormData 'modality'.
 - **output module** - streams a FormData stream into any desired datastructure
 
 The only formalized convention/protocol you need to understand to create a UIT module, is which FormData headers UIT modules work with. These FormData headers can be divided into standard and non-standard (custom) headers:
-
-# UIT FormData Headers
 
 ## Standard FormData Headers
 
@@ -99,7 +107,7 @@ Please open a discussion, issue, pull request, or [reach out](https://x.com/janw
 - [GETTING-STARTED.md](GETTING-STARTED.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [ATTRIBUTION.md](ATTRIBUTION.md)
-- plugins [[html]](https://uuithub.com/plugins) [[md]](uithub/public/plugins.json)
+- plugins [[html]](https://uuithub.com/plugins) [[json]](uithub/public/plugins.json)
 
 # Community & Related work
 

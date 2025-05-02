@@ -274,6 +274,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     for (const pluginId in plugins) {
       const plugin = plugins[pluginId];
+      if (plugin.disabled) {
+        continue;
+      }
       const isPinned = pinned.includes(pluginId);
       const card = createPluginCard(pluginId, plugin, isPinned);
 

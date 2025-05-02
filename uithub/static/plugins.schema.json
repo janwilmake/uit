@@ -1,10 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-
   "type": "object",
   "additionalProperties": false,
   "required": ["plugins"],
   "properties": {
+    "$comment": { "type": "string" },
     "$schema": { "type": "string" },
     "plugins": {
       "description": "Plugins for uithub. These plugins can be made accessible via the plugins menu in the sidebar, and can be pinned to the UI. \n\nThe key of any plugin in plugin object can be used to access the plugin through its page in format \"/[owner]/[repo]/[page]\".\n\nRight now the plugin store should be focused mainly on the easiest and most impactful types of plugins. At a later stage, plugins could become discoverable pieces of code, auto-detected on GitHub, and would be able to be easily used and tested by agents to ensure marketplace quality.",

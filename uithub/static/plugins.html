@@ -49,13 +49,21 @@
                     class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
                     All
                 </button>
-                <button id="filter-api"
+                <button id="filter-ingest"
                     class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
-                    API
+                    Ingest
                 </button>
-                <button id="filter-transformer"
+                <button id="filter-transform-file"
                     class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
-                    Transformer
+                    Transform File
+                </button>
+                <button id="filter-transform-formdata"
+                    class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    Transform FormData
+                </button>
+                <button id="filter-domain"
+                    class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    With Domain
                 </button>
                 <div class="flex-grow"></div>
                 <div class="relative">
@@ -99,6 +107,7 @@
             let plugins = {};
             let currentFilter = 'all';
             let currentSearch = '';
+            let showWithDomain = false;
 
             try {
                 // Fetch plugins from JSON file
@@ -120,12 +129,22 @@
                 setActiveFilter('all');
             });
 
-            document.getElementById('filter-api').addEventListener('click', () => {
-                setActiveFilter('api');
+            document.getElementById('filter-ingest').addEventListener('click', () => {
+                setActiveFilter('ingest');
             });
 
-            document.getElementById('filter-transformer').addEventListener('click', () => {
-                setActiveFilter('formdata-transformer');
+            document.getElementById('filter-transform-file').addEventListener('click', () => {
+                setActiveFilter('transform-file');
+            });
+
+            document.getElementById('filter-transform-formdata').addEventListener('click', () => {
+                setActiveFilter('transform-formdata');
+            });
+
+            document.getElementById('filter-domain').addEventListener('click', () => {
+                showWithDomain = !showWithDomain;
+                updateDomainButtonStyle();
+                renderPlugins();
             });
 
             // Set up search input
@@ -133,6 +152,13 @@
                 currentSearch = e.target.value.toLowerCase();
                 renderPlugins();
             });
+
+            function updateDomainButtonStyle() {
+                document.getElementById('filter-domain').className =
+                    showWithDomain
+                        ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors'
+                        : 'bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors';
+            }
 
             function setActiveFilter(filter) {
                 currentFilter = filter;
@@ -142,15 +168,61 @@
                     filter === 'all' ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors'
                         : 'bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors';
 
-                document.getElementById('filter-api').className =
-                    filter === 'api' ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors'
+                document.getElementById('filter-ingest').className =
+                    filter === 'ingest' ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors'
                         : 'bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors';
 
-                document.getElementById('filter-transformer').className =
-                    filter === 'formdata-transformer' ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors'
+                document.getElementById('filter-transform-file').className =
+                    filter === 'transform-file' ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors'
+                        : 'bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors';
+
+                document.getElementById('filter-transform-formdata').className =
+                    filter === 'transform-formdata' ? 'bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors'
                         : 'bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors';
 
                 renderPlugins();
+            }
+
+            function getPluginBadgeColor(type) {
+                switch (type) {
+                    case 'ingest':
+                        return 'bg-blue-900 text-blue-200';
+                    case 'transform-file':
+                        return 'bg-green-900 text-green-200';
+                    case 'transform-formdata':
+                        return 'bg-teal-900 text-teal-200';
+                    case 'output':
+                        return 'bg-yellow-900 text-yellow-200';
+                    case 'storage':
+                        return 'bg-pink-900 text-pink-200';
+                    case 'workflow':
+                        return 'bg-orange-900 text-orange-200';
+                    case 'scope':
+                        return 'bg-purple-900 text-purple-200';
+                    default:
+                        return 'bg-gray-900 text-gray-200';
+                }
+            }
+
+            function getPluginTypeLabel(type) {
+                switch (type) {
+                    case 'ingest':
+                        return 'Ingest';
+                    case 'transform-file':
+                        return 'Transform File';
+                    case 'transform-formdata':
+                        return 'Transform FormData';
+                    case 'output':
+                        return 'Output';
+                    case 'storage':
+                        return 'Storage';
+                    case 'workflow':
+                        return 'Workflow';
+                    case 'scope':
+                        return 'Scope';
+                    default:
+                        return type;
+                }
             }
 
             function renderPlugins() {
@@ -164,8 +236,18 @@
 
                 // Filter and render plugins
                 Object.entries(plugins).forEach(([key, plugin]) => {
-                    // Apply filters
+                    // Skip disabled plugins
+                    if (plugin.disabled) {
+                        return;
+                    }
+
+                    // Apply type filter
                     if (currentFilter !== 'all' && plugin.type !== currentFilter) {
+                        return;
+                    }
+
+                    // Apply domain filter
+                    if (showWithDomain && !plugin.domain) {
                         return;
                     }
 
@@ -184,15 +266,14 @@
                     card.className = 'bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors duration-300 border border-gray-700 flex flex-col h-full';
 
                     // Determine badge color based on plugin type
-                    const badgeColor = plugin.type === 'api'
-                        ? 'bg-blue-900 text-blue-200'
-                        : 'bg-green-900 text-green-200';
+                    const badgeColor = getPluginBadgeColor(plugin.type);
+                    const typeLabel = getPluginTypeLabel(plugin.type);
 
                     card.innerHTML = `
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="text-xl font-semibold text-purple-400 truncate">${plugin.title || key}</h3>
                             <span class="text-xs px-2 py-1 rounded ${badgeColor}">
-                                ${plugin.type === 'api' ? 'API' : 'Transformer'}
+                                ${typeLabel}
                             </span>
                         </div>
                         

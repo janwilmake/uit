@@ -16,12 +16,7 @@ import html429 from "./static/429.html";
 import { RatelimitDO } from "./ratelimiter.js";
 export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
-import {
-  Plugin,
-  ResponseTypeEnum,
-  router,
-  StandardURL,
-} from "./routers/router.js";
+import { OutputType, Plugin, router, StandardURL } from "./routers/router.js";
 import { escapeHTML, updateIndex } from "./homepage.js";
 import { buildTree, TreeObject } from "./buildTree.js";
 interface Env {
@@ -183,7 +178,7 @@ export default {
         });
       }
 
-      const { domain, plugin, standardUrl, responseType, needHtml } = result;
+      const { domain, plugin, standardUrl, outputType, needHtml } = result;
 
       const {
         // To load source
@@ -261,12 +256,12 @@ export default {
         url,
         plugin,
         standardUrl,
-        responseType,
+        outputType,
         CREDENTIALS: env.CREDENTIALS,
         sourceAuthorization: access_token ? `token ${access_token}` : undefined,
 
         // whether or not to immediately include piping output
-        pipeOutput: responseType === "zip" || !needHtml,
+        pipeOutput: outputType === "zip" || !needHtml,
       });
       const contentType = response.headers.get("content-type");
       if (!response.ok || !response.body || !contentType) {
@@ -482,7 +477,7 @@ const pipeResponse = async (context: {
   url: URL;
   plugin?: Plugin;
   standardUrl: StandardURL;
-  responseType: ResponseTypeEnum;
+  outputType: OutputType;
   CREDENTIALS: string;
   sourceAuthorization?: string;
   pipeOutput?: boolean;
@@ -492,7 +487,7 @@ const pipeResponse = async (context: {
     sourceAuthorization,
     CREDENTIALS,
     plugin,
-    responseType,
+    outputType,
     pipeOutput,
     standardUrl: {
       primarySourceSegment,
@@ -506,37 +501,35 @@ const pipeResponse = async (context: {
     },
   } = context;
 
-  if (plugin?.type === "ingest") {
-    const response = new Response(
-      `\n\nIngest plugins use should use ingestjson.uithub.com so we need to make that (plugin = ${plugin.title})`,
-      {
-        status: 400,
-      },
-    );
-    return { response };
-  }
-
-  if (plugin?.type === "api") {
-    const response = new Response(
-      `API plugins should transform every file that fits the description. Sicko!`,
-      { status: 400 },
-    );
-    return { response };
-  }
-
-  const genignoreQuery = url.searchParams.get("genignore");
   const rawUrlPrefixPart = rawUrlPrefix ? `&rawUrlPrefix=${rawUrlPrefix}` : "";
-  const omitBinaryPart = responseType === "zip" ? "" : `&omitBinary=true`;
+  const omitBinaryPart = outputType === "zip" ? "" : `&omitBinary=true`;
+  const genignoreQuery = url.searchParams.get("genignore");
   const genignorePart = `&genignore=${
     genignoreQuery === "false" ? false : true
   }`;
-
-  const ingestUrl =
+  let ingestUrl: string | undefined =
     sourceType === "zip"
       ? `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
       : sourceType === "tar"
       ? `https://ingesttar.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
       : undefined;
+  if (!plugin) {
+    // no plugin. good
+  } else if (plugin?.type === "ingest") {
+    ingestUrl = plugin.endpoint
+      .replace("{primarySourceSegment}", primarySourceSegment)
+      .replace("{secondarySourceSegment}", secondarySourceSegment || "")
+      .replace("{basePath}", basePath || "");
+  } else if (plugin?.type === "transform-formdata") {
+    //
+  } else {
+    const response = new Response(
+      `Plugin with type ${plugin?.type} not supported yet!`,
+      { status: 400 },
+    );
+    return { response };
+  }
+
   if (!ingestUrl) {
     const response = new Response(
       `Could not find ingest url of source type ${sourceType}!`,
@@ -551,7 +544,7 @@ const pipeResponse = async (context: {
     yaml: undefined, //"https://outputyaml.uithub.com",
     md: "https://outputmd.uithub.com",
     txt: undefined,
-  }[responseType];
+  }[outputType];
 
   const searchParams = new URLSearchParams(url.searchParams);
 
@@ -562,11 +555,13 @@ const pipeResponse = async (context: {
     searchParams.append("basePath", "/" + basePath);
   }
 
-  const shadowTransformUrl = plugin?.endpoint;
+  const shadowTransformUrl =
+    plugin?.type === "transform-formdata" ? plugin?.endpoint : undefined;
 
   const searchUrl = `https://search.uithub.com/?${searchParams.toString()}`;
 
   const urls = [
+    // any -> formdata
     ingestUrl,
     // formdata -> formdata
     searchUrl,

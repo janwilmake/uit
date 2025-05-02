@@ -8,9 +8,18 @@ import { getAuthorization } from "sponsorflare";
 
 // todo: to be generated from plugin.schema.json
 export type Plugin = {
+  disabled?: boolean;
   title: string;
   domain: string;
-  type: "formdata-transformer" | "ingest" | "api";
+  type: [
+    "ingest",
+    "transform-file",
+    "transform-formdata",
+    "output",
+    "storage",
+    "workflow",
+    "scope",
+  ][number];
   description: string;
   endpoint: string;
   source: string;
@@ -50,7 +59,7 @@ const getCrawler = (userAgent: string | null) => {
   return crawler;
 };
 
-export type ResponseTypeEnum = "zip" | "txt" | "json" | "yaml" | "md";
+export type OutputType = "zip" | "txt" | "json" | "yaml" | "md";
 
 /**
  * Router that takes a request and parses it to determine the URL structure
@@ -69,7 +78,7 @@ export const router = async (
     standardUrl: StandardURL;
     domain: string;
     plugin?: Plugin;
-    responseType: ResponseTypeEnum;
+    outputType: OutputType;
     needHtml: boolean;
   };
 }> => {
@@ -131,7 +140,7 @@ export const router = async (
   const isYaml = standardUrl.ext === "yaml" || accept === "text/yaml";
   const isMd = standardUrl.ext === "md" || accept === "text/markdown";
 
-  const responseType = isZip
+  const outputType = isZip
     ? "zip"
     : isJson
     ? "json"
@@ -150,14 +159,16 @@ export const router = async (
     standardUrl.pluginId as keyof typeof plugins.plugins
   ] as Plugin | undefined;
 
+  const realPlugin = plugin && !plugin.disabled ? plugin : undefined;
+
   return {
     status: 200,
     result: {
       standardUrl,
       domain,
-      plugin,
       needHtml,
-      responseType,
+      outputType,
+      plugin: realPlugin,
     },
   };
 };

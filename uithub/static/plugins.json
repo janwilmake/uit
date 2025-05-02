@@ -1,8 +1,10 @@
 {
   "$schema": "./plugins.schema.json",
+  "$comment": "The schema may change in the future. For plugin ideas, visit https://uuithub.com/plugins.md",
   "plugins": {
     "node_modules": {
       "type": "ingest",
+      "title": "Resolve node modules",
       "domain": "github.com",
       "description": "Resolves package info of required node_modules",
       "endpoint": "https://npm.forgithub.com/{primarySourceSegment}/node_modules/{secondarySourceSegment}/{basePath}",
@@ -12,6 +14,7 @@
     "dependencies": {
       "type": "ingest",
       "domain": "github.com",
+      "title": "Retrieve dependency context",
       "description": "Gets package info and readme for package.json dependencies",
       "endpoint": "https://npm.forgithub.com/{primarySourceSegment}/dependencies/{secondarySourceSegment}/{basePath}",
       "source": "https://github.com/janwilmake/forgithub.npm"
