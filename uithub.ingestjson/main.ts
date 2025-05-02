@@ -1,35 +1,8 @@
+// Import picomatch for glob pattern matching
 import picomatch from "picomatch";
+import map from "./public/ext-to-mime.json";
+import binaryExtensions from "binary-extensions";
 import { Env, FilterOptions, RequestParams, ResponseOptions } from "./types";
-
-// Known file extensions to detect in JSON keys
-const KNOWN_EXTENSIONS = [
-  "json",
-  "yaml",
-  "yml",
-  "ts",
-  "js",
-  "html",
-  "css",
-  "md",
-  "txt",
-  "jsx",
-  "tsx",
-  "scss",
-  "less",
-  "xml",
-  "svg",
-  "csv",
-  "py",
-  "go",
-  "rs",
-  "java",
-  "c",
-  "cpp",
-  "h",
-  "hpp",
-  "sh",
-  "rb",
-];
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -57,7 +30,7 @@ export default {
       return new Response("Authentication required", {
         status: 401,
         headers: {
-          "WWW-Authenticate": 'Basic realm="Archive Access"',
+          "WWW-Authenticate": 'Basic realm="JSON Access"',
         },
       });
     }
@@ -72,20 +45,20 @@ export default {
       // Fetch the JSON
       const jsonResponse = await fetch(jsonUrl, { headers });
 
+      if (!jsonResponse.ok) {
+        return createErrorResponse(jsonResponse, params.jsonUrl);
+      }
+
       const initialResponseTime = Date.now() - requestStartTime;
       responseHeaders.set(
         "X-Initial-Response-Time-Ms",
         initialResponseTime.toString(),
       );
 
-      if (!jsonResponse.ok) {
-        return createErrorResponse(jsonResponse, jsonUrl);
-      }
-
-      // Get JSON content
+      // Parse the JSON data
       const jsonData = await jsonResponse.json();
 
-      // Process and stream the JSON contents to multipart form data
+      // Process and stream the JSON as files
       const { readable, writable } = new TransformStream();
 
       // Start processing the JSON in the background
@@ -112,9 +85,12 @@ function parseRequest(request: Request): RequestParams {
   // Extract the JSON URL from the path
   const jsonUrl = decodeURIComponent(url.pathname.slice(1));
 
-  // Parse filter options (adapted from ingestzip, removing irrelevant options)
+  // Parse filter options
   const filterOptions: FilterOptions = {
+    omitFirstSegment: url.searchParams.get("omitFirstSegment") === "true",
+    omitBinary: url.searchParams.get("omitBinary") === "true",
     enableFuzzyMatching: url.searchParams.get("enableFuzzyMatching") === "true",
+    rawUrlPrefix: url.searchParams.get("rawUrlPrefix"),
     basePath: url.searchParams.getAll("basePath"),
     pathPatterns: url.searchParams.getAll("pathPatterns"),
     excludePathPatterns: url.searchParams.getAll("excludePathPatterns"),
@@ -138,6 +114,39 @@ function createErrorResponse(response: Response, jsonUrl: string): Response {
     } ${response.statusText}\n\n${response.text()}\n\n-----`,
     { status: response.status },
   );
+}
+
+// Helper functions for path normalization
+const prependSlash = (path: string) =>
+  path.startsWith("/") ? path : "/" + path;
+const surroundSlash = (path: string) =>
+  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
+const withoutSlash = (path: string) =>
+  path.startsWith("/") ? path.slice(1) : path;
+
+/**
+ * Simple fuzzy matching function that works similarly to VS Code's fuzzy search
+ */
+function fuzzyMatch(pattern: string, str: string): boolean {
+  // Convert both strings to lowercase for case-insensitive matching
+  const lowerPattern = pattern.toLowerCase();
+  const lowerStr = str.toLowerCase();
+
+  let patternIdx = 0;
+  let strIdx = 0;
+
+  // Try to match all characters in the pattern in sequence
+  while (patternIdx < lowerPattern.length && strIdx < lowerStr.length) {
+    // If characters match, advance pattern index
+    if (lowerPattern[patternIdx] === lowerStr[strIdx]) {
+      patternIdx++;
+    }
+    // Always advance string index
+    strIdx++;
+  }
+
+  // If we've gone through the entire pattern, it's a match
+  return patternIdx === lowerPattern.length;
 }
 
 function parseMaxFileSize(maxFileSizeParam: string | null): number | undefined {
@@ -180,295 +189,18 @@ function generateRandomString(length: number): string {
   return result;
 }
 
-// TextEncoder for string to Uint8Array conversion
-const encoder = new TextEncoder();
+// Process file path for omitFirstSegment option
+function processFilePath(fileName: string, omitFirstSegment: boolean): string {
+  if (!omitFirstSegment) return fileName;
 
-// Helper functions for path normalization - mirroring ingestzip
-const prependSlash = (path: string) =>
-  path.startsWith("/") ? path : "/" + path;
-const surroundSlash = (path: string) =>
-  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
-const withoutSlash = (path: string) =>
-  path.startsWith("/") ? path.slice(1) : path;
+  const parts = fileName.split("/");
+  if (parts.length <= 1) return fileName;
 
-/**
- * Process the JSON data and convert it to multipart/form-data stream
- */
-async function processJsonToMultipart(
-  jsonData: any,
-  output: WritableStream,
-  filterOptions: FilterOptions,
-  responseOptions: ResponseOptions,
-  requestStartTime: number,
-): Promise<void> {
-  const { boundary } = responseOptions;
-  const writer = output.getWriter();
-
-  try {
-    // Initialize path trackers and file collections
-    const files: {
-      path: string;
-      content: string;
-      contentType: string;
-    }[] = [];
-
-    // Process the JSON data recursively
-    processJsonRecursively(jsonData, "", files);
-
-    // Apply filters if needed
-    const filteredFiles = applyFilters(files, filterOptions);
-
-    // Write each file to the multipart form data
-    for (const file of filteredFiles) {
-      // Start multipart section
-      await writer.write(encoder.encode(`--${boundary}\r\n`));
-      await writer.write(
-        encoder.encode(
-          `Content-Disposition: form-data; name="${file.path}"; filename="${file.path}"\r\n`,
-        ),
-      );
-
-      // Add content type header
-      await writer.write(
-        encoder.encode(`Content-Type: ${file.contentType}\r\n`),
-      );
-
-      // Add content length if available
-      const contentBytes = encoder.encode(file.content);
-      await writer.write(
-        encoder.encode(`Content-Length: ${contentBytes.length}\r\n`),
-      );
-
-      // Hash the content
-      const hashBuffer = await crypto.subtle.digest("SHA-256", contentBytes);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-
-      await writer.write(encoder.encode(`x-file-hash: ${hashHex}\r\n`));
-
-      // Transfer encoding - assuming text content
-      await writer.write(
-        encoder.encode(`Content-Transfer-Encoding: 8bit\r\n\r\n`),
-      );
-
-      // Write the file content
-      await writer.write(contentBytes);
-      await writer.write(encoder.encode("\r\n"));
-    }
-
-    // End the multipart form data
-    await writer.write(encoder.encode(`--${boundary}--\r\n`));
-
-    const totalProcessingTime = Date.now() - requestStartTime;
-    console.log({ totalProcessingTime });
-  } catch (error) {
-    console.error("Error processing JSON:", error);
-  } finally {
-    await writer.close();
-  }
+  return "/" + parts.slice(1).join("/");
 }
 
 /**
- * Recursively process JSON data, extracting files based on keys and structure
- */
-function processJsonRecursively(
-  data: any,
-  currentPath: string,
-  files: { path: string; content: string; contentType: string }[],
-): void {
-  // Base case: null or undefined
-  if (data === null || data === undefined) {
-    return;
-  }
-
-  // Handle different data types
-  if (typeof data === "object") {
-    if (Array.isArray(data)) {
-      // Process arrays
-      let removed = false;
-
-      // Look for any array items to extract as files
-      for (let i = 0; i < data.length; i++) {
-        processJsonRecursively(data[i], `${currentPath}/${i}`, files);
-      }
-
-      // If the array wasn't completely processed as files, save the remaining array
-      if (!removed && data.length > 0) {
-        const arrayPath = `${currentPath}/index.json`;
-        files.push({
-          path: arrayPath.startsWith("/") ? arrayPath.substring(1) : arrayPath,
-          content: JSON.stringify(data, null, 2),
-          contentType: "application/json",
-        });
-      }
-    } else {
-      // Create a copy of the object to modify
-      const objectCopy = { ...data };
-      let hasRemainingProperties = false;
-
-      // First pass: identify and extract keys with extensions
-      for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-          const value = data[key];
-
-          // Check if key contains a file extension
-          const keyParts = key.split(".");
-          if (keyParts.length > 1) {
-            const extension = keyParts[keyParts.length - 1].toLowerCase();
-            if (KNOWN_EXTENSIONS.includes(extension)) {
-              const filePath = `${currentPath}/${key}`;
-
-              // Extract as a file with the extension
-              if (
-                typeof value === "string" ||
-                typeof value === "number" ||
-                typeof value === "boolean"
-              ) {
-                files.push({
-                  path: filePath.startsWith("/")
-                    ? filePath.substring(1)
-                    : filePath,
-                  content: String(value),
-                  contentType: getContentType(extension),
-                });
-
-                // Remove from the object copy
-                delete objectCopy[key];
-              } else {
-                // If it's an object/array but has a file extension in the key
-                files.push({
-                  path: filePath.startsWith("/")
-                    ? filePath.substring(1)
-                    : filePath,
-                  content: JSON.stringify(value, null, 2),
-                  contentType: getContentType(extension),
-                });
-
-                // Remove from the object copy
-                delete objectCopy[key];
-              }
-              continue;
-            }
-          }
-
-          // Check if key is numeric (should be treated as a file)
-          if (!isNaN(Number(key))) {
-            const itemPath = `${currentPath}/${key}`;
-            processJsonRecursively(value, itemPath, files);
-            delete objectCopy[key];
-            continue;
-          }
-
-          // Recursively process nested objects and arrays
-          processJsonRecursively(value, `${currentPath}/${key}`, files);
-          delete objectCopy[key];
-        }
-      }
-
-      // Check if we have any properties left
-      for (const key in objectCopy) {
-        if (Object.prototype.hasOwnProperty.call(objectCopy, key)) {
-          hasRemainingProperties = true;
-          break;
-        }
-      }
-
-      // If there are remaining properties, save as index.json
-      if (hasRemainingProperties) {
-        const objectPath = `${currentPath}/index.json`;
-        files.push({
-          path: objectPath.startsWith("/")
-            ? objectPath.substring(1)
-            : objectPath,
-          content: JSON.stringify(objectCopy, null, 2),
-          contentType: "application/json",
-        });
-      }
-    }
-  } else {
-    // Handle primitive values (string, number, boolean)
-    const extension = typeof data === "string" ? guessExtension(data) : "txt";
-    const filePath = `${currentPath}.${extension}`;
-
-    files.push({
-      path: filePath.startsWith("/") ? filePath.substring(1) : filePath,
-      content: String(data),
-      contentType: getContentType(extension),
-    });
-  }
-}
-
-/**
- * Try to guess the file extension based on content
- */
-function guessExtension(content: string): string {
-  // Simple heuristics for file type detection
-  if (content.trim().startsWith("{") && content.trim().endsWith("}")) {
-    try {
-      JSON.parse(content);
-      return "json";
-    } catch {
-      // Not valid JSON
-    }
-  }
-
-  if (content.trim().startsWith("<") && content.trim().endsWith(">")) {
-    return "html";
-  }
-
-  if (
-    content.includes("function ") ||
-    content.includes("const ") ||
-    content.includes("let ") ||
-    content.includes("var ")
-  ) {
-    return "js";
-  }
-
-  // Default to txt for plain text
-  return "txt";
-}
-
-/**
- * Get the content type based on file extension
- */
-function getContentType(extension: string): string {
-  const mimeTypes: { [key: string]: string } = {
-    json: "application/json",
-    yaml: "application/yaml",
-    yml: "application/yaml",
-    ts: "application/typescript",
-    js: "application/javascript",
-    html: "text/html",
-    css: "text/css",
-    md: "text/markdown",
-    txt: "text/plain",
-    jsx: "application/javascript",
-    tsx: "application/typescript",
-    scss: "text/x-scss",
-    less: "text/x-less",
-    xml: "application/xml",
-    svg: "image/svg+xml",
-    csv: "text/csv",
-    py: "text/x-python",
-    go: "text/x-go",
-    rs: "text/x-rust",
-    java: "text/x-java",
-    c: "text/x-c",
-    cpp: "text/x-c++",
-    h: "text/x-c",
-    hpp: "text/x-c++",
-    sh: "text/x-sh",
-    rb: "text/x-ruby",
-  };
-
-  return mimeTypes[extension] || "text/plain";
-}
-
-/**
- * Precompile picomatch patterns for faster matching - similar to ingestzip approach
+ * Precompile picomatch patterns for faster matching
  */
 function compileMatchers(options: FilterOptions): CompiledMatchers {
   // Common picomatch options
@@ -532,7 +264,7 @@ function compileMatchers(options: FilterOptions): CompiledMatchers {
   };
 }
 
-// CompiledMatchers interface
+// Updated CompiledMatchers interface
 interface CompiledMatchers {
   inclusionMatchers: {
     normal: Array<(path: string) => boolean>;
@@ -547,137 +279,470 @@ interface CompiledMatchers {
 }
 
 /**
- * Apply filters to the extracted files based on filter options
+ * Process the JSON data and convert it to multipart/form-data stream
  */
-function applyFilters(
-  files: { path: string; content: string; contentType: string }[],
+async function processJsonToMultipart(
+  jsonData: any,
+  output: WritableStream,
   filterOptions: FilterOptions,
-): { path: string; content: string; contentType: string }[] {
-  const { basePath, maxFileSize, enableFuzzyMatching } = filterOptions;
-  const matchers = compileMatchers(filterOptions);
+  responseOptions: ResponseOptions,
+  requestStartTime: number,
+): Promise<void> {
+  const { omitFirstSegment, rawUrlPrefix, omitBinary } = filterOptions;
+  const { boundary } = responseOptions;
+  const writer = output.getWriter();
+  const encoder = new TextEncoder();
 
-  return files.filter((file) => {
-    // Check maxFileSize filter
-    if (maxFileSize !== undefined) {
-      const contentSize = encoder.encode(file.content).length;
-      if (contentSize > maxFileSize) {
-        return false;
-      }
-    }
+  try {
+    // Determine file structure based on JSON shape
+    const fileEntries = extractFileEntries(jsonData);
 
-    // Check base path filter
-    if (basePath && basePath.length > 0) {
-      const matchesBasePath = basePath.some((base) => {
-        const normalizedBase = surroundSlash(base);
-        const normalizedFilename = surroundSlash(file.path);
-        return normalizedFilename.startsWith(normalizedBase);
-      });
+    // Compile matchers once
+    const matchers = compileMatchers(filterOptions);
 
-      if (!matchesBasePath) {
-        return false;
-      }
-    }
-
-    // Extract basename for pattern matching
-    const normalizedPath = withoutSlash(file.path);
-    const basename = file.path.split("/").pop() || "";
-
-    // Apply inclusion patterns if defined
-    let included = true;
-    if (matchers.hasInclusion) {
-      // Check normal patterns from picomatch
-      const matchesNormalPattern = matchers.inclusionMatchers.normal.some(
-        (matcher) => matcher(normalizedPath),
-      );
-
-      // Check basename patterns from picomatch
-      const matchesBasenamePattern = matchers.inclusionMatchers.basename.some(
-        (matcher) => matcher(basename),
-      );
-
-      // Apply fuzzy matching if enabled
-      const matchesFuzzyPattern = enableFuzzyMatching
-        ? filterOptions.pathPatterns.some((pattern) => {
-            // Only apply fuzzy matching to non-glob patterns
-            if (!pattern.includes("*") && !pattern.includes("?")) {
-              return fuzzyMatch(pattern, normalizedPath);
-            }
-            return false;
-          })
-        : false;
-
-      // File is included if it matches any pattern
-      included =
-        matchesNormalPattern || matchesBasenamePattern || matchesFuzzyPattern;
-    }
-
-    // If not included, no need to check exclusion
-    if (!included) {
-      return false;
-    }
-
-    // Apply exclusion patterns
-    if (matchers.hasExclusion) {
-      // Check normal patterns from picomatch
-      const matchesNormalExcludePattern =
-        matchers.exclusionMatchers.normal.some((matcher) =>
-          matcher(normalizedPath),
+    // Process each file entry
+    for (const { path, content, contentType, isUrl, size } of fileEntries) {
+      try {
+        // Apply filtering
+        const filter = shouldFilter(
+          filterOptions,
+          matchers,
+          path,
+          false, // isDirectory
+          size,
         );
 
-      // Check basename patterns from picomatch
-      const matchesBasenameExcludePattern =
-        matchers.exclusionMatchers.basename.some((matcher) =>
-          matcher(basename),
+        if (filter?.filter) {
+          // If filtered out, decide whether to include in response with filter info
+          if (filter.noCallback) {
+            continue;
+          }
+
+          // Start multipart section
+          await writer.write(encoder.encode(`--${boundary}\r\n`));
+          await writer.write(
+            encoder.encode(
+              `Content-Disposition: form-data; name="${path}"; filename="${path}"\r\n`,
+            ),
+          );
+          await writer.write(
+            encoder.encode(`Content-Type: application/json\r\n`),
+          );
+          await writer.write(
+            encoder.encode(
+              `x-filter: ingestjson;${filter.status || "404"};${
+                filter.message || ""
+              }\r\n\r\n`,
+            ),
+          );
+          await writer.write(encoder.encode("\r\n"));
+          continue;
+        }
+
+        // Process path according to options
+        const processedPath = processFilePath(path, omitFirstSegment);
+        const ext = processedPath.split(".").pop() || "json";
+        const finalContentType =
+          contentType || ((map[ext] || "application/json") as string);
+
+        // Check if it's a binary file
+        const isBinary = binaryExtensions.includes(ext);
+
+        if (omitBinary && isBinary && !isUrl) {
+          continue;
+        }
+
+        // Start multipart section
+        await writer.write(encoder.encode(`--${boundary}\r\n`));
+        await writer.write(
+          encoder.encode(
+            `Content-Disposition: form-data; name="${processedPath}"; filename="${processedPath}"\r\n`,
+          ),
+        );
+        await writer.write(
+          encoder.encode(`Content-Type: ${finalContentType}\r\n`),
         );
 
-      // Apply fuzzy matching if enabled
-      const matchesFuzzyExcludePattern = enableFuzzyMatching
-        ? filterOptions.excludePathPatterns.some((pattern) => {
-            // Only apply fuzzy matching to non-glob patterns
-            if (!pattern.includes("*") && !pattern.includes("?")) {
-              return fuzzyMatch(pattern, normalizedPath);
+        if (size !== undefined) {
+          await writer.write(encoder.encode(`Content-Length: ${size}\r\n`));
+        }
+
+        // Handle binary content with raw URL prefix
+        if ((isBinary || isUrl) && rawUrlPrefix) {
+          const rawUrl = isUrl ? content : `${rawUrlPrefix}${processedPath}`;
+
+          await writer.write(encoder.encode(`x-url: ${rawUrl}\r\n`));
+          await writer.write(
+            encoder.encode(`Content-Transfer-Encoding: binary\r\n\r\n`),
+          );
+          await writer.write(encoder.encode("\r\n"));
+          continue;
+        }
+
+        // For binary content without rawUrlPrefix but with omitBinary
+        if (omitBinary && isBinary) {
+          await writer.write(
+            encoder.encode(`Content-Transfer-Encoding: binary\r\n\r\n`),
+          );
+          await writer.write(encoder.encode("\r\n"));
+          continue;
+        }
+
+        // For content that needs to be streamed
+        if (isUrl && !rawUrlPrefix) {
+          try {
+            // Fetch the content from the URL
+            const contentResponse = await fetch(content);
+            if (!contentResponse.ok) {
+              throw new Error(
+                `Failed to fetch content: ${contentResponse.status}`,
+              );
             }
-            return false;
-          })
-        : false;
 
-      // File is excluded if it matches any exclusion pattern
-      const excluded =
-        matchesNormalExcludePattern ||
-        matchesBasenameExcludePattern ||
-        matchesFuzzyExcludePattern;
+            const contentData = await contentResponse.arrayBuffer();
+            const contentUint8 = new Uint8Array(contentData);
 
-      // If excluded, it takes precedence over inclusion
-      if (excluded) {
-        return false;
+            // Calculate hash
+            const hashBuffer = await crypto.subtle.digest(
+              "SHA-256",
+              contentUint8,
+            );
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray
+              .map((b) => b.toString(16).padStart(2, "0"))
+              .join("");
+
+            await writer.write(encoder.encode(`x-file-hash: ${hashHex}\r\n`));
+            await writer.write(
+              encoder.encode(`Content-Transfer-Encoding: binary\r\n\r\n`),
+            );
+
+            // Write the content
+            await writer.write(contentUint8);
+            await writer.write(encoder.encode("\r\n"));
+          } catch (error) {
+            // If there's an error fetching content, include error info
+            await writer.write(
+              encoder.encode(`x-error: ${error.message}\r\n\r\n`),
+            );
+            await writer.write(encoder.encode("\r\n"));
+          }
+          continue;
+        }
+
+        // For direct content (not URL)
+        let contentBuffer: Uint8Array;
+        let hash: string | undefined;
+
+        if (typeof content === "string") {
+          contentBuffer = encoder.encode(content);
+        } else if (content instanceof Uint8Array) {
+          contentBuffer = content;
+        } else {
+          // For JSON data, stringify it
+          contentBuffer = encoder.encode(
+            typeof content === "object"
+              ? JSON.stringify(content, null, 2)
+              : String(content),
+          );
+        }
+
+        // Calculate hash
+        if (contentBuffer) {
+          const hashBuffer = await crypto.subtle.digest(
+            "SHA-256",
+            contentBuffer,
+          );
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          hash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        }
+
+        if (hash) {
+          await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
+        }
+
+        const contentIsBinary = !isUtf8(contentBuffer);
+        await writer.write(
+          encoder.encode(
+            `Content-Transfer-Encoding: ${
+              contentIsBinary ? "binary" : "8bit"
+            }\r\n\r\n`,
+          ),
+        );
+
+        // Write the content
+        await writer.write(contentBuffer);
+        await writer.write(encoder.encode("\r\n"));
+      } catch (error) {
+        console.error(`Error processing file ${path}:`, error);
       }
     }
 
-    return true;
-  });
+    // End the multipart form data
+    await writer.write(encoder.encode(`--${boundary}--\r\n`));
+
+    const totalProcessingTime = Date.now() - requestStartTime;
+    console.log({ totalProcessingTime });
+  } catch (error) {
+    console.error("Error processing JSON:", error);
+  } finally {
+    await writer.close();
+  }
 }
 
-/**
- * Simple fuzzy matching function (similar to the one in ingestzip)
- */
-function fuzzyMatch(pattern: string, str: string): boolean {
-  // Convert both strings to lowercase for case-insensitive matching
-  const lowerPattern = pattern.toLowerCase();
-  const lowerStr = str.toLowerCase();
+// Extract file entries from JSON data based on its shape
+function extractFileEntries(jsonData: any): Array<{
+  path: string;
+  content: any;
+  contentType?: string;
+  isUrl: boolean;
+  size?: number;
+}> {
+  const entries: Array<{
+    path: string;
+    content: any;
+    contentType?: string;
+    isUrl: boolean;
+    size?: number;
+  }> = [];
 
-  let patternIdx = 0;
-  let strIdx = 0;
+  // Check if the JSON has the specified shape
+  if (
+    jsonData &&
+    typeof jsonData === "object" &&
+    jsonData.files &&
+    typeof jsonData.files === "object"
+  ) {
+    // Process files according to the specified schema
+    for (const [path, fileInfo] of Object.entries(jsonData.files)) {
+      if (typeof fileInfo !== "object") continue;
 
-  // Try to match all characters in the pattern in sequence
-  while (patternIdx < lowerPattern.length && strIdx < lowerStr.length) {
-    // If characters match, advance pattern index
-    if (lowerPattern[patternIdx] === lowerStr[strIdx]) {
-      patternIdx++;
+      const { type, content, url, contentType, size } = fileInfo as any;
+
+      if (type === "binary" && url) {
+        entries.push({
+          path,
+          content: url,
+          contentType,
+          isUrl: true,
+          size,
+        });
+      } else if (type === "content" && content !== undefined) {
+        entries.push({
+          path,
+          content,
+          contentType,
+          isUrl: false,
+          size: typeof content === "string" ? content.length : undefined,
+        });
+      }
     }
-    // Always advance string index
-    strIdx++;
+  } else if (jsonData && typeof jsonData === "object") {
+    // For other JSON objects, create files based on first-level entries
+    if (Array.isArray(jsonData)) {
+      // For arrays, use indices as filenames
+      jsonData.forEach((item, index) => {
+        const content = JSON.stringify(item, null, 2);
+        entries.push({
+          path: `/${index}.json`,
+          content,
+          contentType: "application/json",
+          isUrl: false,
+          size: content.length,
+        });
+      });
+    } else {
+      // For objects, use keys as filenames
+      for (const [key, value] of Object.entries(jsonData)) {
+        const content = JSON.stringify(value, null, 2);
+        let filename = key;
+
+        // Use id or slug if available
+        if (typeof value === "object" && value !== null) {
+          if ("id" in value) {
+            filename = (value as any).id;
+          } else if ("slug" in value) {
+            filename = (value as any).slug;
+          }
+        }
+        console.log("file found", filename);
+        entries.push({
+          path: `/${filename}.json`,
+          content,
+          contentType: "application/json",
+          isUrl: false,
+          size: content.length,
+        });
+      }
+    }
   }
 
-  // If we've gone through the entire pattern, it's a match
-  return patternIdx === lowerPattern.length;
+  return entries;
 }
+
+// Check if content is valid UTF-8
+function isUtf8(data: Uint8Array | undefined): boolean {
+  if (!data) {
+    return false;
+  }
+  try {
+    const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false });
+    decoder.decode(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const shouldFilter = (
+  filterOptions: FilterOptions,
+  matchers: CompiledMatchers,
+  fileName: string,
+  isDirectory: boolean,
+  size?: number,
+): {
+  filter: boolean;
+  noCallback?: boolean;
+  status?: string;
+  message?: string;
+} => {
+  if (isDirectory) return { filter: true, noCallback: true }; // Skip directories
+
+  const {
+    omitFirstSegment,
+    basePath,
+    maxFileSize,
+    omitBinary,
+    rawUrlPrefix,
+    enableFuzzyMatching,
+    pathPatterns,
+    excludePathPatterns,
+  } = filterOptions;
+
+  // Process the path with omitFirstSegment if needed
+  const processedPath = omitFirstSegment
+    ? processFilePath(fileName, true)
+    : fileName;
+
+  // Check maxFileSize filter
+  if (maxFileSize !== undefined && size !== undefined && size > maxFileSize) {
+    return { filter: true, status: "413", message: "Content too large" };
+  }
+
+  const ext = processedPath.split(".").pop()!;
+
+  if (omitBinary && !rawUrlPrefix && binaryExtensions.includes(ext)) {
+    return {
+      filter: true,
+      status: "415",
+      message: "File has binary extension",
+    };
+  }
+
+  // Check base path filter
+  if (basePath && basePath.length > 0) {
+    const matchesBasePath = basePath.some((base) => {
+      // Normalize base path and filename for directory matching
+      const normalizedBase = surroundSlash(base);
+      const normalizedFilename = surroundSlash(processedPath);
+      return normalizedFilename.startsWith(normalizedBase);
+    });
+
+    if (!matchesBasePath) {
+      return { filter: true, status: "404", message: "No basePath matched" };
+    }
+  }
+
+  // Extract basename once for potential basename pattern matching
+  const basename = processedPath.split("/").pop() || "";
+  const normalizedPath = withoutSlash(processedPath);
+
+  // Apply inclusion patterns if defined
+  let included = true;
+  if (
+    matchers.hasInclusion ||
+    (enableFuzzyMatching && pathPatterns && pathPatterns.length > 0)
+  ) {
+    // Check normal patterns from picomatch
+    const matchesNormalPattern = matchers.inclusionMatchers.normal.some(
+      (matcher) => matcher(normalizedPath),
+    );
+
+    // Check basename patterns from picomatch
+    const matchesBasenamePattern = matchers.inclusionMatchers.basename.some(
+      (matcher) => matcher(basename),
+    );
+
+    // Apply fuzzy matching directly to path patterns if enabled
+    const matchesFuzzyPattern =
+      enableFuzzyMatching && pathPatterns
+        ? pathPatterns.some((pattern) => {
+            // Only apply fuzzy matching to non-glob patterns
+            if (!pattern.includes("*") && !pattern.includes("?")) {
+              return fuzzyMatch(pattern, normalizedPath);
+            }
+            return false;
+          })
+        : false;
+
+    // File is included if it matches any pattern
+    included =
+      matchesNormalPattern || matchesBasenamePattern || matchesFuzzyPattern;
+  }
+
+  // If not included, no need to check exclusion
+  if (!included) {
+    return {
+      filter: true,
+      status: "404",
+      message: "Not included in path patterns",
+    };
+  }
+
+  // Apply exclusion patterns
+  if (
+    matchers.hasExclusion ||
+    (enableFuzzyMatching &&
+      excludePathPatterns &&
+      excludePathPatterns.length > 0)
+  ) {
+    // Check normal patterns from picomatch
+    const matchesNormalExcludePattern = matchers.exclusionMatchers.normal.some(
+      (matcher) => matcher(normalizedPath),
+    );
+
+    // Check basename patterns from picomatch
+    const matchesBasenameExcludePattern =
+      matchers.exclusionMatchers.basename.some((matcher) => matcher(basename));
+
+    // Apply fuzzy matching directly to exclude path patterns if enabled
+    const matchesFuzzyExcludePattern =
+      enableFuzzyMatching && excludePathPatterns
+        ? excludePathPatterns.some((pattern) => {
+            // Only apply fuzzy matching to non-glob patterns
+            if (!pattern.includes("*") && !pattern.includes("?")) {
+              return fuzzyMatch(pattern, normalizedPath);
+            }
+            return false;
+          })
+        : false;
+
+    // File is excluded if it matches any exclusion pattern
+    const excluded =
+      matchesNormalExcludePattern ||
+      matchesBasenameExcludePattern ||
+      matchesFuzzyExcludePattern;
+
+    // If excluded, it takes precedence over inclusion
+    if (excluded) {
+      return {
+        filter: true,
+        status: "404",
+        message: "Excluded by excludePathPatterns",
+      };
+    }
+  }
+
+  // If we reach this point, the file should be processed
+  return { filter: false };
+};

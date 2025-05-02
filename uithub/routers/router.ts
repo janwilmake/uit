@@ -1,5 +1,5 @@
 import github from "./github.js";
-import npmjs from "./github.js";
+import npmjs from "./npmjs.js";
 import x from "./github.js";
 
 import plugins from "../static/plugins.json" assert { type: "json" };
@@ -100,8 +100,11 @@ export const router = async (
       : undefined;
 
   if (!fetcher) {
+    // TODO: Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
+
     return { status: 404, error: "This domain isn't available yet" };
   }
+
   const response = await fetcher(
     new Request(mirrorBasePath + pathname, {
       headers: { "X-IS-AUTHENTICATED": String(!!access_token) },

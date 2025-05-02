@@ -1,7 +1,10 @@
 export type Env = { CREDENTIALS: string };
 
 export interface FilterOptions {
+  omitFirstSegment: boolean;
+  omitBinary: boolean;
   enableFuzzyMatching: boolean;
+  rawUrlPrefix: string | null;
   basePath: string[];
   pathPatterns: string[];
   excludePathPatterns: string[];

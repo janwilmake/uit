@@ -836,3 +836,13 @@ Sha url can't be used for edit link, must be branch!
 ✅ Apply `StandardURL` data and new tree datastructure in frontend. Ensure we use it to navigate!
 
 ✅ `explore.js`: gray out based by comparing final paths with filetree via `string[].includes`. For this we need the final tree as structured data as well.
+
+# package resolving (2025-05-02)
+
+This is what needs to be done for this:
+
+1. ✅ create `ingesttar` and npmjs domain binding to `uithub`
+2. ✅ get `npmjz` module resolution as I had before with function to also get all versions based on package.json/npmrc.
+3. ✅ ensure the above allows only finding packages that are specified, not subdependencies
+4. ✅ deployed at https://npm.forgithub.com
+5. ✅ added to `plugins.json`

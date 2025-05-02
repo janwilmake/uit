@@ -16,6 +16,10 @@
         "required": ["type", "source", "endpoint"],
 
         "properties": {
+          "disabled": {
+            "type": "boolean",
+            "description": "True if it's not live yet"
+          },
           "type": {
             "type": "string",
             "enum": [

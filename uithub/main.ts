@@ -202,7 +202,7 @@ export default {
         secondarySourceSegment,
         basePath,
       } = standardUrl;
-      if (!sourceType || !sourceUrl || sourceType !== "zip") {
+      if (!sourceType || !sourceUrl) {
         return new Response("Source not found", { status: 404 });
       }
 
@@ -506,16 +506,6 @@ const pipeResponse = async (context: {
     },
   } = context;
 
-  if (sourceType !== "zip") {
-    const response = new Response(
-      "Source type not supported yet: " + sourceType,
-      {
-        status: 400,
-      },
-    );
-    return { response };
-  }
-
   if (plugin?.type === "ingest") {
     const response = new Response(
       `\n\nIngest plugins use should use ingestjson.uithub.com so we need to make that (plugin = ${plugin.title})`,
@@ -541,7 +531,19 @@ const pipeResponse = async (context: {
     genignoreQuery === "false" ? false : true
   }`;
 
-  const ingestUrl = `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`;
+  const ingestUrl =
+    sourceType === "zip"
+      ? `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      : sourceType === "tar"
+      ? `https://ingesttar.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      : undefined;
+  if (!ingestUrl) {
+    const response = new Response(
+      `Could not find ingest url of source type ${sourceType}!`,
+      { status: 400 },
+    );
+    return { response };
+  }
 
   const outputUrl = {
     zip: "https://outputzip.uithub.com",

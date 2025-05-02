@@ -134,10 +134,6 @@ It's best to create a function to do this trial and error. This would most likel
 
 Installs context from url into standard location `.rules`
 
-# `ingesttar`
-
-@samgoodwin - as a Alchemy maintainer, I want control over what my users use for context from my package. NPM version-managed as a source makes most sense.
-
 # version selectors
 
 - a github repo has branches and versions
