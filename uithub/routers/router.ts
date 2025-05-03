@@ -59,7 +59,7 @@ const getCrawler = (userAgent: string | null) => {
   return crawler;
 };
 
-export type OutputType = "zip" | "txt" | "json" | "yaml" | "md";
+export type OutputType = "zip" | "txt" | "json" | "yaml" | "md" | "git";
 
 /**
  * Router that takes a request and parses it to determine the URL structure
@@ -90,7 +90,8 @@ export const router = async (
   const pathname = isDomain
     ? url.pathname.split("/").slice(1).join("/")
     : url.pathname;
-
+  const userAgent = request.headers.get("user-agent");
+  const isGit = userAgent?.startsWith("git/");
   const item = domains[domain as keyof typeof domains];
 
   if (!item) {
@@ -127,9 +128,10 @@ export const router = async (
   const standardUrl: StandardURL = await response.json();
 
   const acceptQuery = url.searchParams.get("accept");
+
   const acceptHeader = request.headers.get("Accept");
   const accept = acceptQuery || acceptHeader || undefined;
-  const crawler = getCrawler(request.headers.get("user-agent"));
+  const crawler = getCrawler(userAgent);
   const isCrawler = !!crawler;
   const isBrowser = acceptHeader?.includes("text/html");
 
@@ -140,7 +142,9 @@ export const router = async (
   const isYaml = standardUrl.ext === "yaml" || accept === "text/yaml";
   const isMd = standardUrl.ext === "md" || accept === "text/markdown";
 
-  const outputType = isZip
+  const outputType = isGit
+    ? "git"
+    : isZip
     ? "zip"
     : isJson
     ? "json"

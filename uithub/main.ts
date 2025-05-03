@@ -19,6 +19,7 @@ export { RatelimitDO } from "./ratelimiter.js";
 import { OutputType, Plugin, router, StandardURL } from "./routers/router.js";
 import { escapeHTML, updateIndex } from "./homepage.js";
 import { buildTree, TreeObject } from "./buildTree.js";
+import { uithubMiddleware } from "./uithubMiddleware.js";
 interface Env {
   RATELIMIT_DO: DurableObjectNamespace<RatelimitDO>;
   GITHUB_PAT: string;
@@ -34,401 +35,409 @@ const fillTemplate = (html: string, template: { [key: string]: any }) => {
   }, html);
 };
 
+const requestHandler = async (request: Request, env: Env, context: any) => {
+  const url = new URL(request.url);
+  const userAgent = request.headers.get("user-agent") || "";
+
+  const uithubResponse = await uithubMiddleware(
+    request,
+    (request) => requestHandler(request, env, context),
+    // where the root of this domain is found
+    "janwilmake/uit/tree/main/uithub",
+  );
+
+  if (uithubResponse) {
+    return uithubResponse;
+  }
+
+  // More specific regex that tries to exclude larger tablets
+  const mobileRegex =
+    /Android(?!.*Tablet)|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
+
+  // Specific tablet detection
+  const tabletRegex = /iPad|Android.*Tablet|Tablet|Tab/i;
+
+  const isMobileDevice =
+    mobileRegex.test(userAgent) && !tabletRegex.test(userAgent);
+
+  if (isMobileDevice) {
+    return new Response("Redirecting", {
+      status: 302,
+      headers: { Location: "/mobile-not-supported" },
+    });
+  }
+
+  let t = Date.now();
+
+  const sponsorflare = await middleware(request, env as any);
+  if (sponsorflare) {
+    return sponsorflare;
+  }
+
+  const {
+    is_authenticated,
+    owner_login,
+    avatar_url,
+    balance,
+    spent,
+    access_token,
+    charged,
+    scope,
+  } = await getSponsor(
+    request,
+    env as any,
+    // 1-1000th of a cent
+    //{ charge: 0.001, allowNegativeClv: true },
+  );
+
+  const requestLimit = !is_authenticated
+    ? // Logged out should get 5 requests per hour, then login first.
+      50
+    : (balance || 0) > 0
+    ? 1000
+    : (balance || 0) < -1
+    ? // after spending more than a dollar, ratelimit is 10 per hour
+      10
+    : // for now 100 per hour max until I got pricing
+      100;
+
+  console.log("middleware 1:", Date.now() - t + "ms");
+
+  const clientIp =
+    request.headers.get("CF-Connecting-IP") ||
+    request.headers.get("X-Forwarded-For")?.split(",")[0].trim() ||
+    "127.0.0.1";
+
+  const ratelimited = await env.RATELIMIT_DO.get(
+    env.RATELIMIT_DO.idFromName("v2." + clientIp),
+  ).checkRateLimit({
+    requestLimit,
+    resetIntervalMs: 3600 * 1000,
+  });
+
+  // console.log("middleware 2:", Date.now() - t + "ms", {
+  //   requestLimit,
+  //   ratelimited,
+  // });
+
+  const acceptHtml = request.headers.get("accept")?.includes("text/html");
+  const TEST_RATELIMIT_PAGE = false;
+  const hasWaitTime = (ratelimited?.waitTime || 0) > 0;
+  const hasNegativeBalance = !balance || balance < 0;
+  // console.log({ requestLimit, ratelimited, hasWaitTime, hasNegativeBalance });
+  if ((hasWaitTime && hasNegativeBalance) || TEST_RATELIMIT_PAGE) {
+    if (acceptHtml) {
+      return new Response(
+        html429.replace(
+          "</body>",
+          `<script>window.data = ${JSON.stringify({
+            owner_login,
+            avatar_url,
+            balance,
+            ratelimitHeaders: ratelimited?.headers,
+          })};</script></body>`,
+        ),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "text/html;charset=utf8",
+            ...ratelimited?.headers,
+          },
+        },
+      );
+    }
+
+    // can only exceed ratelimit if balance is negative
+    return new Response(
+      "Ratelimit exceeded\n\n" + ratelimited?.headers
+        ? JSON.stringify(ratelimited?.headers, undefined, 2)
+        : undefined,
+      {
+        status: 429,
+        headers: {
+          ...ratelimited?.headers,
+          "WWW-Authenticate":
+            'Bearer realm="uithub service",' +
+            'error="rate_limit_exceeded",' +
+            'error_description="Rate limit exceeded. Please login at https://uithub.com/login to get a personal access token for higher limits"',
+        },
+      },
+    );
+  }
+
+  const headers: Record<string, string> = {
+    Authorization: `Basic ${btoa(env.CREDENTIALS)}`,
+  };
+
+  if (access_token) {
+    // as sponsorflare uses a github access token 1:1
+    // it can be used directly as github authorization when accessing the source
+    headers["x-source-authorization"] = `token ${access_token}`;
+  }
+
+  const { error, status, result } = await router(request);
+
+  if (!result || error) {
+    return new Response(error || "Something went wrong with routing", {
+      status,
+    });
+  }
+
+  const { domain, plugin, standardUrl, outputType, needHtml } = result;
+
+  console.log({ standardUrl });
+  const {
+    // To load source
+    sourceUrl,
+    sourceType,
+
+    // FOR HTML
+    title,
+    description,
+    ogImageUrl,
+
+    // URL BUILDUP
+    primarySourceSegment,
+    pluginId,
+    ext,
+    secondarySourceSegment,
+    basePath,
+  } = standardUrl;
+  if (!sourceType || !sourceUrl) {
+    return new Response("Source not found", { status: 404 });
+  }
+
+  //   const treeUrl = `https://ziptree.uithub.com/tree/${sourceUrl}?type=token-tree&omitFirstSegment=true`;
+
+  const t3 = Date.now();
+
+  const maxTokens = url.searchParams.get("maxTokens") || undefined;
+  const maxFileSize = url.searchParams.get("maxFileSize") || undefined;
+
+  const realMaxTokens =
+    maxTokens && !isNaN(Number(maxTokens))
+      ? Number(maxTokens)
+      : needHtml
+      ? 50000
+      : undefined;
+
+  const realMaxFileSize =
+    maxFileSize && !isNaN(Number(maxFileSize))
+      ? Number(maxFileSize)
+      : undefined;
+
+  const searchParams = new URLSearchParams({});
+
+  // Add all parameters as search params
+  if (realMaxTokens !== undefined) {
+    searchParams.append("maxTokens", realMaxTokens.toString());
+  } else {
+    searchParams.delete("maxTokens");
+  }
+
+  if (realMaxFileSize !== undefined) {
+    searchParams.append("maxFileSize", realMaxFileSize.toString());
+  } else {
+    searchParams.delete("maxFileSize");
+  }
+
+  if (
+    !searchParams.get("accept") ||
+    searchParams.get("accept") === "text/html"
+  ) {
+    // markdown by default, no html
+    searchParams.append("accept", "text/markdown");
+  }
+
+  if (basePath) {
+    // add the path param
+    searchParams.append("basePath", basePath);
+  }
+
+  const {
+    response,
+    outputUrl,
+    headers: outputHeaders,
+  } = await pipeResponse({
+    url,
+    plugin,
+    standardUrl,
+    outputType,
+    CREDENTIALS: env.CREDENTIALS,
+    sourceAuthorization: access_token ? `token ${access_token}` : undefined,
+
+    // whether or not to immediately include piping output
+    pipeOutput: outputType === "zip" || !needHtml,
+  });
+  const contentType = response.headers.get("content-type");
+  if (!response.ok || !response.body || !contentType) {
+    const message = access_token
+      ? `Pipe Not OK ${response.status} ${
+          response.statusText
+        } ${await response.text()}`
+      : "Pipe not OK: Failed to fetch repository. If the repo is private, be sure to provide an Authorization header. Status:" +
+        response.status +
+        `\n\n${await response.text()}`;
+
+    if (acceptHtml) {
+      const data = { owner_login, avatar_url, scope };
+      return new Response(
+        html404
+          .replace("</pre>", message + "</pre>")
+          .replace(
+            "</body>",
+            `<script>window.data = ${JSON.stringify(data)};</script></body>`,
+          ),
+        {
+          headers: { "Content-Type": "text/html" },
+          status: response.status,
+        },
+      );
+    }
+
+    return new Response(`${response.status} - ${message}`, {
+      status: response.status,
+    });
+  }
+
+  if (!outputUrl) {
+    // directly output response if no further processing is required
+
+    // either zip or non-html
+    return response;
+  }
+
+  /**
+   * We need HTML!
+   * 1. tee repsonse.body
+   * 3. use first copy + outputUrl to get output format
+   * 2. use second copy to build tree
+   */
+  const [formDataBody, treeBody] = response.body.tee();
+
+  // use first copy and outputUrl to get output format
+  const contextStringPromise = fetch(outputUrl, {
+    body: formDataBody,
+    headers: outputHeaders,
+    method: "POST",
+  }).then(async (response) => {
+    if (!response.ok) {
+      return `Not ok (${response.status}) - ${await response.text()}`;
+    }
+    return response.text();
+  });
+
+  console.log("Initial formData response", Date.now() - t3, "ms");
+
+  const treePromise = buildTree(treeBody, contentType);
+
+  const [contextString, treeResult]: [string, TreeObject] = await Promise.all([
+    contextStringPromise,
+    treePromise,
+  ]);
+
+  console.log("Tree", Date.now() - t3, "ms");
+
+  if (!treeResult) {
+    return new Response("Tree error: Tree not provided", { status: 500 });
+  }
+
+  console.log({ treeResult });
+  // Gather the data
+
+  const currentTokens = Math.round(contextString.length / 500) * 100;
+
+  // keys that will be replaced in html looking for {{varname}}
+  const template = {
+    currentTokens,
+    baseLink: `https://${domain}/${primarySourceSegment}`,
+    baseName: primarySourceSegment,
+    baseTokens: treeResult["/"]?.tokens,
+    moreToolsLink: domain
+      ? "#"
+      : `https://forgithub.com/${primarySourceSegment}`,
+    contextString: escapeHTML(contextString),
+  };
+
+  // TODO: set this to show warning
+  const isTokensCapped = false;
+
+  const data = {
+    isPaymentRequired: false,
+    isTokensCapped,
+    tree: treeResult,
+    is_authenticated,
+    owner_login,
+    avatar_url,
+    balance,
+
+    primarySourceSegment,
+    pluginId,
+    ext,
+    secondarySourceSegment,
+    basePath,
+  };
+
+  // this is it
+  const pathname = `/${primarySourceSegment}/${pluginId || "tree"}${
+    ext ? `.${ext}` : ""
+  }${secondarySourceSegment ? `/${secondarySourceSegment}` : ""}${
+    basePath ? `/${basePath}` : ""
+  }`;
+
+  const replacedHtml = viewHtml
+    .replace(
+      "</body>",
+      `<script>window.data = ${JSON.stringify(data)};</script></body>`,
+    )
+    .replace(
+      "<title></title>",
+      `<title>${title}</title>
+    <meta name="description" content="${description}" />
+    <meta name="keywords" content="GitHub, LLM, context, code, developer tools" />
+    <meta name="author" content="Code From Anywhere" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Facebook Meta Tags -->
+<meta property="og:url" content="${url.toString()}" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="${title}" />
+<meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${ogImageUrl}" />
+    <meta property="og:image:alt" content="${description}"/>
+    <meta property="og:image:width" content="1200"/>
+    <meta property="og:image:height" content="600"/>
+
+
+<!-- Twitter Meta Tags -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta property="twitter:domain" content="uithub.com" />
+<meta property="twitter:url" content="${url.toString()}" />
+<meta name="twitter:title" content="${title}" />
+<meta name="twitter:description" content="${description}" />
+<meta name="twitter:image" content="${ogImageUrl}" />`,
+    );
+
+  const finalHtml = fillTemplate(replacedHtml, template);
+  return new Response(finalHtml, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html",
+      // recommended seucrity headers by claude against XSS
+      "X-XSS-Protection": "1; mode=block",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      // Strong Content Security Policy to prevent any script execution
+      //  "Content-Security-Policy":
+      //    "default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none'; form-action 'self'; base-uri 'self';",
+    },
+  });
+};
 export default {
   scheduled: async (event: any, env: Env, ctx: any) => {
     await updateIndex(env.UITHUB_ASSETS_KV);
   },
-  fetch: withAssetsKV(
-    async (request: Request, env: Env, context: any) => {
-      const url = new URL(request.url);
-
-      if (url.pathname === "/archive.zip") {
-        // convention; by exposing the zip of the repo at this path, anyone can find your code at https://uithub.com/{domain}/public, even from a private repo if we pass the PAT!
-        return fetch(
-          `https://github.com/janwilmake/uit/archive/refs/heads/main.zip`,
-        );
-      }
-
-      const userAgent = request.headers.get("user-agent") || "";
-
-      // More specific regex that tries to exclude larger tablets
-      const mobileRegex =
-        /Android(?!.*Tablet)|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
-
-      // Specific tablet detection
-      const tabletRegex = /iPad|Android.*Tablet|Tablet|Tab/i;
-
-      const isMobileDevice =
-        mobileRegex.test(userAgent) && !tabletRegex.test(userAgent);
-
-      if (isMobileDevice) {
-        return new Response("Redirecting", {
-          status: 302,
-          headers: { Location: "/mobile-not-supported" },
-        });
-      }
-
-      let t = Date.now();
-
-      const sponsorflare = await middleware(request, env as any);
-      if (sponsorflare) {
-        return sponsorflare;
-      }
-
-      const {
-        is_authenticated,
-        owner_login,
-        avatar_url,
-        balance,
-        spent,
-        access_token,
-        charged,
-        scope,
-      } = await getSponsor(
-        request,
-        env as any,
-        // 1-1000th of a cent
-        //{ charge: 0.001, allowNegativeClv: true },
-      );
-
-      const requestLimit = !is_authenticated
-        ? // Logged out should get 5 requests per hour, then login first.
-          5
-        : (balance || 0) > 0
-        ? 1000
-        : (balance || 0) < -1
-        ? // after spending more than a dollar, ratelimit is 10 per hour
-          10
-        : // for now 100 per hour max until I got pricing
-          100;
-
-      console.log("middleware 1:", Date.now() - t + "ms");
-
-      const clientIp =
-        request.headers.get("CF-Connecting-IP") ||
-        request.headers.get("X-Forwarded-For")?.split(",")[0].trim() ||
-        "127.0.0.1";
-
-      const ratelimited = await env.RATELIMIT_DO.get(
-        env.RATELIMIT_DO.idFromName("v2." + clientIp),
-      ).checkRateLimit({
-        requestLimit,
-        resetIntervalMs: 3600 * 1000,
-      });
-
-      console.log("middleware 2:", Date.now() - t + "ms", {
-        requestLimit,
-        ratelimited,
-      });
-
-      const acceptHtml = request.headers.get("accept")?.includes("text/html");
-      const TEST_RATELIMIT_PAGE = false;
-      const hasWaitTime = (ratelimited?.waitTime || 0) > 0;
-      const hasNegativeBalance = !balance || balance < 0;
-      // console.log({ requestLimit, ratelimited, hasWaitTime, hasNegativeBalance });
-      if ((hasWaitTime && hasNegativeBalance) || TEST_RATELIMIT_PAGE) {
-        if (acceptHtml) {
-          return new Response(
-            html429.replace(
-              "</body>",
-              `<script>window.data = ${JSON.stringify({
-                owner_login,
-                avatar_url,
-                balance,
-                ratelimitHeaders: ratelimited?.headers,
-              })};</script></body>`,
-            ),
-            {
-              status: 429,
-              headers: {
-                "Content-Type": "text/html;charset=utf8",
-                ...ratelimited?.headers,
-              },
-            },
-          );
-        }
-
-        // can only exceed ratelimit if balance is negative
-        return new Response(
-          "Ratelimit exceeded\n\n" + ratelimited?.headers
-            ? JSON.stringify(ratelimited?.headers, undefined, 2)
-            : undefined,
-          {
-            status: 429,
-            headers: { ...ratelimited?.headers },
-          },
-        );
-      }
-
-      const headers: Record<string, string> = {
-        Authorization: `Basic ${btoa(env.CREDENTIALS)}`,
-      };
-
-      if (access_token) {
-        // as sponsorflare uses a github access token 1:1
-        // it can be used directly as github authorization when accessing the source
-        headers["x-source-authorization"] = `token ${access_token}`;
-      }
-
-      const { error, status, result } = await router(request);
-
-      if (!result || error) {
-        return new Response(error || "Something went wrong with routing", {
-          status,
-        });
-      }
-
-      const { domain, plugin, standardUrl, outputType, needHtml } = result;
-
-      const {
-        // To load source
-        sourceUrl,
-        sourceType,
-
-        // FOR HTML
-        title,
-        description,
-        ogImageUrl,
-
-        // URL BUILDUP
-        primarySourceSegment,
-        pluginId,
-        ext,
-        secondarySourceSegment,
-        basePath,
-      } = standardUrl;
-      if (!sourceType || !sourceUrl) {
-        return new Response("Source not found", { status: 404 });
-      }
-
-      //   const treeUrl = `https://ziptree.uithub.com/tree/${sourceUrl}?type=token-tree&omitFirstSegment=true`;
-
-      const t3 = Date.now();
-
-      const maxTokens = url.searchParams.get("maxTokens") || undefined;
-      const maxFileSize = url.searchParams.get("maxFileSize") || undefined;
-
-      const realMaxTokens =
-        maxTokens && !isNaN(Number(maxTokens))
-          ? Number(maxTokens)
-          : needHtml
-          ? 50000
-          : undefined;
-
-      const realMaxFileSize =
-        maxFileSize && !isNaN(Number(maxFileSize))
-          ? Number(maxFileSize)
-          : undefined;
-
-      const searchParams = new URLSearchParams({});
-
-      // Add all parameters as search params
-      if (realMaxTokens !== undefined) {
-        searchParams.append("maxTokens", realMaxTokens.toString());
-      } else {
-        searchParams.delete("maxTokens");
-      }
-
-      if (realMaxFileSize !== undefined) {
-        searchParams.append("maxFileSize", realMaxFileSize.toString());
-      } else {
-        searchParams.delete("maxFileSize");
-      }
-
-      if (
-        !searchParams.get("accept") ||
-        searchParams.get("accept") === "text/html"
-      ) {
-        // markdown by default, no html
-        searchParams.append("accept", "text/markdown");
-      }
-
-      if (basePath) {
-        // add the path param
-        searchParams.append("basePath", basePath);
-      }
-
-      const {
-        response,
-        outputUrl,
-        headers: outputHeaders,
-      } = await pipeResponse({
-        url,
-        plugin,
-        standardUrl,
-        outputType,
-        CREDENTIALS: env.CREDENTIALS,
-        sourceAuthorization: access_token ? `token ${access_token}` : undefined,
-
-        // whether or not to immediately include piping output
-        pipeOutput: outputType === "zip" || !needHtml,
-      });
-      const contentType = response.headers.get("content-type");
-      if (!response.ok || !response.body || !contentType) {
-        const message = access_token
-          ? `Pipe Not OK ${response.status} ${
-              response.statusText
-            } ${await response.text()}`
-          : "Pipe not OK: Failed to fetch repository. If the repo is private, be sure to provide an Authorization header. Status:" +
-            response.status +
-            `\n\n${await response.text()}`;
-
-        if (acceptHtml) {
-          const data = { owner_login, avatar_url, scope };
-          return new Response(
-            html404
-              .replace("</pre>", message + "</pre>")
-              .replace(
-                "</body>",
-                `<script>window.data = ${JSON.stringify(
-                  data,
-                )};</script></body>`,
-              ),
-            {
-              headers: { "Content-Type": "text/html" },
-              status: response.status,
-            },
-          );
-        }
-
-        return new Response(`${response.status} - ${message}`, {
-          status: response.status,
-        });
-      }
-
-      if (!outputUrl) {
-        // directly output response if no further processing is required
-
-        // either zip or non-html
-        return response;
-      }
-
-      /**
-       * We need HTML!
-       * 1. tee repsonse.body
-       * 3. use first copy + outputUrl to get output format
-       * 2. use second copy to build tree
-       */
-      const [formDataBody, treeBody] = response.body.tee();
-
-      // use first copy and outputUrl to get output format
-      const contextStringPromise = fetch(outputUrl, {
-        body: formDataBody,
-        headers: outputHeaders,
-        method: "POST",
-      }).then(async (response) => {
-        if (!response.ok) {
-          return `Not ok (${response.status}) - ${await response.text()}`;
-        }
-        return response.text();
-      });
-
-      console.log("Initial formData response", Date.now() - t3, "ms");
-
-      const treePromise = buildTree(treeBody, contentType);
-
-      const [contextString, treeResult]: [string, TreeObject] =
-        await Promise.all([contextStringPromise, treePromise]);
-
-      console.log("Tree", Date.now() - t3, "ms");
-
-      if (!treeResult) {
-        return new Response("Tree error: Tree not provided", { status: 500 });
-      }
-
-      console.log({ treeResult });
-      // Gather the data
-
-      const currentTokens = Math.round(contextString.length / 500) * 100;
-
-      // keys that will be replaced in html looking for {{varname}}
-      const template = {
-        currentTokens,
-        baseLink: `https://${domain}/${primarySourceSegment}`,
-        baseName: primarySourceSegment,
-        baseTokens: treeResult["/"]?.tokens,
-        moreToolsLink: domain
-          ? "#"
-          : `https://forgithub.com/${primarySourceSegment}`,
-        contextString: escapeHTML(contextString),
-      };
-
-      // TODO: set this to show warning
-      const isTokensCapped = false;
-
-      const data = {
-        isPaymentRequired: false,
-        isTokensCapped,
-        tree: treeResult,
-        is_authenticated,
-        owner_login,
-        avatar_url,
-        balance,
-
-        primarySourceSegment,
-        pluginId,
-        ext,
-        secondarySourceSegment,
-        basePath,
-      };
-
-      // this is it
-      const pathname = `/${primarySourceSegment}/${pluginId || "tree"}${
-        ext ? `.${ext}` : ""
-      }${secondarySourceSegment ? `/${secondarySourceSegment}` : ""}${
-        basePath ? `/${basePath}` : ""
-      }`;
-
-      const replacedHtml = viewHtml
-        .replace(
-          "</body>",
-          `<script>window.data = ${JSON.stringify(data)};</script></body>`,
-        )
-        .replace(
-          "<title></title>",
-          `<title>${title}</title>
-        <meta name="description" content="${description}" />
-        <meta name="keywords" content="GitHub, LLM, context, code, developer tools" />
-        <meta name="author" content="Code From Anywhere" />
-        <meta name="robots" content="index, follow" />
-        
-        <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="${url.toString()}" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-        <meta property="og:image" content="${ogImageUrl}" />
-        <meta property="og:image:alt" content="${description}"/>
-        <meta property="og:image:width" content="1200"/>
-        <meta property="og:image:height" content="600"/>
-    
-    
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta property="twitter:domain" content="uithub.com" />
-    <meta property="twitter:url" content="${url.toString()}" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
-    <meta name="twitter:image" content="${ogImageUrl}" />`,
-        );
-
-      const finalHtml = fillTemplate(replacedHtml, template);
-      return new Response(finalHtml, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/html",
-          // recommended seucrity headers by claude against XSS
-          "X-XSS-Protection": "1; mode=block",
-          "X-Content-Type-Options": "nosniff",
-          "X-Frame-Options": "DENY",
-          // Strong Content Security Policy to prevent any script execution
-          //  "Content-Security-Policy":
-          //    "default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none'; form-action 'self'; base-uri 'self';",
-        },
-      });
-    },
-    { kvNamespace: "UITHUB_ASSETS_KV" },
-  ),
+  fetch: withAssetsKV(requestHandler, { kvNamespace: "UITHUB_ASSETS_KV" }),
 };
 
 /**
@@ -539,6 +548,8 @@ const pipeResponse = async (context: {
   }
 
   const outputUrl = {
+    git: undefined,
+    // git: "https://output-git-upload-pack.uithub.com",
     zip: "https://outputzip.uithub.com",
     json: "https://outputjson.uithub.com",
     yaml: undefined, //"https://outputyaml.uithub.com",
@@ -593,8 +604,8 @@ const pipeResponse = async (context: {
     searchUrl,
     shadowTransformUrl,
     outputUrl,
-    fullUrl,
     sourceAuthorization,
+    fullUrl,
   });
 
   // Make a single request to the nested URL

@@ -77,7 +77,6 @@ export const buildTree = async (
         0,
         currentPathWithoutLastSlash.lastIndexOf("/") + 1,
       );
-      console.log({ currentPath });
       if (currentPath === "") currentPath = "/";
 
       // Add or update folder in the map

@@ -34,9 +34,3 @@ class_name = "RatelimitDO"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RatelimitDO"]
-
-# Uncomment this service to bind it for better performance.
-
-[[services]]
-binding = "UITHUB_ZIPTREE"
-service = "uithub_ziptree"
