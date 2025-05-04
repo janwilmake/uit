@@ -21,10 +21,10 @@
 
 # Github URL structure
 
-- keen out the url structure of github and which ones i can support easily
-- improve github url parsing `github.ts` for issues/pulls/etc I need to alter what the basepath becomes.
-- ensure https://uuithub.com/facebook/react/issues/17473 makes `17474` the basepath of the source that is `issues`
-- in https://cache.forgithub.com/owner/repo/issues|discussions|pulls ensure to respond with a file object and present every thread as JSON and MD.
+- Keen out the URL structure of GitHub and which URLs I can support easily
+- Improve github url parsing `github.ts` for issues/pulls/etc I need to alter what the basepath becomes.
+- Ensure https://uuithub.com/facebook/react/issues/17473 makes `17474` the basepath of the source that is `issues`
+- In https://cache.forgithub.com/owner/repo/issues|discussions|pulls ensure to respond with a file object and present every thread as JSON and MD.
 - Do the same for https://log.forgithub.com making these paths available.
 - Fix actions.forgithub.com (or remove for now)
 - Improve threads.forgithub.com (one file per thread)

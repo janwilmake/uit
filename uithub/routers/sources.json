@@ -1,0 +1,64 @@
+{
+  "plugins": {
+    "issues": {
+      "title": "Issues",
+      "domain": "github.com",
+      "type": "ingest",
+      "endpoint": "https://cache.forgithub.com/{primarySourceSegment}/issues",
+      "source": "https://github.com/janwilmake/forgithub.cache",
+      "description": "Loads issues of a repo"
+    },
+
+    "pulls": {
+      "title": "Pull Requests",
+      "domain": "github.com",
+      "type": "ingest",
+      "endpoint": "https://cache.forgithub.com/{primarySourceSegment}/pulls",
+      "source": "https://github.com/janwilmake/forgithub.cache",
+      "description": "Load PRs of a repo"
+    },
+
+    "discussions": {
+      "title": "Discussions",
+      "domain": "github.com",
+      "type": "ingest",
+      "source": "https://github.com/janwilmake/forgithub.cache",
+      "endpoint": "https://cache.forgithub.com/{primarySourceSegment}/discussions",
+      "description": "Load Discussions of a repo"
+    },
+
+    "branches": {
+      "title": "Branches",
+      "type": "ingest",
+      "description": "Gets last commits and contributor info",
+      "endpoint": "https://log.forgithub.com/{primarySourceSegment}/branches",
+      "source": "https://github.com/janwilmake/forgithub.log",
+      "domain": "github.com"
+    },
+
+    "commits": {
+      "type": "ingest",
+      "description": "Gets last commits and contributor info",
+      "endpoint": "https://log.forgithub.com/{primarySourceSegment}/commits",
+      "source": "https://github.com/janwilmake/forgithub.log",
+      "title": "Commits",
+      "domain": "github.com"
+    },
+
+    "releases": {
+      "title": "Releases",
+      "endpoint": "https://log.forgithub.com/{primarySourceSegment}/releases",
+      "source": "https://github.com/janwilmake/forgithub.log",
+      "type": "ingest",
+      "domain": "github.com"
+    },
+
+    "actions": {
+      "title": "Actions",
+      "domain": "github.com",
+      "type": "ingest",
+      "endpoint": "https://actions.forgithub.com/{primarySourceSegment}",
+      "source": "https://github.com/janwilmake/forgithub.actions"
+    }
+  }
+}
