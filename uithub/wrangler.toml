@@ -1,9 +1,11 @@
+# Base configuration (default staging environment)
 name = "janwilmake_uithub"
 main = "main.ts"
 compatibility_date = "2024-12-05"
-assets = { directory= "./static" }
+assets = { directory = "./static" }
 dev.port = 3000
 
+# Default routes (staging)
 routes = [
   { pattern = "uuithub.com", custom_domain = true },
   { pattern = "www.uuithub.com", custom_domain = true }
@@ -11,11 +13,11 @@ routes = [
 
 triggers.crons = ["0 4 * * *"]
 
+# Default vars (staging)
 [vars]
 GITHUB_REDIRECT_URI = "https://uuithub.com/callback"
 LOGIN_REDIRECT_URI = "/"
 COOKIE_DOMAIN_SHARING = "true"
-
 
 [[kv_namespaces]]
 binding = "UITHUB_ASSETS_KV"
@@ -24,7 +26,6 @@ id = "782785454eac450aba2f0904fa5de087"
 [[durable_objects.bindings]]
 name = "SPONSOR_DO"
 class_name = "SponsorDO"
-# This allows to use the same DO even though it's defined in another worker!
 script_name = "sponsorflare2"
 
 [[durable_objects.bindings]]
@@ -34,3 +35,16 @@ class_name = "RatelimitDO"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RatelimitDO"]
+
+# Production environment
+[env.production]
+name = "janwilmake_uithub_production"
+routes = [
+  { pattern = "uithub.com", custom_domain = true },
+  { pattern = "www.uithub.com", custom_domain = true }
+]
+
+[env.production.vars]
+GITHUB_REDIRECT_URI = "https://uithub.com/callback"
+LOGIN_REDIRECT_URI = "/"
+COOKIE_DOMAIN_SHARING = "true"

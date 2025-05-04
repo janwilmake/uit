@@ -43,7 +43,8 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     request,
     (request) => requestHandler(request, env, context),
     // where the root of this domain is found
-    "janwilmake/uit/tree/main/uithub",
+    "/janwilmake/uit/tree/main/uithub",
+    env.CREDENTIALS,
   );
 
   if (uithubResponse) {
@@ -163,6 +164,21 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
         },
       },
     );
+  }
+
+  if (userAgent.startsWith("git/")) {
+    // bypass router, directly go into the git service with the same request but as formData
+    const searchParams = url.searchParams;
+    searchParams.set("accept", "multipart/form-data");
+    const uploadPackUrl =
+      "https://output-git-upload-pack.uithub.com/" +
+      "https://uuithub.com" +
+      url.pathname +
+      "?" +
+      searchParams.toString();
+    return fetch(uploadPackUrl, {
+      headers: { Authorization: `Basic ${btoa(env.CREDENTIALS)}` },
+    });
   }
 
   const headers: Record<string, string> = {
@@ -342,7 +358,7 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     return new Response("Tree error: Tree not provided", { status: 500 });
   }
 
-  console.log({ treeResult });
+  // console.log({ treeResult });
   // Gather the data
 
   const currentTokens = Math.round(contextString.length / 500) * 100;
@@ -525,10 +541,11 @@ const pipeResponse = async (context: {
   if (!plugin) {
     // no plugin. good
   } else if (plugin?.type === "ingest") {
-    ingestUrl = plugin.endpoint
+    const ingestEndpoint = plugin.endpoint
       .replace("{primarySourceSegment}", primarySourceSegment)
       .replace("{secondarySourceSegment}", secondarySourceSegment || "")
       .replace("{basePath}", basePath || "");
+    ingestUrl = `https://ingestjson.uithub.com/${ingestEndpoint}`;
   } else if (plugin?.type === "transform-formdata") {
     //
   } else {

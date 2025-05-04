@@ -311,6 +311,7 @@ async function processJsonToMultipart(
           false, // isDirectory
           size,
         );
+        console.log({ path, filter });
 
         if (filter?.filter) {
           // If filtered out, decide whether to include in response with filter info
@@ -342,8 +343,6 @@ async function processJsonToMultipart(
         // Process path according to options
         const processedPath = processFilePath(path, omitFirstSegment);
         const ext = processedPath.split(".").pop() || "json";
-        const finalContentType =
-          contentType || ((map[ext] || "application/json") as string);
 
         // Check if it's a binary file
         const isBinary = binaryExtensions.includes(ext);
@@ -359,9 +358,7 @@ async function processJsonToMultipart(
             `Content-Disposition: form-data; name="${processedPath}"; filename="${processedPath}"\r\n`,
           ),
         );
-        await writer.write(
-          encoder.encode(`Content-Type: ${finalContentType}\r\n`),
-        );
+        await writer.write(encoder.encode(`Content-Type: ${contentType}\r\n`));
 
         if (size !== undefined) {
           await writer.write(encoder.encode(`Content-Length: ${size}\r\n`));
@@ -494,14 +491,14 @@ async function processJsonToMultipart(
 function extractFileEntries(jsonData: any): Array<{
   path: string;
   content: any;
-  contentType?: string;
+  contentType: string;
   isUrl: boolean;
   size?: number;
 }> {
   const entries: Array<{
     path: string;
     content: any;
-    contentType?: string;
+    contentType: string;
     isUrl: boolean;
     size?: number;
   }> = [];
@@ -513,17 +510,19 @@ function extractFileEntries(jsonData: any): Array<{
     jsonData.files &&
     typeof jsonData.files === "object"
   ) {
-    // Process files according to the specified schema
     for (const [path, fileInfo] of Object.entries(jsonData.files)) {
+      // Process files according to the files notation
       if (typeof fileInfo !== "object") continue;
 
       const { type, content, url, contentType, size } = fileInfo as any;
+
+      const ext = path.split("/").pop()?.split(".")?.pop();
 
       if (type === "binary" && url) {
         entries.push({
           path,
           content: url,
-          contentType,
+          contentType: contentType || map[ext || "bin"],
           isUrl: true,
           size,
         });
@@ -531,7 +530,7 @@ function extractFileEntries(jsonData: any): Array<{
         entries.push({
           path,
           content,
-          contentType,
+          contentType: contentType || map[ext || "md"],
           isUrl: false,
           size: typeof content === "string" ? content.length : undefined,
         });
@@ -541,10 +540,29 @@ function extractFileEntries(jsonData: any): Array<{
     // For other JSON objects, create files based on first-level entries
     if (Array.isArray(jsonData)) {
       // For arrays, use indices as filenames
-      jsonData.forEach((item, index) => {
-        const content = JSON.stringify(item, null, 2);
+      jsonData.forEach((value, index) => {
+        const content =
+          typeof value === "object"
+            ? JSON.stringify(value, null, 2)
+            : String(value);
+        const ext = typeof value === "object" ? "json" : "md";
+
+        let filename = String(index);
+
+        // Use id or slug if available
+        if (typeof value === "object" && value !== null) {
+          if (
+            "id" in value &&
+            (typeof value.id === "string" || typeof value.id === "number")
+          ) {
+            filename = String((value as any).id);
+          } else if ("slug" in value && typeof value.slug === "string") {
+            filename = String((value as any).slug);
+          }
+        }
+
         entries.push({
-          path: `/${index}.json`,
+          path: `/${filename}.${ext}`,
           content,
           contentType: "application/json",
           isUrl: false,
@@ -554,22 +572,21 @@ function extractFileEntries(jsonData: any): Array<{
     } else {
       // For objects, use keys as filenames
       for (const [key, value] of Object.entries(jsonData)) {
-        const content = JSON.stringify(value, null, 2);
-        let filename = key;
+        const content =
+          typeof value === "object"
+            ? JSON.stringify(value, null, 2)
+            : String(value);
+        const filename = String(key);
 
-        // Use id or slug if available
-        if (typeof value === "object" && value !== null) {
-          if ("id" in value) {
-            filename = (value as any).id;
-          } else if ("slug" in value) {
-            filename = (value as any).slug;
-          }
-        }
-        console.log("file found", filename);
+        const ext =
+          typeof value === "object" ? "json" : filename.split(".").pop()!;
+        const mime = typeof value === "object" ? "application/json" : map[ext];
+        const hasExt = !!map[filename.split(".").pop()!];
+
         entries.push({
-          path: `/${filename}.json`,
+          path: hasExt ? `/${filename}` : `/${filename}.${ext}`,
           content,
-          contentType: "application/json",
+          contentType: mime || "text/markdown",
           isUrl: false,
           size: content.length,
         });
@@ -639,19 +656,20 @@ const shouldFilter = (
     };
   }
 
+  // basepath filter should not be applied, basepath is used for source
   // Check base path filter
-  if (basePath && basePath.length > 0) {
-    const matchesBasePath = basePath.some((base) => {
-      // Normalize base path and filename for directory matching
-      const normalizedBase = surroundSlash(base);
-      const normalizedFilename = surroundSlash(processedPath);
-      return normalizedFilename.startsWith(normalizedBase);
-    });
+  // if (basePath && basePath.length > 0) {
+  //   const matchesBasePath = basePath.some((base) => {
+  //     // Normalize base path and filename for directory matching
+  //     const normalizedBase = surroundSlash(base);
+  //     const normalizedFilename = surroundSlash(processedPath);
+  //     return normalizedFilename.startsWith(normalizedBase);
+  //   });
 
-    if (!matchesBasePath) {
-      return { filter: true, status: "404", message: "No basePath matched" };
-    }
-  }
+  //   if (!matchesBasePath) {
+  //     return { filter: true, status: "404", message: "No basePath matched" };
+  //   }
+  // }
 
   // Extract basename once for potential basename pattern matching
   const basename = processedPath.split("/").pop() || "";

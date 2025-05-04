@@ -7,10 +7,10 @@
 5. ✅ Announcement (Friday, april 25th, 6PM)
 6. ✅ Nailing omni-compatible navigation
 7. ingest plugins
-8. npmjs.com domain
-9. merged source
-10. xymake zips
-11. ❗️ Minor improvements
+8. ❗️ Stability
+9. npmjs.com domain
+10. merged source
+11. xymake zips
 12. `.genignore`
 13. `context.json`
 14. agent-friendly middleware
@@ -19,24 +19,63 @@
 
 ^^^ This can still take several weeks to make good. Target: end of may ^^^
 
-# `ingest` plugins
+# Github URL structure
 
-- ✅ Make `ingestjson.uithub.com` so all the apis make sense! Make it adhere to `{files:{[path]:{content}}}` and if that format isn't found, take first key as `{key}.json`
-- ✅ finalize routing logic for ingest plugins
-- ensure ingestjson has content-type + boundary such that it doesnt error out. test locally.
-- ensure npm.forgithub.com works
-- ensure cache.forgithub.com works. add slug being `createdatdate+slugify(title)`.
-- fix log.forgithub.com making these paths available
-- fix actions.forgithub.com (or remove for now)
-- improve threads.forgithub.com (one file per thread)
-- confirm all visible plugins are functional!!!
+- keen out the url structure of github and which ones i can support easily
+- improve github url parsing `github.ts` for issues/pulls/etc I need to alter what the basepath becomes.
+- ensure https://uuithub.com/facebook/react/issues/17473 makes `17474` the basepath of the source that is `issues`
+- in https://cache.forgithub.com/owner/repo/issues|discussions|pulls ensure to respond with a file object and present every thread as JSON and MD.
+- Do the same for https://log.forgithub.com making these paths available.
+- Fix actions.forgithub.com (or remove for now)
+- Improve threads.forgithub.com (one file per thread)
+- Confirm all visible plugins are functional!!!
+- Improve error handling; If plugin returns 404/500, show that error in the same interface.
 
 Share with the world: node_modules, dependencies, issues, discussions, etc etc etc (Can pretty much do one, every day)
+
+# plugin monetisation incentivization
+
+Come up with a good way for any plugin to provide FREEMIUM functionality.
+
+- how old is the data, is the data fresh?
+- is there a better version of the same data? if so, how can it be made available?
+
+The plugin should return one of these in response headers:
+
+- Age
+- Date
+- Last-Modified
+- ETag
+- Link header (RFC 8288)
+- Warning header (RFC 7234) - https://datatracker.ietf.org/doc/html/rfc7234#section-5.5
+
+Maybe I could do it by just adding a README file (or similar) to the files for any ingest plugin. For a transformation plugin, a README.md or WARNING.md file can be added as well. This should get a special place in the UI. For example, we can
+
+# Stability
+
+In `outputmd`, add the params that were used to search as frontmatter. Also, add warning to the top if tokens were capped.
+
+`outputjson` should take request.body as possible way of input (JSON output should work)
+
+`?accept=multipart/Form-Data` should render HTML
+
+Ensure we get the default branch for any github repo from a KV.
+
+We don't get the size of filtered out files. Ensure we still get this (keep content-size header alive). When filtering out files in `ingestzip`, ensure original filesize is preserved.
+
+`search.js`: basepath should show up on search to easily remove
+
+Bug with spaces: https://x.com/janwilmake/status/1898753253988253946
+
+Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
+
+🤔 Review it: What prevents me from hosting this at uithub.com with uuithub.com being the public staging environment that can be unstable? I just made it possible to vary between `wrangler deploy` and `wrangler deploy --production`. Prod can still break when editing sub-services though, so this is difficult.
 
 # `transform-formdata` plugins
 
 - Should already work.
-- Make this work for swc + parsing as primary example.
+- Make this work for SWC + parsing as primary example.
+- The dream: have all source-context for every codefile bound to the file (e.g. as a giant comment)
 
 # `npmjs.com` domain
 
@@ -56,7 +95,7 @@ Share with the world: npmjz 2.0
 GOAL: Resolver of github OR npm repos based off `package.json` in a repo.
 
 - Source1: npm.forgithub.com --> dependencies: `(repositoryUrl | packageUrl)[]`
-- Document how to use `uithub` as API or make `uitx` package already.
+- Document how to use `uithub` as API or make `uitx` package already
 - Create a merger that uses source of uithub itself in parallel, and outputs `FormData` for an applied filter on every repo/package.
 - BONUS: for repo urls we'd want to use the sha closest to the releasedate (or tag-based) so the source is correct
 
@@ -94,24 +133,6 @@ Maybe also needs to be https://transformfile.uithub.com/{openapiUrl}/{operationI
 
 Similarly, maybe ingest plugins need openapi+operation (to know output type beforehand, to know if a plugin is another source)
 
-# Minor improvements
-
-In `outputmd`, add the params that were used to search as frontmatter. Also, add warning to the top if tokens were capped.
-
-`outputjson` should take request.body as possible way of input (JSON output should work)
-
-`?accept=multipart/Form-Data` should render HTML
-
-Ensure we get the default branch for any github repo from a KV.
-
-We don't get the size of filtered out files. Ensure we still get this (keep content-size header alive). When filtering out files in `ingestzip`, ensure original filesize is preserved.
-
-`search.js`: basepath should show up on search to easily remove
-
-Bug with spaces: https://x.com/janwilmake/status/1898753253988253946
-
-Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: https://docs.simpleanalytics.com/events/server-side)
-
 # generate `.genignore` files
 
 Can be done based on filetree and the default genignore with max certain maxtokens. Can be done using deepseek or cloudflare-based model. Can be done on-demand, stored in KV.
@@ -143,8 +164,8 @@ Besides `llms.txt`, a `tree.json` file seems useful, not to put in your repo, bu
 - llms-full.txt
 - .genignore
 - context.json
-- archive.zip
 - `.well-known/*`
+- archive.zip
 - archive/{contextId}.zip
 
 Any server that exposes this sourcecode-based middleware (setting env of sha at deploy-time) is much more agent-friendly with a single LOC, and can be accessed through uuithub.com/{domain} with all search abilities there!
@@ -152,3 +173,15 @@ Any server that exposes this sourcecode-based middleware (setting env of sha at 
 # `uithub.otp`
 
 # `monetaryurl`
+
+# Dataset
+
+After this is there, and after I have proper categorisation, create a set of datasets with the most useful data around github repos, organised per repo.
+
+- popular python
+- popular node
+- popular cloudflare
+- janwilmake
+- etc.
+
+These datasets should be able to be downloaded directly as zip from some page.

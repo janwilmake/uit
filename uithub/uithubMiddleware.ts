@@ -3,6 +3,7 @@ export const uithubMiddleware = (
   request: Request,
   fetcher: (request: Request) => Promise<Response>,
   pathname: string,
+  CREDENTIALS: string,
 ) => {
   const url = new URL(request.url);
   const accept = request.headers.get("accept");
@@ -23,10 +24,17 @@ export const uithubMiddleware = (
     (url.pathname === "/info/refs" || url.pathname === "/git-upload-pack")
   ) {
     // git clone https://uithub.com would clone the repo of the site
+    // NB: not functional right now
     return fetcher(
-      new Request(`https://uuithub.com/${pathname}` + url.pathname, {
-        headers: { "user-agent": userAgent },
-      }),
+      new Request(
+        "https://output-git-upload-pack.uithub.com/" +
+          "https://uuithub.com" +
+          pathname +
+          url.pathname,
+        {
+          headers: { Authorization: `Basic ${btoa(CREDENTIALS)}` },
+        },
+      ),
     );
   }
 

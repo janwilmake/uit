@@ -846,3 +846,11 @@ This is what needs to be done for this:
 3. ✅ ensure the above allows only finding packages that are specified, not subdependencies
 4. ✅ deployed at https://npm.forgithub.com
 5. ✅ added to `plugins.json`
+
+# `ingest` plugins (2025-05-04)
+
+- ✅ Make `ingestjson.uithub.com` so all the apis make sense! Make it adhere to `{files:{[path]:{content}}}` and if that format isn't found, take first key as `{key}.json`
+- ✅ finalize routing logic for ingest plugins
+- ✅ ensure ingestjson has content-type + boundary such that it doesnt error out. Test locally.
+- ✅ ensure npm.forgithub.com works
+- ✅ ensure cache.forgithub.com works
