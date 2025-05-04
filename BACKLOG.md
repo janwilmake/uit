@@ -2,8 +2,6 @@
 
 - Add `maxTokens` filter to `ingestzip`, but ensure it still browses through the pathnames (but skipping content). This is more efficient than doing it later on and will ensure we get the full tree still. **🤔 Not sure! maybe its better to do this after we built up the tree. For formats other than markdown, maxTokens isn't that important. Maybe the tree should also be something that we always append/prepend as a file. Pretty useful**
 
-- When generating full markdown-tree, also get token size for each file/folder, and show the size on folders
-
 - Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.
 
 # creating sha-cached basePath-based inferences (big on performance)
@@ -32,19 +30,11 @@ Only do the above for public repos with permissive lisence allowing commercial r
 4. Use keywords within context of posts of X accounts to filter out threads that are relevant (without duplication).
 5. Run a search on x with results of people mentioning the keyword(s) to find other mentions about this repo.
 
-All of this should be done respecing privacy and with an xymake configuration in the repo. This will be a challenge, but very cool nonetheless!
+All of this should be done respecting privacy and with an xymake configuration in the repo. This will be a challenge, but very cool nonetheless!
 
 # Ratelimiter is slow
 
 Keep watching ratelimiter speed. Sorta slow sometimes, maybe ratelimt resets too fast which causes required reinitialisation which takes a bit longer?
-
-# uithub as API product
-
-- Provide programmatic way to login and get API key, and document this in the OpenAPI. It's probably good to add this into sponsorflare as well. --> Follow MCP recommended oauth 2.1 spec!!
-- Provide programmatic way to retrieve usage and show this in a table on per-month basis as well as last 14 days on a per-day basis in a graph.
-- Provide ability to create/rotate api key, and ensure the api key is not the same as the key you login with, but a key specifically made for API use.
-
-After this is there, this'd be a great thing to show to people, as a minimal example of how to build a paid API with Cloudflare.
 
 # Process `.gitattributes`
 

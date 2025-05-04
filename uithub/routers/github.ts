@@ -244,9 +244,7 @@ export default {
             undefined,
             2,
           ),
-          {
-            headers: { "content-type": "application/json" },
-          },
+          { headers: { "content-type": "application/json" } },
         );
 
       case "discussions":
@@ -290,9 +288,7 @@ export default {
             undefined,
             2,
           ),
-          {
-            headers: { "content-type": "application/json" },
-          },
+          { headers: { "content-type": "application/json" } },
         );
 
       case "commits":
