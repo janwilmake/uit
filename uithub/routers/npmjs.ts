@@ -9,153 +9,104 @@ export default {
     const pathname = new URL(request.url).pathname;
     const isAuthenticated =
       request.headers.get("X-IS-AUTHENTICATED") === "true";
-    console.log({ pathname });
 
     // Check if the URL starts with /package/
     if (!pathname.startsWith("/package/")) {
-      return new Response("Invalid npm package URL format", { status: 400 });
+      return new Response("Invalid npm package URL format", { status: 404 });
     }
 
     // Get the package path after /package/
-    const packagePath = pathname.substring("/package/".length);
+    const remainingPath = pathname.substring("/package/".length);
+    const segments = remainingPath.split("/").filter((part) => part);
 
-    // Parse npm package URL path: /@scope/package-name or /package-name
-    const packageParts = packagePath.split("/").filter((part) => part);
-
+    // State variables
     let packageName = "";
     let scope = "";
-    let version = "latest";
-    let basePath = "";
-
-    // Check for version format like /v/4.6.3
-    let versionFormat = false;
-
-    // Look for a /v/ segment that's followed by a version number
-    const vIndex = packageParts.findIndex((part) => part === "v");
-    if (
-      vIndex !== -1 &&
-      vIndex + 1 < packageParts.length &&
-      packageParts[vIndex + 1].match(/^\d/)
-    ) {
-      versionFormat = true;
-      version = packageParts[vIndex + 1];
-    }
-
-    if (packageParts[0]?.startsWith("@")) {
-      // Scoped package: @scope/package
-      if (packageParts.length >= 2) {
-        scope = packageParts[0].substring(1); // Remove @ from scope
-        packageName = packageParts[1];
-
-        // Handle remaining parts differently based on if we found a /v/ format
-        if (versionFormat) {
-          // We already extracted the version, so exclude those parts
-          const remainingParts = [
-            ...packageParts.slice(2, vIndex),
-            ...packageParts.slice(vIndex + 2),
-          ];
-          basePath = remainingParts.join("/");
-        } else if (packageParts.length > 2) {
-          // Traditional format - check remaining parts
-          const remainingParts = packageParts.slice(2);
-
-          // Check if the next part is a version (starts with a number, v, or is "latest")
-          if (
-            remainingParts[0]?.match(/^(v?\d|latest)/) ||
-            remainingParts[0] === "latest"
-          ) {
-            version = remainingParts[0].replace(/^v/, ""); // Remove 'v' prefix if present
-            basePath = remainingParts.slice(1).join("/");
-          } else {
-            basePath = remainingParts.join("/");
-          }
-        }
-      }
-    } else {
-      // Regular package
-      if (packageParts.length >= 1) {
-        scope = ""; // No scope
-        packageName = packageParts[0];
-
-        // Handle remaining parts differently based on if we found a /v/ format
-        if (versionFormat) {
-          // We already extracted the version, so exclude those parts
-          const remainingParts = [
-            ...packageParts.slice(1, vIndex),
-            ...packageParts.slice(vIndex + 2),
-          ];
-          basePath = remainingParts.join("/");
-        } else if (packageParts.length > 1) {
-          // Traditional format - check remaining parts
-          const remainingParts = packageParts.slice(1);
-
-          // Check if the next part is a version (starts with a number, v, or is "latest")
-          if (
-            remainingParts[0]?.match(/^(v?\d|latest)/) ||
-            remainingParts[0] === "latest"
-          ) {
-            version = remainingParts[0].replace(/^v/, ""); // Remove 'v' prefix if present
-            basePath = remainingParts.slice(1).join("/");
-          } else {
-            basePath = remainingParts.join("/");
-          }
-        }
-      }
-    }
-
-    // Extract plugin information from basePath if present
+    let version = "";
     let pluginId = "";
     let ext = "";
+    let basePath = "";
 
-    const parts = basePath.split("/");
-    if (parts.length > 0 && parts[0].includes(".")) {
-      const [id, extension] = parts[0].split(".");
+    // Parse package name (with optional scope)
+    if (segments[0]?.startsWith("@")) {
+      // Scoped package: @scope/package
+      if (segments.length < 2) {
+        return new Response("Invalid scoped package format", { status: 404 });
+      }
+      scope = segments[0].substring(1); // Remove @
+      packageName = segments[1];
+      segments.splice(0, 2); // Remove scope and package name
+    } else {
+      // Regular package
+      if (segments.length === 0) {
+        return new Response("Invalid package format", { status: 404 });
+      }
+      packageName = segments[0];
+      segments.splice(0, 1); // Remove package name
+    }
+
+    // Check for optional /v/{version} format
+    if (
+      segments.length >= 2 &&
+      segments[0] === "v" &&
+      segments[1].match(/^\d/)
+    ) {
+      version = segments[1];
+      segments.splice(0, 2); // Remove 'v' and version
+    }
+
+    // Extract plugin information if present (first segment with a dot)
+    if (segments.length > 0) {
+      const [id, extension] = segments[0].split(".");
       pluginId = id;
       ext = extension;
-      basePath = parts.slice(1).join("/");
+      segments.splice(0, 1); // Remove plugin segment
     }
 
-    console.log({ packageName, scope, version, basePath });
+    // Remaining segments form the basePath
+    basePath = segments.join("/");
 
-    // For npm packages, the primarySourceSegment is the package name (with scope if present)
+    // If no version was found in URL, fetch latest version
+    if (!version) {
+      try {
+        const registryUrl = scope
+          ? `https://registry.npmjs.org/@${scope}/${packageName}/latest`
+          : `https://registry.npmjs.org/${packageName}/latest`;
+
+        const response = await fetch(registryUrl);
+        const json: { version: string } = await response.json();
+        version = json.version;
+
+        if (!version) {
+          throw new Error("No version found");
+        }
+      } catch (e) {
+        return new Response("Failed to fetch package version", { status: 404 });
+      }
+    }
+
+    // Construct full package name and tarball URL
     const fullPackageName = scope ? `@${scope}/${packageName}` : packageName;
-    const primarySourceSegment = fullPackageName;
+    const tarballUrl = `https://registry.npmjs.org/${fullPackageName}/-/${packageName}-${version}.tgz`;
 
-    // Generate correct tarball URL for the package
-    let tarballUrl = "";
-
-    if (scope) {
-      // Scoped package tarball URL format
-      tarballUrl = `https://registry.npmjs.org/${fullPackageName}/-/${packageName}-${version}.tgz`;
-    } else {
-      // Regular package tarball URL format
-      tarballUrl = `https://registry.npmjs.org/${packageName}/-/${packageName}-${version}.tgz`;
-    }
-
+    // Generate metadata
     const currentTokens = `{{currentTokens}}`;
-    const title = `NPM ${primarySourceSegment} LLM Context`;
-    const description = `Easily ask your LLM code questions about "${primarySourceSegment}" npm package. /${basePath} contains ${currentTokens} tokens.`;
+    const title = `NPM ${fullPackageName} LLM Context`;
+    const description = `Easily ask your LLM code questions about "${fullPackageName}" npm package. /${basePath} contains ${currentTokens} tokens.`;
+    const ogImageUrl = `https://github-og-image.githuq.workers.dev/npm/${fullPackageName}?path=${basePath}&tokens=${currentTokens}`;
+    const rawUrlPrefix = `https://unpkg.com/${fullPackageName}@${version}`;
 
-    // Create an OG image URL specific to npm packages
-    const ogImageUrl = `https://github-og-image.githuq.workers.dev/npm/${primarySourceSegment}?path=${basePath}&tokens=${currentTokens}`;
-
-    // For raw access, we can use unpkg.com which serves raw npm package content
-    const rawUrlPrefix = `https://unpkg.com/${fullPackageName}${
-      version && version !== "latest" ? `@${version}` : ""
-    }`;
-
-    // Create the StandardURL object
+    // Create the StandardURL response
     const json: StandardURL = {
       pluginId,
       ext,
       basePath,
-      primarySourceSegment,
-      secondarySourceSegment: version,
+      primarySourceSegment: "package/" + fullPackageName + "/v/" + version,
       ogImageUrl,
       description,
       title,
-      // source
-      sourceType: "tar", // or "tgz" depending on what your backend expects
+      omitFirstSegment: true,
+      sourceType: "tar",
       sourceUrl: tarballUrl,
       rawUrlPrefix,
     };

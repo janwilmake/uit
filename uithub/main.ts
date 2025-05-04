@@ -201,7 +201,6 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
 
   const { domain, plugin, standardUrl, outputType, needHtml } = result;
 
-  console.log({ standardUrl });
   const {
     // To load source
     sourceUrl,
@@ -358,7 +357,7 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     return new Response("Tree error: Tree not provided", { status: 500 });
   }
 
-  // console.log({ treeResult });
+  console.log({ treeResult });
   // Gather the data
 
   const currentTokens = Math.round(contextString.length / 500) * 100;
@@ -515,6 +514,7 @@ const pipeResponse = async (context: {
     outputType,
     pipeOutput,
     standardUrl: {
+      omitFirstSegment,
       primarySourceSegment,
       basePath,
       ext,
@@ -532,11 +532,17 @@ const pipeResponse = async (context: {
   const genignorePart = `&genignore=${
     genignoreQuery === "false" ? false : true
   }`;
+  const omitFirstSegmentPart = `?omitFirstSegment=${
+    omitFirstSegment ? "true" : "false"
+  }`;
+
   let ingestUrl: string | undefined =
     sourceType === "zip"
-      ? `https://ingestzip.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      ? `https://ingestzip.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
       : sourceType === "tar"
-      ? `https://ingesttar.uithub.com/${sourceUrl}?omitFirstSegment=true${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      ? `https://ingesttar.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      : sourceType === "json"
+      ? `https://ingestjson.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
       : undefined;
   if (!plugin) {
     // no plugin. good
@@ -623,6 +629,7 @@ const pipeResponse = async (context: {
     outputUrl,
     sourceAuthorization,
     fullUrl,
+    standardUrl: context.standardUrl,
   });
 
   // Make a single request to the nested URL

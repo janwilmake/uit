@@ -26,6 +26,7 @@ export type Plugin = {
 };
 
 export type StandardURL = {
+  omitFirstSegment?: boolean;
   primarySourceSegment: string;
   pluginId?: string;
   secondarySourceSegment?: string;
@@ -126,7 +127,11 @@ export const router = async (
   }
 
   const standardUrl: StandardURL = await response.json();
-
+  if (isDomain) {
+    // prepend domain to the primary source segment
+    standardUrl.primarySourceSegment =
+      domain + "/" + standardUrl.primarySourceSegment;
+  }
   const acceptQuery = url.searchParams.get("accept");
 
   const acceptHeader = request.headers.get("Accept");

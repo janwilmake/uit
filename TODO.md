@@ -19,37 +19,42 @@
 
 ^^^ This can still take several weeks to make good. Target: end of may ^^^
 
-# Github URL structure
+# `jsr.io`
 
-- Keen out the URL structure of GitHub and which URLs I can support easily
-- Improve github url parsing `github.ts` for issues/pulls/etc I need to alter what the basepath becomes.
-- Ensure https://uuithub.com/facebook/react/issues/17473 makes `17474` the basepath of the source that is `issues`
-- In https://cache.forgithub.com/owner/repo/issues|discussions|pulls ensure to respond with a file object and present every thread as JSON and MD.
-- Do the same for https://log.forgithub.com making these paths available.
-- Fix actions.forgithub.com (or remove for now)
-- Improve threads.forgithub.com (one file per thread)
-- Confirm all visible plugins are functional!!!
-- Improve error handling; If plugin returns 404/500, show that error in the same interface.
+- Figure out url structure
+- Make it work
 
-Share with the world: node_modules, dependencies, issues, discussions, etc etc etc (Can pretty much do one, every day)
+# `x.com`
 
-# plugin monetisation incentivization
+- Figure out url structure and what my source should become
+
+# Ingestzip wiki broken
+
+All files are empty - it may be the inflate/deflate method? https://ingestzip.uithub.com/https://wikizip.forgithub.com/Netflix/Hystrix/wiki
+
+# Cache and log for github
+
+- In https://cache.forgithub.com/{owner}/{repo}/{issues|discussions|pulls}/{number} ensure to respond with a file object
+- present every thread as JSON and MD
+- After updating this, confirm navigating works for issues, discussions, pulls
+- 🤔 Figure out how to apply plugins when there is no room for it in the URL (there is no tree) - possibly, adhere to some other standard that can also be easily generated from the frontend through a string-replace mechanism.
+- Do the same for https://log.forgithub.com making these paths available. Confirm it works.
+
+# Improved on-domain navigation
+
+- It'd be interesting to be able to determine all possible pages for a particular domain, or at least, some. For example, to easily navigate up from a repo source to the owner source.
+- Redirects should function.
+
+# Plugin monetisation incentivization
 
 Come up with a good way for any plugin to provide FREEMIUM functionality.
 
 - how old is the data, is the data fresh?
 - is there a better version of the same data? if so, how can it be made available?
 
-The plugin should return one of these in response headers:
+Maybe the plugin should return one of these in response headers: Age, Date, Last-Modified, ETag, Link header (RFC 8288), Warning header (RFC 7234) - https://datatracker.ietf.org/doc/html/rfc7234#section-5.5
 
-- Age
-- Date
-- Last-Modified
-- ETag
-- Link header (RFC 8288)
-- Warning header (RFC 7234) - https://datatracker.ietf.org/doc/html/rfc7234#section-5.5
-
-Maybe I could do it by just adding a README file (or similar) to the files for any ingest plugin. For a transformation plugin, a README.md or WARNING.md file can be added as well. This should get a special place in the UI. For example, we can
+Maybe I could do it by just adding a README file (or similar) to the files for any ingest plugin. For a transformation plugin, a README.md or `WARNING.md` file can be added as well. This should get a special place in the UI. For example, we can render the markdown in `WARNING.md` on top, if available, so it can reach things.
 
 # Stability
 
@@ -76,19 +81,6 @@ Add https://www.simpleanalytics.com event if free plan (**yes, is free**) (see: 
 - Should already work.
 - Make this work for SWC + parsing as primary example.
 - The dream: have all source-context for every codefile bound to the file (e.g. as a giant comment)
-
-# `npmjs.com` domain
-
-- ✅ create `ingesttar` and npmjs domain binding to `uithub`
-- ✅ add npmjs.com into domains; `npmjs.ts` should route to the appropriate package
-- ✅ Make `domains.json` function
-- ✅ confirm I can get packages by changing from npmjs url structure to uuithub.com/npmjs.com/...
-- make it work without version (resolve dist/latest)
-- make it work for subfolders
-- make filters work. seems non-responsive
-- just redirect npmjz.com to uuithub.com/npmjs.com/...
-
-Share with the world: npmjz 2.0
 
 # Merged source
 

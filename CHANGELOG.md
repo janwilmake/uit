@@ -854,3 +854,23 @@ This is what needs to be done for this:
 - ✅ ensure ingestjson has content-type + boundary such that it doesnt error out. Test locally.
 - ✅ ensure npm.forgithub.com works
 - ✅ ensure cache.forgithub.com works
+
+# Github URL structure (2025-05-04)
+
+- ✅ Keen out the URL structure of GitHub and which URLs I can support easily
+- ✅ Improve github url parsing `github.ts` for issues/pulls/etc I need to alter what the basepath becomes.
+- ✅ Ensure https://uuithub.com/facebook/react/issues/17473 makes `17474` the basepath of the source that is `issues`
+- ✅ Remove actions.forgithub.com for now
+
+# `npmjs.com` domain (2025-05-04)
+
+- ✅ create `ingesttar` and npmjs domain binding to `uithub`
+- ✅ add npmjs.com into domains; `npmjs.ts` should route to the appropriate package
+- ✅ Make `domains.json` function
+- ✅ confirm I can get packages by changing from npmjs url structure to uuithub.com/npmjs.com/...
+- ✅ determine npmjs.com url structure and what the sources should be for that through some table
+- ✅ http://localhost:3000/npmjs.com/package/reactatron should work
+- ✅ navigation from http://localhost:3000/npmjs.com/package/reactatron/v/0.0.3 should work.
+- ✅ make it work without version (resolve dist/latest)
+- ✅ make filters work. seems non-responsive
+- ✅ just redirect npmjz.com to uuithub.com/npmjs.com/...
