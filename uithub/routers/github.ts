@@ -151,7 +151,7 @@ export default {
     }
 
     const basePath = pathParts.join("/");
-    const primarySourceSegment = `${owner}/${repo}/wiki`;
+    const primarySourceSegment = `${owner}/${repo}`;
 
     // Handle GitHub source types
     switch (page) {
@@ -160,7 +160,7 @@ export default {
           pluginId: branch || "tree",
           ext,
           basePath,
-          primarySourceSegment,
+          primarySourceSegment: `${owner}/${repo}/wiki`,
           title: `GitHub ${primarySourceSegment} Wiki`,
           description: `Wiki documentation for ${primarySourceSegment}`,
           sourceType: "zip",

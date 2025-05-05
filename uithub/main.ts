@@ -448,12 +448,6 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     },
   });
 };
-export default {
-  scheduled: async (event: any, env: Env, ctx: any) => {
-    await updateIndex(env.UITHUB_ASSETS_KV);
-  },
-  fetch: withAssetsKV(requestHandler, { kvNamespace: "UITHUB_ASSETS_KV" }),
-};
 
 /**
  * Processes an array of URLs by removing search parameters, combining them,
@@ -657,4 +651,11 @@ const pipeResponse = async (context: {
       "content-type": response.headers.get("content-type")!,
     },
   };
+};
+
+export default {
+  scheduled: async (event: any, env: Env, ctx: any) => {
+    await updateIndex(env.UITHUB_ASSETS_KV);
+  },
+  fetch: withAssetsKV(requestHandler, { kvNamespace: "UITHUB_ASSETS_KV" }),
 };

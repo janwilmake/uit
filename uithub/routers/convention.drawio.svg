@@ -1,0 +1,106 @@
+<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" style="background: transparent; background-color: transparent;" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="661px" height="360px" viewBox="-0.5 -0.5 661 360" content="&lt;mxfile&gt;&lt;diagram id=&quot;Qx9gPIoBUQu7DY5W8qFG&quot; name=&quot;Page-1&quot;&gt;7VjLctsgFP0azSQLa4RkPbyM82gW7Yxnsmi7xBKRmCKhIhTb/fqCAL0TeybKoplmEXEPFwTn3HsFtrzb/PiFwTL7RhNELNdJjpZ3Z7nuBgTivwROCgBRABSSMpxorAOe8B+kQUejNU5QNXDklBKOyyEY06JAMR9gkDF6GLo9UzJ8awlTNAGeYkim6Hec8EyhkRt2+CPCaWbeDIKN6smhcdY7qTKY0EMP8u4t75ZRylUrP94iIskzvKhxD6/0tgtjqOAXDdBSvEBS683phfGT2S2jdZEgOcCxvO0hwxw9lTCWvQehr8AynhNhAdHU0yHG0fHVNYF2pyJEEM0RZyfhYuJDc6OjY+VGNtCrOnRsB752y3pMe37nC7XIafuCjgfR0FTM0xKeZ0UoV8pmXDNy2jIY/0L8PD0dl9J6Jrh81G0C94jsaIU5poXAmNrVVlKJReh9HfXnOEnkWraQ4FQCBD33/W803PoxyqEeu3FapSayzIj3qlJCKtuPBmqFGzsMJ2Kt17ZJ8b5cwF3b0QJyRTNyBUSyUZWwGOgW/K5lbm1jSiizvBvRydL9VeBZrniN0z2vG4pEbSj4qmoqkPR11+Wx6TDziFYqnzXmWb23Y5qLxdJDgZh4MlRSuQm9mL1xbuqLBkV/i8s2g0WciYZt23tYoV1TMR4qBJmE2zFqY2bYKDaFfHwYdyZIYiG2WNobYTIXwMMKsEDgAMe5IGrmU9x5f7xs/qf3JSqtfdf2BzoBJzRITyffn8oULSATADM6qQyQaTmb15fma0VrFveTUM34ryaUF4ylckNnItRmJp+CJYRaf+6EWi2VUZ4odE4w1Mm1p4ebLvH6UvneIocb4H9cWpWkTnFxVV1/oswa5tUKSBWc3t+0IEbhnHxLfLmAN2EQJeJuos2CFmjIJjpi/kOyYRvrZ2P52ro7aqoa49QzdohhsT4pgcIKsVY1Vegb+2e/s5ursU7nRNA1uP9J5pClqL02KUxu8E2lGCIiU1+Gl7N3seyer2eoSG7kVVJGKoFVheOPIv4i/sJ38NcvPDNfCINdTLN+w47ippqYRBqd+bzxEUFtR4/q31nHE/mjicaJpUiYTNSo3m57LhDkkb29eiv37gcM7/4v&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <defs/>
+    <g>
+        <g>
+            <rect x="0" y="-0.12" width="650" height="358.12" fill="#ffffff" stroke="#000000" pointer-events="all" style="fill: light-dark(#ffffff, var(--ge-dark-color, #121212)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+        </g>
+        <g>
+            <path d="M 245.19 107.77 L 232.88 107.77 Q 222.88 107.77 222.88 117.77 L 222.88 160.18 Q 222.88 170.18 212.88 170.18 L 206.73 170.18 Q 200.58 170.18 210.58 170.18 L 216.73 170.18 Q 222.88 170.18 222.88 180.18 L 222.88 222.59 Q 222.88 232.59 232.88 232.59 L 245.19 232.59" fill="none" stroke="#000000" stroke-miterlimit="10" transform="translate(222.88,0)scale(-1,1)translate(-222.88,0)rotate(-90,222.88,170.18)" pointer-events="all" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+        </g>
+        <g>
+            <rect x="10" y="107.77" width="650" height="30" fill="none" stroke="none" pointer-events="all"/>
+        </g>
+        <g>
+            <g transform="translate(-0.5 -0.5)">
+                <switch>
+                    <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+                        <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 648px; height: 1px; padding-top: 123px; margin-left: 11px;">
+                            <div style="box-sizing: border-box; font-size: 0; text-align: center; color: #000000; ">
+                                <div style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: light-dark(#000000, #ffffff); line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                                    <span style="color: light-dark(rgb(63, 63, 63), rgb(183, 183, 183)); font-size: 24px;">
+                                        uithub.com/owner/repo/
+                                        <b>
+                                            page
+                                        </b>
+                                        /branch/...basePath?search
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </foreignObject>
+                    <text x="335" y="126" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;" font-size="12px" text-anchor="middle">
+                        uithub.com/owner/repo/page/branch/...basePath?search
+                    </text>
+                </switch>
+            </g>
+        </g>
+        <g>
+            <path d="M 417.5 135.5 L 400 135.5 Q 390 135.5 390 145.5 L 390 165.5 Q 390 175.5 380 175.5 L 371.25 175.5 Q 362.5 175.5 372.5 175.5 L 381.25 175.5 Q 390 175.5 390 185.5 L 390 205.5 Q 390 215.5 400 215.5 L 417.5 215.5" fill="none" stroke="#000000" stroke-miterlimit="10" transform="translate(390,0)scale(-1,1)translate(-390,0)rotate(-90,390,175.5)" pointer-events="all" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+        </g>
+        <g>
+            <rect x="272.5" y="298" width="90" height="60" fill="none" stroke="none" pointer-events="all"/>
+        </g>
+        <g>
+            <g transform="translate(-0.5 -0.5)">
+                <switch>
+                    <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+                        <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 88px; height: 1px; padding-top: 328px; margin-left: 274px;">
+                            <div style="box-sizing: border-box; font-size: 0; text-align: center; color: #000000; ">
+                                <div style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: light-dark(#000000, #ffffff); line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                                    <font style="font-size: 24px;">
+                                        source
+                                    </font>
+                                </div>
+                            </div>
+                        </div>
+                    </foreignObject>
+                    <text x="318" y="332" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;" font-size="12px" text-anchor="middle">
+                        source
+                    </text>
+                </switch>
+            </g>
+        </g>
+        <g>
+            <path d="M 341.56 50.2 L 325.31 50.2 Q 315.31 50.2 315.31 60.2 L 315.31 68.48 Q 315.31 76.76 305.31 76.76 L 297.18 76.76 Q 289.06 76.76 299.06 76.76 L 307.18 76.76 Q 315.31 76.76 315.31 86.76 L 315.31 95.04 Q 315.31 103.32 325.31 103.32 L 341.56 103.32" fill="none" stroke="#000000" stroke-miterlimit="10" transform="translate(315.31,0)scale(-1,1)translate(-315.31,0)rotate(90,315.31,76.76)" pointer-events="all" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+        </g>
+        <g>
+            <rect x="275" y="14.88" width="87.5" height="30" fill="none" stroke="none" pointer-events="all"/>
+        </g>
+        <g>
+            <g transform="translate(-0.5 -0.5)">
+                <switch>
+                    <foreignObject style="overflow: visible; text-align: left;" pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility">
+                        <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 86px; height: 1px; padding-top: 30px; margin-left: 276px;">
+                            <div style="box-sizing: border-box; font-size: 0; text-align: center; color: #000000; ">
+                                <div style="display: inline-block; font-size: 12px; font-family: &quot;Helvetica&quot;; color: light-dark(#000000, #ffffff); line-height: 1.2; pointer-events: all; white-space: normal; word-wrap: normal; ">
+                                    <font style="font-size: 24px;">
+                                        plugin(s)
+                                    </font>
+                                </div>
+                            </div>
+                        </div>
+                    </foreignObject>
+                    <text x="319" y="33" fill="light-dark(#000000, #ffffff)" font-family="&quot;Helvetica&quot;" font-size="12px" text-anchor="middle">
+                        plugin(s)
+                    </text>
+                </switch>
+            </g>
+        </g>
+        <g>
+            <path d="M 390 197.5 L 342.84 292.3" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 340.5 297 L 340.48 289.17 L 342.84 292.3 L 346.75 292.29 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="all" style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+        </g>
+        <g>
+            <path d="M 222.88 188.02 L 293.66 292.72" fill="none" stroke="#000000" stroke-miterlimit="10" pointer-events="stroke" style="stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+            <path d="M 296.6 297.07 L 289.78 293.23 L 293.66 292.72 L 295.58 289.31 Z" fill="#000000" stroke="#000000" stroke-miterlimit="10" pointer-events="all" style="fill: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); stroke: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));"/>
+        </g>
+    </g>
+    <switch>
+        <g requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"/>
+        <a transform="translate(0,-5)" xlink:href="https://www.drawio.com/doc/faq/svg-export-text-problems" target="_blank">
+            <text text-anchor="middle" font-size="10px" x="50%" y="100%">
+                Text is not SVG - cannot display
+            </text>
+        </a>
+    </switch>
+</svg>
