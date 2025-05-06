@@ -1,0 +1,10 @@
+name = "uithub_ingestsql"
+compatibility_date = "2025-04-01"
+dev.port = 3000
+route.pattern = "ingestsql.uithub.com"
+route.custom_domain = true
+main = "./main.ts"
+assets.directory = "./public"
+
+# my feature!
+limits.cpu_ms = 300000
