@@ -14,4 +14,4 @@ Relevant context:
 - turn every table row that is not filtered out into a `.json` file, ensure the path is prefixed with the name of the table, and suffixed with `.json` (if not already in the path)
 - output a FormData stream of files
 
-It implements this in `types.ts` and `main.ts`
+It implements this in `types.ts` and `main.ts` and a spec of it `openapi.json` hosted at ingestsql.uithub.com

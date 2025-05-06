@@ -1,0 +1,272 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "IngestSQL API",
+    "description": "An API service that fetches data from SQL databases (following the DORM API) and converts it to multipart/form-data streams with various filtering options.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "UIThub",
+      "url": "https://ingestsql.uithub.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://ingestsql.uithub.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/{sqlUrl}": {
+      "get": {
+        "summary": "Fetch and process SQL database data",
+        "description": "Fetches data from a SQL database following the DORM API, processes the contents, and returns a multipart/form-data stream with the filtered records as JSON files.",
+        "parameters": [
+          {
+            "name": "sqlUrl",
+            "in": "path",
+            "description": "URL-encoded path to the SQL server implementing the DORM API",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "omitFirstSegment",
+            "in": "query",
+            "description": "Remove the first segment from file paths in the output",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "omitBinary",
+            "in": "query",
+            "description": "Skip binary files in the output (not typically relevant for SQL data)",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "enableFuzzyMatching",
+            "in": "query",
+            "description": "Enable fuzzy matching for path patterns",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "rawUrlPrefix",
+            "in": "query",
+            "description": "Prefix to use for raw URLs (not typically used for SQL data)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "basePath",
+            "in": "query",
+            "description": "Base path(s) to filter records by. Only files under these paths will be included",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "pathPatterns",
+            "in": "query",
+            "description": "Glob pattern(s) to include files matching these patterns. Supports picomatch syntax",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "excludePathPatterns",
+            "in": "query",
+            "description": "Glob pattern(s) to exclude files matching these patterns. Supports picomatch syntax",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "maxFileSize",
+            "in": "query",
+            "description": "Maximum file size in bytes to include in the response",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SQL data successfully processed and streamed",
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request, missing SQL URL",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, authentication required",
+            "headers": {
+              "WWW-Authenticate": {
+                "schema": {
+                  "type": "string",
+                  "example": "Basic realm=\"SQL Access\""
+                }
+              }
+            },
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error processing the SQL data",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication with credentials"
+      }
+    },
+    "headers": {
+      "x-source-authorization": {
+        "description": "Optional authorization header to forward to the SQL server",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "FormDataFile": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "format": "binary",
+            "description": "JSON content representing a database record"
+          },
+          "x-source-table": {
+            "type": "string",
+            "description": "Source table name for the record"
+          },
+          "x-file-hash": {
+            "type": "string",
+            "description": "SHA-256 hash of the file content"
+          }
+        }
+      },
+      "MetadataFile": {
+        "type": "object",
+        "properties": {
+          "tables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Table name"
+                },
+                "totalRows": {
+                  "type": "integer",
+                  "description": "Total number of rows in the table"
+                },
+                "processedRows": {
+                  "type": "integer",
+                  "description": "Number of rows processed after filtering"
+                }
+              }
+            }
+          },
+          "processingTime": {
+            "type": "integer",
+            "description": "Total processing time in milliseconds"
+          },
+          "totalProcessedRows": {
+            "type": "integer",
+            "description": "Total number of records processed across all tables"
+          },
+          "totalRows": {
+            "type": "integer",
+            "description": "Total number of rows across all tables"
+          },
+          "filterOptions": {
+            "type": "object",
+            "description": "Filter options used in the request"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "SQL Processing",
+      "description": "Operations related to fetching and processing SQL data"
+    }
+  ]
+}
