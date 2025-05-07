@@ -1,4 +1,4 @@
-import { StandardURL } from "./router.js";
+import { StandardURL } from "./standard-url.js";
 
 // Helper function to get zip URL for a repo
 function getRepoZipUrl(

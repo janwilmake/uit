@@ -5,6 +5,7 @@ import x from "./github.js";
 import plugins from "../static/plugins.json" assert { type: "json" };
 import domains from "../static/domains.json" assert { type: "json" };
 import { getAuthorization } from "sponsorflare";
+import { StandardURL } from "./standard-url.js";
 
 // todo: to be generated from plugin.schema.json
 export type Plugin = {
@@ -23,21 +24,6 @@ export type Plugin = {
   description: string;
   endpoint: string;
   source: string;
-};
-
-export type StandardURL = {
-  omitFirstSegment?: boolean;
-  primarySourceSegment: string;
-  pluginId?: string;
-  secondarySourceSegment?: string;
-  basePath?: string;
-  ext?: string;
-  sourceType?: string;
-  sourceUrl?: string;
-  ogImageUrl?: string;
-  title?: string;
-  description?: string;
-  rawUrlPrefix?: string;
 };
 
 const getCrawler = (userAgent: string | null) => {
