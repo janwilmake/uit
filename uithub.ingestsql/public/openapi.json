@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "IngestSQL API",
-    "description": "An API service that fetches data from SQL databases (following the DORM API) and converts it to multipart/form-data streams with various filtering options.",
+    "description": "An API service that fetches SQL query results from DORM (Durable Object Relational Mapper) and converts them to multipart/form-data streams with various filtering and templating options.",
     "version": "1.0.0",
     "contact": {
       "name": "UIThub",
@@ -18,13 +18,13 @@
   "paths": {
     "/{sqlUrl}": {
       "get": {
-        "summary": "Fetch and process SQL database data",
-        "description": "Fetches data from a SQL database following the DORM API, processes the contents, and returns a multipart/form-data stream with the filtered records as JSON files.",
+        "summary": "Fetch and process SQL query results",
+        "description": "Fetches SQL query results from a DORM API endpoint, processes the contents using templates, and returns a multipart/form-data stream with the filtered files.",
         "parameters": [
           {
             "name": "sqlUrl",
             "in": "path",
-            "description": "URL-encoded path to the SQL server implementing the DORM API",
+            "description": "URL-encoded path to the SQL query endpoint (DORM API GET /query/raw/QUERY)",
             "required": true,
             "schema": {
               "type": "string"
@@ -43,7 +43,7 @@
           {
             "name": "omitBinary",
             "in": "query",
-            "description": "Skip binary files in the output (not typically relevant for SQL data)",
+            "description": "Skip binary files in the output",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -63,7 +63,7 @@
           {
             "name": "rawUrlPrefix",
             "in": "query",
-            "description": "Prefix to use for raw URLs (not typically used for SQL data)",
+            "description": "Prefix to use for raw URLs for binary files (if set, binary files are referenced by URL instead of including content)",
             "required": false,
             "schema": {
               "type": "string"
@@ -72,7 +72,7 @@
           {
             "name": "basePath",
             "in": "query",
-            "description": "Base path(s) to filter records by. Only files under these paths will be included",
+            "description": "Base path(s) to filter files by. Only files under these paths will be included",
             "required": false,
             "schema": {
               "type": "array",
@@ -114,12 +114,42 @@
           {
             "name": "maxFileSize",
             "in": "query",
-            "description": "Maximum file size in bytes to include in the response",
+            "description": "Maximum file size in bytes to include",
             "required": false,
             "schema": {
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "itemTemplate",
+            "in": "query",
+            "description": "Template string for generating file paths from row data. Use {property} syntax to reference columns by name and {index} for row number.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true,
+            "example": ["/records/{id}/record.json", "/items/item_{index}.json"]
+          },
+          {
+            "name": "columnTemplate",
+            "in": "query",
+            "description": "Template string for generating file paths from individual column values. Format is 'columnName:pathTemplate'.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true,
+            "example": ["name:/names/{id}.txt", "avatar:/avatars/{id}.png"]
           }
         ],
         "security": [
@@ -195,7 +225,7 @@
     },
     "headers": {
       "x-source-authorization": {
-        "description": "Optional authorization header to forward to the SQL server",
+        "description": "Optional authorization header to forward to the SQL source",
         "schema": {
           "type": "string"
         }
@@ -208,65 +238,106 @@
           "content": {
             "type": "string",
             "format": "binary",
-            "description": "JSON content representing a database record"
-          },
-          "x-source-table": {
-            "type": "string",
-            "description": "Source table name for the record"
+            "description": "File content"
           },
           "x-file-hash": {
             "type": "string",
             "description": "SHA-256 hash of the file content"
+          },
+          "x-url": {
+            "type": "string",
+            "description": "URL to access the raw file (only present for binary files when rawUrlPrefix is provided or for URL column values)"
+          },
+          "x-filter": {
+            "type": "string",
+            "description": "Filter information if the file was filtered out but still included in the response"
           }
         }
       },
-      "MetadataFile": {
-        "type": "object",
-        "properties": {
-          "tables": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "Table name"
-                },
-                "totalRows": {
-                  "type": "integer",
-                  "description": "Total number of rows in the table"
-                },
-                "processedRows": {
-                  "type": "integer",
-                  "description": "Number of rows processed after filtering"
-                }
-              }
-            }
-          },
-          "processingTime": {
-            "type": "integer",
-            "description": "Total processing time in milliseconds"
-          },
-          "totalProcessedRows": {
-            "type": "integer",
-            "description": "Total number of records processed across all tables"
-          },
-          "totalRows": {
-            "type": "integer",
-            "description": "Total number of rows across all tables"
-          },
-          "filterOptions": {
+      "StreamRecord": {
+        "oneOf": [
+          {
             "type": "object",
-            "description": "Filter options used in the request"
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["columns"],
+                "description": "Indicates this record contains column names"
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Array of column names"
+              }
+            },
+            "required": ["type", "data"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["row"],
+                "description": "Indicates this record contains a single row of data"
+              },
+              "data": {
+                "type": "array",
+                "items": {},
+                "description": "Array of values in the row"
+              }
+            },
+            "required": ["type", "data"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["meta"],
+                "description": "Indicates this record contains metadata about the query"
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "rows_read": {
+                    "type": "integer",
+                    "description": "Number of rows read by the query"
+                  },
+                  "rows_written": {
+                    "type": "integer",
+                    "description": "Number of rows written by the query"
+                  }
+                },
+                "required": ["rows_read", "rows_written"]
+              }
+            },
+            "required": ["type", "data"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["error"],
+                "description": "Indicates an error occurred during streaming"
+              },
+              "error": {
+                "type": "string",
+                "description": "Error message"
+              }
+            },
+            "required": ["type", "error"]
           }
-        }
+        ]
       }
     }
   },
   "tags": [
     {
       "name": "SQL Processing",
-      "description": "Operations related to fetching and processing SQL data"
+      "description": "Operations related to fetching and processing SQL query results"
     }
   ]
 }

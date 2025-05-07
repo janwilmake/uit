@@ -9,6 +9,8 @@ export interface FilterOptions {
   pathPatterns: string[];
   excludePathPatterns: string[];
   maxFileSize: number | undefined;
+  itemTemplate?: string[];
+  columnTemplate?: string[];
 }
 
 export interface ResponseOptions {
@@ -23,46 +25,19 @@ export interface RequestParams {
   responseOptions: ResponseOptions;
 }
 
-export interface SqlTable {
-  name: string;
+export interface StreamRecord {
+  type: "columns" | "row" | "meta" | "error";
+  data?: any[] | { rows_read: number; rows_written: number };
+  error?: string;
+}
+
+export interface ColumnTemplate {
+  columnName: string;
+  pathTemplate: string;
+}
+
+export interface ProcessedRow {
+  index: number;
+  data: any[];
   columns: string[];
-  pathColumn: string;
-}
-
-export interface SqlQueryResult {
-  columns: string[];
-  rows: any[][];
-  meta: {
-    rows_read: number;
-    rows_written: number;
-  };
-}
-
-export interface SqlResponse {
-  result: SqlQueryResult;
-}
-
-export interface SqlRecord {
-  table: string;
-  data: Record<string, any>;
-  path: string;
-}
-
-export interface TableStats {
-  name: string;
-  totalRows: number;
-  processedRows: number;
-}
-
-export interface CompiledMatchers {
-  inclusionMatchers: {
-    normal: Array<(path: string) => boolean>;
-    basename: Array<(basename: string) => boolean>;
-  };
-  exclusionMatchers: {
-    normal: Array<(path: string) => boolean>;
-    basename: Array<(basename: string) => boolean>;
-  };
-  hasInclusion: boolean;
-  hasExclusion: boolean;
 }

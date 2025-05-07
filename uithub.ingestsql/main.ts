@@ -1,19 +1,15 @@
-// Import picomatch for glob pattern matching
 import picomatch from "picomatch";
+import map from "./public/ext-to-mime.json";
+import binaryExtensions from "binary-extensions";
 import {
   Env,
   FilterOptions,
   RequestParams,
   ResponseOptions,
-  SqlTable,
-  SqlQueryResult,
-  SqlRecord,
-  SqlResponse,
-  TableStats,
-  CompiledMatchers,
+  StreamRecord,
+  ColumnTemplate,
+  ProcessedRow,
 } from "./types";
-
-const BATCH_SIZE = 200; // Process rows in batches to manage memory
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -33,7 +29,7 @@ export default {
 
     // Validate the SQL URL
     if (!sqlUrl) {
-      return new Response("No SQL server URL provided", { status: 400 });
+      return new Response("No SQL URL provided", { status: 400 });
     }
 
     // Check authentication
@@ -47,18 +43,39 @@ export default {
     }
 
     try {
+      // Prepare headers for fetching SQL data
+      const headers = new Headers({
+        "User-Agent": "Cloudflare-Worker",
+        Accept: "application/x-ndjson",
+      });
+
+      if (responseOptions.authHeader) {
+        headers.set("Authorization", responseOptions.authHeader);
+      }
+
+      // Fetch the SQL data
+      const sqlResponse = await fetch(sqlUrl, { headers });
+
+      const initialResponseTime = Date.now() - requestStartTime;
+      responseHeaders.set(
+        "X-Initial-Response-Time-Ms",
+        initialResponseTime.toString(),
+      );
+
+      if (!sqlResponse.ok || !sqlResponse.body) {
+        return createErrorResponse(sqlResponse, params.sqlUrl);
+      }
+
       // Process and stream the SQL contents
       const { readable, writable } = new TransformStream();
 
-      // Start processing SQL data in the background
-      ctx.waitUntil(
-        processSqlToMultipart(
-          sqlUrl,
-          writable,
-          filterOptions,
-          responseOptions,
-          requestStartTime,
-        ),
+      // Start processing the SQL data in the background
+      processSqlToMultipart(
+        sqlResponse.body,
+        writable,
+        filterOptions,
+        params.responseOptions,
+        requestStartTime,
       );
 
       return new Response(readable, { headers: responseHeaders });
@@ -86,6 +103,8 @@ function parseRequest(request: Request): RequestParams {
     pathPatterns: url.searchParams.getAll("pathPatterns"),
     excludePathPatterns: url.searchParams.getAll("excludePathPatterns"),
     maxFileSize: parseMaxFileSize(url.searchParams.get("maxFileSize")),
+    itemTemplate: url.searchParams.getAll("itemTemplate"),
+    columnTemplate: url.searchParams.getAll("columnTemplate"),
   };
 
   // Prepare response options
@@ -96,6 +115,15 @@ function parseRequest(request: Request): RequestParams {
   };
 
   return { sqlUrl, filterOptions, responseOptions };
+}
+
+function createErrorResponse(response: Response, sqlUrl: string): Response {
+  return new Response(
+    `----\nIngestSQL: Failed to fetch SQL data: URL=${sqlUrl}\n\n${
+      response.status
+    } ${response.statusText}\n\n${response.text()}\n\n-----`,
+    { status: response.status },
+  );
 }
 
 function parseMaxFileSize(maxFileSizeParam: string | null): number | undefined {
@@ -138,563 +166,86 @@ function generateRandomString(length: number): string {
   return result;
 }
 
-// Helper functions for path normalization
-const prependSlash = (path: string) =>
-  path.startsWith("/") ? path : "/" + path;
-const surroundSlash = (path: string) =>
-  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
-const withoutSlash = (path: string) =>
-  path.startsWith("/") ? path.slice(1) : path;
-
 /**
- * Simple fuzzy matching function that works similarly to VS Code's fuzzy search
+ * Parse column templates from the format "columnName:pathTemplate"
  */
-function fuzzyMatch(pattern: string, str: string): boolean {
-  // Convert both strings to lowercase for case-insensitive matching
-  const lowerPattern = pattern.toLowerCase();
-  const lowerStr = str.toLowerCase();
+function parseColumnTemplates(templates: string[]): ColumnTemplate[] {
+  const result: ColumnTemplate[] = [];
 
-  let patternIdx = 0;
-  let strIdx = 0;
-
-  // Try to match all characters in the pattern in sequence
-  while (patternIdx < lowerPattern.length && strIdx < lowerStr.length) {
-    // If characters match, advance pattern index
-    if (lowerPattern[patternIdx] === lowerStr[strIdx]) {
-      patternIdx++;
+  for (const template of templates) {
+    const colonIndex = template.indexOf(":");
+    if (colonIndex > 0) {
+      const columnName = template.substring(0, colonIndex);
+      const pathTemplate = template.substring(colonIndex + 1);
+      result.push({ columnName, pathTemplate });
     }
-    // Always advance string index
-    strIdx++;
   }
 
-  // If we've gone through the entire pattern, it's a match
-  return patternIdx === lowerPattern.length;
+  return result;
 }
 
 /**
- * Precompile picomatch patterns for faster matching
+ * Apply template to a row of data to create a filename
+ * Replaces {property} with the corresponding property value
  */
-function compileMatchers(options: FilterOptions): CompiledMatchers {
-  // Common picomatch options
-  const picoOptions = {
-    dot: true, // Match dotfiles
-    windows: false, // Use forward slashes (POSIX style)
-  };
+function applyTemplate(template: string, row: ProcessedRow): string {
+  let result = template;
 
-  // For each category, create separate matchers for normal patterns and basename patterns
-  const inclusionMatchers = {
-    normal: [] as Array<(path: string) => boolean>,
-    basename: [] as Array<(basename: string) => boolean>,
-  };
+  // Replace column references
+  for (let i = 0; i < row.columns.length; i++) {
+    const columnName = row.columns[i];
+    const value = row.data[i];
 
-  const exclusionMatchers = {
-    normal: [] as Array<(path: string) => boolean>,
-    basename: [] as Array<(basename: string) => boolean>,
-  };
-
-  // Process inclusion patterns
-  if (options.pathPatterns && options.pathPatterns.length > 0) {
-    for (const pattern of options.pathPatterns) {
-      if (pattern.startsWith("*")) {
-        // Compile basename matchers
-        inclusionMatchers.basename.push(picomatch(pattern, picoOptions));
-      } else if (!pattern.includes("*") && !pattern.includes("?")) {
-        // VSCode-like behavior for non-glob patterns
-        inclusionMatchers.normal.push(picomatch(`${pattern}/**`, picoOptions));
-      } else {
-        // Standard pattern matching
-        inclusionMatchers.normal.push(picomatch(pattern, picoOptions));
-      }
+    if (value !== null && value !== undefined) {
+      // Replace both {columnName} and {index} patterns
+      result = result.replace(
+        new RegExp(`\\{${columnName}\\}`, "g"),
+        String(value),
+      );
     }
   }
 
-  // Process exclusion patterns
-  if (options.excludePathPatterns && options.excludePathPatterns.length > 0) {
-    for (const pattern of options.excludePathPatterns) {
-      if (pattern.startsWith("*")) {
-        // Compile basename matchers
-        exclusionMatchers.basename.push(picomatch(pattern, picoOptions));
-      } else if (!pattern.includes("*") && !pattern.includes("?")) {
-        // VSCode-like behavior for non-glob patterns
-        exclusionMatchers.normal.push(picomatch(`${pattern}/**`, picoOptions));
-      } else {
-        // Standard pattern matching
-        exclusionMatchers.normal.push(picomatch(pattern, picoOptions));
-      }
-    }
-  }
+  // Replace row index
+  result = result.replace(/\{index\}/g, String(row.index));
 
-  return {
-    inclusionMatchers,
-    exclusionMatchers,
-    hasInclusion:
-      inclusionMatchers.normal.length > 0 ||
-      inclusionMatchers.basename.length > 0,
-    hasExclusion:
-      exclusionMatchers.normal.length > 0 ||
-      exclusionMatchers.basename.length > 0,
-  };
+  return result;
 }
 
 /**
- * Process the SQL data and convert it to multipart/form-data stream
+ * Check if a path should be filtered based on the filter options
  */
-async function processSqlToMultipart(
-  sqlUrl: string,
-  output: WritableStream,
-  filterOptions: FilterOptions,
-  responseOptions: ResponseOptions,
-  requestStartTime: number,
-): Promise<void> {
-  const writer = output.getWriter();
-  const encoder = new TextEncoder();
-  const { boundary } = responseOptions;
-
-  try {
-    // Fetch tables and their schema
-    const tables = await fetchTables(sqlUrl, responseOptions.authHeader);
-    const matchers = compileMatchers(filterOptions);
-
-    // Process each table
-    const tableStats: TableStats[] = [];
-
-    for (const table of tables) {
-      const tableStartTime = Date.now();
-      let offset = 0;
-      let hasMoreRows = true;
-      let totalProcessed = 0;
-
-      // Process the table in batches to manage memory
-      while (hasMoreRows) {
-        // Build SQL query with filters applied at SQL level
-        const query = buildFilteredQuery(
-          table,
-          filterOptions,
-          BATCH_SIZE,
-          offset,
-        );
-
-        // Execute query
-        const records = await executeQuery(
-          sqlUrl,
-          query,
-          responseOptions.authHeader,
-        );
-
-        // Check if we've processed all rows
-        hasMoreRows = records.length === BATCH_SIZE;
-        offset += BATCH_SIZE;
-
-        // Process and filter records
-        for (const record of records) {
-          // Apply client-side filtering if needed
-          const filter = shouldFilter(record.path, filterOptions, matchers);
-
-          if (filter.filter) {
-            // If filtered out, we can optionally include a header with filter info
-            if (!filter.noCallback) {
-              await writeFilteredRecord(
-                writer,
-                encoder,
-                boundary,
-                record,
-                filter,
-              );
-            }
-            continue;
-          }
-
-          // Write the record to the FormData stream
-          await writeRecord(writer, encoder, boundary, record);
-          totalProcessed++;
-        }
-
-        // If no more rows, break the loop
-        if (!hasMoreRows || records.length === 0) break;
-      }
-
-      tableStats.push({
-        name: table.name,
-        totalRows: await countTableRows(
-          sqlUrl,
-          table.name,
-          responseOptions.authHeader,
-        ),
-        processedRows: totalProcessed,
-      });
-
-      console.log(
-        `Processed table ${table.name} in ${Date.now() - tableStartTime}ms`,
-      );
-    }
-
-    // End the multipart form data
-    await writer.write(encoder.encode(`--${boundary}--\r\n`));
-
-    // Create and write a metadata file
-    const metadataRecord: SqlRecord = {
-      table: "_metadata",
-      data: {
-        tables: tableStats,
-        processingTime: Date.now() - requestStartTime,
-        totalProcessedRows: tableStats.reduce(
-          (sum, t) => sum + t.processedRows,
-          0,
-        ),
-        totalRows: tableStats.reduce((sum, t) => sum + t.totalRows, 0),
-        filterOptions,
-      },
-      path: "/_metadata.json",
-    };
-
-    await writeRecord(writer, encoder, boundary, metadataRecord);
-
-    const totalProcessingTime = Date.now() - requestStartTime;
-    console.log({ totalProcessingTime, tableStats });
-  } catch (error) {
-    console.error("Error processing SQL:", error);
-
-    // Write error information to the stream
-    try {
-      const errorRecord: SqlRecord = {
-        table: "_error",
-        data: {
-          message: error.message,
-          stack: error.stack,
-          timestamp: new Date().toISOString(),
-        },
-        path: "/_error.json",
-      };
-
-      await writeRecord(writer, encoder, boundary, errorRecord);
-      await writer.write(encoder.encode(`--${boundary}--\r\n`));
-    } catch (writeError) {
-      console.error("Error writing error information:", writeError);
-    }
-  } finally {
-    await writer.close();
-  }
-}
-
-async function writeRecord(
-  writer: WritableStreamDefaultWriter<Uint8Array>,
-  encoder: TextEncoder,
-  boundary: string,
-  record: SqlRecord,
-): Promise<void> {
-  const jsonContent = JSON.stringify(record.data, null, 2);
-  const contentBytes = encoder.encode(jsonContent);
-
-  // Start multipart section
-  await writer.write(encoder.encode(`--${boundary}\r\n`));
-  await writer.write(
-    encoder.encode(
-      `Content-Disposition: form-data; name="${record.path}"; filename="${record.path}"\r\n`,
-    ),
-  );
-
-  // Add content type header
-  await writer.write(encoder.encode(`Content-Type: application/json\r\n`));
-
-  // Calculate content length
-  await writer.write(
-    encoder.encode(`Content-Length: ${contentBytes.length}\r\n`),
-  );
-
-  // Add source table header
-  await writer.write(encoder.encode(`x-source-table: ${record.table}\r\n`));
-
-  // Content encoding
-  await writer.write(encoder.encode(`Content-Transfer-Encoding: 8bit\r\n\r\n`));
-
-  // Write the content
-  await writer.write(contentBytes);
-  await writer.write(encoder.encode("\r\n"));
-}
-
-async function writeFilteredRecord(
-  writer: WritableStreamDefaultWriter<Uint8Array>,
-  encoder: TextEncoder,
-  boundary: string,
-  record: SqlRecord,
-  filter: {
-    filter: boolean;
-    status?: string;
-    message?: string;
-    noCallback?: boolean;
-  },
-): Promise<void> {
-  // Start multipart section
-  await writer.write(encoder.encode(`--${boundary}\r\n`));
-  await writer.write(
-    encoder.encode(
-      `Content-Disposition: form-data; name="${record.path}"; filename="${record.path}"\r\n`,
-    ),
-  );
-
-  // Add content type header
-  await writer.write(encoder.encode(`Content-Type: application/json\r\n`));
-
-  // Add source table header
-  await writer.write(encoder.encode(`x-source-table: ${record.table}\r\n`));
-
-  // Add filter header
-  const PLUGIN_NAME = "ingestsql";
-  await writer.write(
-    encoder.encode(
-      `x-filter: ${PLUGIN_NAME};${filter.status || "404"};${
-        filter.message || ""
-      }\r\n`,
-    ),
-  );
-
-  // Content encoding (empty content)
-  await writer.write(
-    encoder.encode(`Content-Transfer-Encoding: 8bit\r\n\r\n\r\n`),
-  );
-}
-
-async function fetchTables(
-  sqlUrl: string,
-  authHeader: string | null,
-): Promise<SqlTable[]> {
-  try {
-    // Get all table names using a query
-    const tablesQuery = buildTablesListQuery();
-    const tables = await executeRawQuery(sqlUrl, tablesQuery, authHeader);
-
-    if (
-      !tables.result ||
-      !tables.result.rows ||
-      tables.result.rows.length === 0
-    ) {
-      throw new Error("No tables found in the database");
-    }
-
-    // Process each table to get its columns
-    const tableStructures: SqlTable[] = [];
-
-    for (const row of tables.result.rows) {
-      const tableName = row[0]; // Assuming first column is table name
-
-      // Get columns for this table
-      const columnsQuery = buildTableColumnsQuery(tableName);
-      const columnsResult = await executeRawQuery(
-        sqlUrl,
-        columnsQuery,
-        authHeader,
-      );
-
-      if (
-        columnsResult.result &&
-        columnsResult.result.rows &&
-        columnsResult.result.rows.length > 0
-      ) {
-        // Extract column names
-        const columns = columnsResult.result.rows.map((row) => row[1]); // Assuming column name is in second position
-
-        // Determine path column (first column, usually 'id')
-        const pathColumn = columns[0];
-
-        tableStructures.push({
-          name: tableName,
-          columns,
-          pathColumn,
-        });
-      }
-    }
-
-    return tableStructures;
-  } catch (error) {
-    console.error("Error fetching tables:", error);
-    throw error;
-  }
-}
-
-function buildTablesListQuery(): string {
-  // Query to get all user tables
-  return "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
-}
-
-function buildTableColumnsQuery(tableName: string): string {
-  // Query to get all columns for a specific table
-  return `PRAGMA table_info('${tableName}')`;
-}
-
-async function countTableRows(
-  sqlUrl: string,
-  tableName: string,
-  authHeader: string | null,
-): Promise<number> {
-  try {
-    const countQuery = `SELECT COUNT(*) FROM '${tableName}'`;
-    const countResult = await executeRawQuery(sqlUrl, countQuery, authHeader);
-
-    if (
-      countResult.result &&
-      countResult.result.rows &&
-      countResult.result.rows.length > 0
-    ) {
-      return parseInt(countResult.result.rows[0][0], 10);
-    }
-
-    return 0;
-  } catch (error) {
-    console.error(`Error counting rows in table ${tableName}:`, error);
-    return 0;
-  }
-}
-
-function buildFilteredQuery(
-  table: SqlTable,
-  filterOptions: FilterOptions,
-  limit: number,
-  offset: number,
-): string {
-  const { basePath, pathPatterns } = filterOptions;
-  let query = `SELECT * FROM '${table.name}'`;
-  const whereConditions: string[] = [];
-
-  // Apply basePath filtering if specified
-  if (basePath && basePath.length > 0) {
-    const pathConditions = basePath.map(
-      (path) => `${table.pathColumn} LIKE '${path}%'`,
-    );
-
-    if (pathConditions.length > 0) {
-      whereConditions.push(`(${pathConditions.join(" OR ")})`);
-    }
-  }
-
-  // Apply simple pathPatterns (non-glob patterns only)
-  if (pathPatterns && pathPatterns.length > 0) {
-    const simplePatterns = pathPatterns.filter(
-      (p) => !p.includes("*") && !p.includes("?"),
-    );
-
-    if (simplePatterns.length > 0) {
-      const pathConditions = simplePatterns.map(
-        (pattern) => `${table.pathColumn} LIKE '${pattern}%'`,
-      );
-
-      if (pathConditions.length > 0) {
-        whereConditions.push(`(${pathConditions.join(" OR ")})`);
-      }
-    }
-  }
-
-  // Apply WHERE conditions if any
-  if (whereConditions.length > 0) {
-    query += ` WHERE ${whereConditions.join(" AND ")}`;
-  }
-
-  // Add pagination
-  query += ` LIMIT ${limit} OFFSET ${offset}`;
-
-  return query;
-}
-
-async function executeQuery(
-  sqlUrl: string,
-  query: string,
-  authHeader: string | null,
-): Promise<SqlRecord[]> {
-  try {
-    const result = await executeRawQuery(sqlUrl, query, authHeader);
-
-    if (!result.result || !result.result.columns || !result.result.rows) {
-      return [];
-    }
-
-    const { columns, rows } = result.result;
-    const records: SqlRecord[] = [];
-
-    // Extract table name from query
-    const tableNameMatch =
-      query.match(/FROM\s+'([^']+)'/i) || query.match(/FROM\s+([^\s]+)/i);
-    const tableName = tableNameMatch ? tableNameMatch[1] : "unknown";
-
-    // Convert rows to records
-    for (const row of rows) {
-      const data: Record<string, any> = {};
-
-      columns.forEach((column, index) => {
-        data[column] = row[index];
-      });
-
-      // Determine the path for this record
-      const pathValue = data[columns[0]]; // Use first column as path key
-      let path = `/${tableName}/${pathValue}`;
-
-      // Ensure path ends with .json
-      if (!path.endsWith(".json")) {
-        path += ".json";
-      }
-
-      records.push({
-        table: tableName,
-        data,
-        path,
-      });
-    }
-
-    return records;
-  } catch (error) {
-    console.error("Error executing query:", error);
-    throw error;
-  }
-}
-
-async function executeRawQuery(
-  sqlUrl: string,
-  query: string,
-  authHeader: string | null,
-): Promise<SqlResponse> {
-  const headers = new Headers({
-    "Content-Type": "application/json",
-  });
-
-  if (authHeader) {
-    headers.set("Authorization", authHeader);
-  }
-
-  const response = await fetch(`${sqlUrl}/query/raw`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      sql: query,
-      isRaw: true,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`SQL server error (${response.status}): ${errorText}`);
-  }
-
-  return await response.json();
-}
-
 function shouldFilter(
-  path: string,
   filterOptions: FilterOptions,
   matchers: CompiledMatchers,
+  filePath: string,
+  fileSize?: number,
 ): {
   filter: boolean;
-  noCallback?: boolean;
   status?: string;
   message?: string;
 } {
   const {
     omitFirstSegment,
     basePath,
-    enableFuzzyMatching,
+    maxFileSize,
     pathPatterns,
     excludePathPatterns,
+    enableFuzzyMatching,
   } = filterOptions;
 
   // Process the path with omitFirstSegment if needed
-  const processedPath = omitFirstSegment ? processFilePath(path, true) : path;
+  const processedPath = omitFirstSegment
+    ? processFilePath(filePath, true)
+    : filePath;
+
+  // Check maxFileSize filter
+  if (
+    maxFileSize !== undefined &&
+    fileSize !== undefined &&
+    fileSize > maxFileSize
+  ) {
+    return { filter: true, status: "413", message: "Content too large" };
+  }
 
   // Check base path filter
   if (basePath && basePath.length > 0) {
@@ -710,7 +261,7 @@ function shouldFilter(
     }
   }
 
-  // Extract basename for potential basename pattern matching
+  // Extract basename once for potential basename pattern matching
   const basename = processedPath.split("/").pop() || "";
   const normalizedPath = withoutSlash(processedPath);
 
@@ -804,7 +355,9 @@ function shouldFilter(
   return { filter: false };
 }
 
-// Process file path for omitFirstSegment option
+/**
+ * Process file path for omitFirstSegment option
+ */
 function processFilePath(fileName: string, omitFirstSegment: boolean): string {
   if (!omitFirstSegment) return fileName;
 
@@ -812,4 +365,442 @@ function processFilePath(fileName: string, omitFirstSegment: boolean): string {
   if (parts.length <= 1) return fileName;
 
   return "/" + parts.slice(1).join("/");
+}
+
+/**
+ * Helper functions for path normalization
+ */
+const prependSlash = (path: string) =>
+  path.startsWith("/") ? path : "/" + path;
+const surroundSlash = (path: string) =>
+  path.endsWith("/") ? prependSlash(path) : prependSlash(path) + "/";
+const withoutSlash = (path: string) =>
+  path.startsWith("/") ? path.slice(1) : path;
+
+/**
+ * Simple fuzzy matching function that works similarly to VS Code's fuzzy search
+ */
+function fuzzyMatch(pattern: string, str: string): boolean {
+  // Convert both strings to lowercase for case-insensitive matching
+  const lowerPattern = pattern.toLowerCase();
+  const lowerStr = str.toLowerCase();
+
+  let patternIdx = 0;
+  let strIdx = 0;
+
+  // Try to match all characters in the pattern in sequence
+  while (patternIdx < lowerPattern.length && strIdx < lowerStr.length) {
+    // If characters match, advance pattern index
+    if (lowerPattern[patternIdx] === lowerStr[strIdx]) {
+      patternIdx++;
+    }
+    // Always advance string index
+    strIdx++;
+  }
+
+  // If we've gone through the entire pattern, it's a match
+  return patternIdx === lowerPattern.length;
+}
+
+// Updated CompiledMatchers interface
+interface CompiledMatchers {
+  inclusionMatchers: {
+    normal: Array<(path: string) => boolean>;
+    basename: Array<(basename: string) => boolean>;
+  };
+  exclusionMatchers: {
+    normal: Array<(path: string) => boolean>;
+    basename: Array<(basename: string) => boolean>;
+  };
+  hasInclusion: boolean;
+  hasExclusion: boolean;
+}
+
+/**
+ * Precompile picomatch patterns for faster matching
+ */
+function compileMatchers(options: FilterOptions): CompiledMatchers {
+  // Common picomatch options
+  const picoOptions = {
+    dot: true, // Match dotfiles
+    windows: false, // Use forward slashes (POSIX style)
+  };
+
+  // For each category, create separate matchers for normal patterns and basename patterns
+  const inclusionMatchers = {
+    normal: [] as Array<(path: string) => boolean>,
+    basename: [] as Array<(basename: string) => boolean>,
+  };
+
+  const exclusionMatchers = {
+    normal: [] as Array<(path: string) => boolean>,
+    basename: [] as Array<(basename: string) => boolean>,
+  };
+
+  // Process inclusion patterns
+  if (options.pathPatterns && options.pathPatterns.length > 0) {
+    for (const pattern of options.pathPatterns) {
+      if (pattern.startsWith("*")) {
+        // Compile basename matchers
+        inclusionMatchers.basename.push(picomatch(pattern, picoOptions));
+      } else if (!pattern.includes("*") && !pattern.includes("?")) {
+        // VSCode-like behavior for non-glob patterns
+        inclusionMatchers.normal.push(picomatch(`${pattern}/**`, picoOptions));
+      } else {
+        // Standard pattern matching
+        inclusionMatchers.normal.push(picomatch(pattern, picoOptions));
+      }
+    }
+  }
+
+  // Process exclusion patterns
+  if (options.excludePathPatterns && options.excludePathPatterns.length > 0) {
+    for (const pattern of options.excludePathPatterns) {
+      if (pattern.startsWith("*")) {
+        // Compile basename matchers
+        exclusionMatchers.basename.push(picomatch(pattern, picoOptions));
+      } else if (!pattern.includes("*") && !pattern.includes("?")) {
+        // VSCode-like behavior for non-glob patterns
+        exclusionMatchers.normal.push(picomatch(`${pattern}/**`, picoOptions));
+      } else {
+        // Standard pattern matching
+        exclusionMatchers.normal.push(picomatch(pattern, picoOptions));
+      }
+    }
+  }
+
+  return {
+    inclusionMatchers,
+    exclusionMatchers,
+    hasInclusion:
+      inclusionMatchers.normal.length > 0 ||
+      inclusionMatchers.basename.length > 0,
+    hasExclusion:
+      exclusionMatchers.normal.length > 0 ||
+      exclusionMatchers.basename.length > 0,
+  };
+}
+
+/**
+ * Determine if content is likely to be a URL
+ */
+function isUrl(str: string): boolean {
+  try {
+    const url = new URL(str);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Get file extension from path
+ */
+function getExtension(path: string): string {
+  return path.split(".").pop()?.toLowerCase() || "";
+}
+
+/**
+ * Get content type from file extension
+ */
+function getContentType(ext: string): string {
+  return (map[ext] || "application/octet-stream") as string;
+}
+
+/**
+ * Check if content is valid UTF-8
+ */
+function isUtf8(data: Uint8Array | undefined): boolean {
+  if (!data) {
+    return false;
+  }
+  try {
+    const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false });
+    decoder.decode(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// TextEncoder for string to Uint8Array conversion
+const encoder = new TextEncoder();
+
+/**
+ * Generate SHA-256 hash for content
+ */
+async function generateHash(content: Uint8Array): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", content);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Process SQL data stream to multipart/form-data
+ */
+async function processSqlToMultipart(
+  sqlStream: ReadableStream,
+  output: WritableStream,
+  filterOptions: FilterOptions,
+  responseOptions: ResponseOptions,
+  requestStartTime: number,
+): Promise<void> {
+  const { boundary } = responseOptions;
+  const writer = output.getWriter();
+  const reader = sqlStream.getReader();
+  const matchers = compileMatchers(filterOptions);
+
+  // Parse item and column templates
+  const itemTemplates = filterOptions.itemTemplate || [];
+  const columnTemplates = parseColumnTemplates(
+    filterOptions.columnTemplate || [],
+  );
+
+  let columns: string[] = [];
+  let rowCount = 0;
+  const textDecoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        // Process any remaining data in the buffer
+        if (buffer.trim()) {
+          await processRecord(JSON.parse(buffer.trim()));
+        }
+        break;
+      }
+
+      const chunk = textDecoder.decode(value, { stream: true });
+      buffer += chunk;
+
+      // Process complete lines
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // Keep the last (potentially incomplete) line in the buffer
+
+      for (const line of lines) {
+        if (line.trim()) {
+          try {
+            const record: StreamRecord = JSON.parse(line);
+            await processRecord(record);
+          } catch (e) {
+            console.error("Error parsing JSON line:", e);
+          }
+        }
+      }
+    }
+
+    // End the multipart form data
+    await writer.write(encoder.encode(`--${boundary}--\r\n`));
+
+    const totalProcessingTime = Date.now() - requestStartTime;
+    console.log({ totalProcessingTime, rowsProcessed: rowCount });
+  } catch (error) {
+    console.error("Error processing SQL data:", error);
+  } finally {
+    await writer.close();
+  }
+
+  async function processRecord(record: StreamRecord): Promise<void> {
+    if (record.type === "columns" && Array.isArray(record.data)) {
+      columns = record.data as string[];
+    } else if (record.type === "row" && Array.isArray(record.data)) {
+      const rowData = record.data as any[];
+      const row: ProcessedRow = {
+        index: rowCount++,
+        data: rowData,
+        columns: columns,
+      };
+
+      // Process item templates
+      for (const template of itemTemplates) {
+        if (template) {
+          const filePath = applyTemplate(template, row);
+          await writeFile(filePath, row);
+        }
+      }
+
+      // Process column templates
+      for (const template of columnTemplates) {
+        const columnIndex = columns.indexOf(template.columnName);
+        if (columnIndex >= 0 && columnIndex < rowData.length) {
+          const value = rowData[columnIndex];
+          if (value !== null && value !== undefined) {
+            const filePath = applyTemplate(template.pathTemplate, row);
+            await writeColumnFile(filePath, value);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Write a file from row data
+   */
+  async function writeFile(filePath: string, row: ProcessedRow): Promise<void> {
+    // Check if this file should be filtered
+    const filterResult = shouldFilter(filterOptions, matchers, filePath);
+    if (filterResult.filter) {
+      // Write filtered file with empty content and filter header
+      await writeFilteredFile(filePath, filterResult);
+      return;
+    }
+
+    // Convert row to JSON
+    const content = JSON.stringify(
+      Object.fromEntries(row.columns.map((col, i) => [col, row.data[i]])),
+      null,
+      2,
+    );
+    const contentBytes = encoder.encode(content);
+
+    // Calculate hash
+    const hash = await generateHash(contentBytes);
+
+    // Get file extension and content type
+    const ext = getExtension(filePath);
+    const contentType = getContentType(ext);
+
+    // Start multipart section
+    await writer.write(encoder.encode(`--${boundary}\r\n`));
+    await writer.write(
+      encoder.encode(
+        `Content-Disposition: form-data; name="${filePath}"; filename="${filePath}"\r\n`,
+      ),
+    );
+    await writer.write(encoder.encode(`Content-Type: ${contentType}\r\n`));
+    await writer.write(
+      encoder.encode(`Content-Length: ${contentBytes.length}\r\n`),
+    );
+    await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
+    await writer.write(
+      encoder.encode(`Content-Transfer-Encoding: 8bit\r\n\r\n`),
+    );
+    await writer.write(contentBytes);
+    await writer.write(encoder.encode("\r\n"));
+  }
+
+  /**
+   * Write a file from a single column value
+   */
+  async function writeColumnFile(filePath: string, value: any): Promise<void> {
+    // Check if this file should be filtered
+    const filterResult = shouldFilter(filterOptions, matchers, filePath);
+    if (filterResult.filter) {
+      // Write filtered file with empty content and filter header
+      await writeFilteredFile(filePath, filterResult);
+      return;
+    }
+
+    // Check if the value is a URL
+    const isUrlValue = typeof value === "string" && isUrl(value);
+
+    // Get file extension and content type
+    const ext = getExtension(filePath);
+    const contentType = getContentType(ext);
+    const isBinaryExt = binaryExtensions.includes(ext);
+
+    // Handle binary files with rawUrlPrefix or URL values
+    if (
+      (filterOptions.omitBinary && isBinaryExt) ||
+      (isUrlValue && filterOptions.rawUrlPrefix)
+    ) {
+      await writeEmptyFile(
+        filePath,
+        contentType,
+        isUrlValue ? value : `${filterOptions.rawUrlPrefix}${filePath}`,
+      );
+      return;
+    }
+
+    // Convert value to string or JSON if object
+    let content: string;
+    if (typeof value === "object") {
+      content = JSON.stringify(value, null, 2);
+    } else {
+      content = String(value);
+    }
+
+    const contentBytes = encoder.encode(content);
+
+    // Calculate hash
+    const hash = await generateHash(contentBytes);
+
+    // Start multipart section
+    await writer.write(encoder.encode(`--${boundary}\r\n`));
+    await writer.write(
+      encoder.encode(
+        `Content-Disposition: form-data; name="${filePath}"; filename="${filePath}"\r\n`,
+      ),
+    );
+    await writer.write(encoder.encode(`Content-Type: ${contentType}\r\n`));
+    await writer.write(
+      encoder.encode(`Content-Length: ${contentBytes.length}\r\n`),
+    );
+    await writer.write(encoder.encode(`x-file-hash: ${hash}\r\n`));
+
+    if (isUrlValue) {
+      await writer.write(encoder.encode(`x-url: ${value}\r\n`));
+    }
+
+    await writer.write(
+      encoder.encode(`Content-Transfer-Encoding: 8bit\r\n\r\n`),
+    );
+    await writer.write(contentBytes);
+    await writer.write(encoder.encode("\r\n"));
+  }
+
+  /**
+   * Write a filtered file with status and message
+   */
+  async function writeFilteredFile(
+    filePath: string,
+    filterResult: { filter: boolean; status?: string; message?: string },
+  ): Promise<void> {
+    const ext = getExtension(filePath);
+    const contentType = getContentType(ext);
+
+    await writer.write(encoder.encode(`--${boundary}\r\n`));
+    await writer.write(
+      encoder.encode(
+        `Content-Disposition: form-data; name="${filePath}"; filename="${filePath}"\r\n`,
+      ),
+    );
+    await writer.write(encoder.encode(`Content-Type: ${contentType}\r\n`));
+    await writer.write(
+      encoder.encode(
+        `x-filter: ingestsql;${filterResult.status || "404"};${
+          filterResult.message || ""
+        }\r\n`,
+      ),
+    );
+    await writer.write(
+      encoder.encode(`Content-Transfer-Encoding: 8bit\r\n\r\n`),
+    );
+    await writer.write(encoder.encode("\r\n"));
+  }
+
+  /**
+   * Write an empty file with URL reference
+   */
+  async function writeEmptyFile(
+    filePath: string,
+    contentType: string,
+    url: string,
+  ): Promise<void> {
+    await writer.write(encoder.encode(`--${boundary}\r\n`));
+    await writer.write(
+      encoder.encode(
+        `Content-Disposition: form-data; name="${filePath}"; filename="${filePath}"\r\n`,
+      ),
+    );
+    await writer.write(encoder.encode(`Content-Type: ${contentType}\r\n`));
+    await writer.write(encoder.encode(`x-url: ${url}\r\n`));
+    await writer.write(
+      encoder.encode(`Content-Transfer-Encoding: binary\r\n\r\n`),
+    );
+    await writer.write(encoder.encode("\r\n"));
+  }
 }
