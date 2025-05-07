@@ -25,6 +25,8 @@ export default {
       request.headers.get("X-IS-AUTHENTICATED") === "true";
     const baseLink = `https://github.com${pathname}`;
     const moreToolsLink = `https://forgithub.com${pathname}`;
+
+    let navigation = { "": "Home" };
     // Parse GitHub path components
     let [owner, repo, pageAndExt, branch, ...pathParts] = pathname
       .split("/")
@@ -39,6 +41,7 @@ export default {
       let description = `Popular repos on GitHub`;
 
       const json: StandardURL = {
+        navigation,
         baseLink,
         moreToolsLink,
         pluginId,
@@ -70,6 +73,7 @@ export default {
       const basePath = subpage ? [subpage].concat(basePathParts).join("/") : "";
 
       const json: StandardURL = {
+        navigation,
         baseLink,
         moreToolsLink,
         pluginId,
@@ -98,6 +102,7 @@ export default {
       const basePath = basePathParts.join("/");
       const [pluginId, ext] = (pluginIdAndExt || "").split(".");
       const json: StandardURL = {
+        navigation,
         baseLink,
         moreToolsLink,
         // no branch
@@ -132,6 +137,7 @@ export default {
       const primarySourceSegment = pathname.split("/").slice(1, 4).join("/");
 
       const json: StandardURL = {
+        navigation,
         baseLink,
         moreToolsLink,
         pluginId,
@@ -162,10 +168,22 @@ export default {
     const basePath = pathParts.join("/");
     const primarySourceSegment = `${owner}/${repo}`;
 
+    navigation = {
+      ...navigation,
+      [`${owner}/${repo}`]: "Code",
+      [`${owner}/${repo}/issues`]: "Issues",
+      [`${owner}/${repo}/pulls`]: "Pull Requests",
+      [`${owner}/${repo}/discussions`]: "Discussions",
+      [`${owner}/${repo}/branches`]: "Branches",
+      [`${owner}/${repo}/commits`]: "Commits",
+      [`${owner}/${repo}/releases`]: "Releases",
+    };
+
     // Handle GitHub source types
     switch (page) {
       case "wiki": {
         const json: StandardURL = {
+          navigation,
           baseLink,
           moreToolsLink,
           pluginId: branch || "tree",
@@ -197,6 +215,7 @@ export default {
           );
 
           const json: StandardURL = {
+            navigation,
             baseLink,
             moreToolsLink,
             pluginId: page,
@@ -219,6 +238,7 @@ export default {
       }
       case "issues": {
         const json: StandardURL = {
+          navigation,
           baseLink,
           moreToolsLink,
           pluginId: page,
@@ -240,6 +260,7 @@ export default {
       case "pull":
       case "pulls": {
         const json: StandardURL = {
+          navigation,
           baseLink,
           moreToolsLink,
           pluginId: page,
@@ -260,6 +281,7 @@ export default {
 
       case "discussions": {
         const json: StandardURL = {
+          navigation,
           baseLink,
           moreToolsLink,
           pluginId: page,
@@ -281,7 +303,7 @@ export default {
         const json: StandardURL = {
           baseLink,
           moreToolsLink,
-
+          navigation,
           pluginId: page,
           ext,
           basePath,
@@ -301,6 +323,7 @@ export default {
       case "commits":
       case "commit": {
         const json: StandardURL = {
+          navigation,
           baseLink,
           moreToolsLink,
           pluginId: page,
@@ -322,9 +345,9 @@ export default {
 
       case "releases": {
         const json: StandardURL = {
+          navigation,
           baseLink,
           moreToolsLink,
-
           pluginId: page,
           ext,
           basePath,
@@ -342,9 +365,9 @@ export default {
       }
       case "actions": {
         const json: StandardURL = {
+          navigation,
           baseLink,
           moreToolsLink,
-
           pluginId: page,
           ext,
           basePath,
@@ -373,6 +396,7 @@ export default {
       : `refs/heads/${branch || "main"}`;
     const rawUrlPrefix = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}`;
     const json: StandardURL = {
+      navigation,
       baseLink,
       moreToolsLink,
       pluginId: page,

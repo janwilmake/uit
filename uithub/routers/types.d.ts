@@ -13,7 +13,12 @@ export type StandardURL = {
   rawUrlPrefix?: string;
   baseLink: string;
   moreToolsLink?: string;
+
+  /** Optional: a record map of basePaths (without '/' prefix) and the values being menu titles */
+  navigation?: Record<String<"basePath">, String<"menuTitle">>;
 };
+
+type String<TDescriptor> = string;
 
 /** Ingestplugin is used */
 export type SourceType = "zip" | "tar" | "json" | "sql";

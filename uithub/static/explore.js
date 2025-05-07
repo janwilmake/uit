@@ -19,7 +19,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const currentBasePath = getCurrentBasePath();
     const defaultExpandLevel = getDefaultExpansionLevel();
 
-    filesContent.innerHTML = `
+    // Start with the explorer section
+    let explorerHTML = `
         <div class="flex items-center mb-4">
           <h2 class="text-sm font-semibold uppercase">Explorer</h2>
           <div class="ml-auto flex">
@@ -43,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
   
         <!-- Folder structure -->
-        <div class="folder-structure overflow-x-auto">
+        <div class="folder-structure overflow-x-auto mb-6">
           ${renderTree(
             processTreeData(window.data.tree),
             "project-root",
@@ -55,6 +56,32 @@ document.addEventListener("DOMContentLoaded", function () {
           )}
         </div>
       `;
+
+    // Add navigation menu section if menu is present and not empty
+    let navigationHTML = "";
+    if (
+      window.data.menu &&
+      typeof window.data.menu === "object" &&
+      Object.keys(window.data.menu).length > 0
+    ) {
+      navigationHTML = `
+        <div class="mt-4">
+          <div class="flex items-center mb-4">
+            <h2 class="text-sm font-semibold uppercase">Navigate ${
+              window.data.domain || ""
+            }</h2>
+          </div>
+          
+          <!-- Navigation menu -->
+          <div class="navigation-menu overflow-x-auto">
+            ${renderNavigationMenu(window.data.menu)}
+          </div>
+        </div>
+      `;
+    }
+
+    // Combine both sections
+    filesContent.innerHTML = explorerHTML + navigationHTML;
 
     // Add event listener for toggle files button
     document
@@ -169,6 +196,46 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = url + queryParams;
       });
     });
+
+    // Add event listeners for navigation menu items
+    document.querySelectorAll(".menu-item").forEach((item) => {
+      item.addEventListener("click", function (e) {
+        e.stopPropagation();
+        const pathname = this.dataset.pathname;
+        if (pathname) {
+          window.location.href = pathname;
+        }
+      });
+    });
+  }
+
+  // Render navigation menu from window.data.menu
+  function renderNavigationMenu(menu) {
+    if (!menu || typeof menu !== "object") return "";
+
+    let html = '<ul class="pl-1">';
+
+    for (const pathname in menu) {
+      if (!menu.hasOwnProperty(pathname)) continue;
+
+      const title = menu[pathname];
+
+      html += `
+        <li class="mb-2">
+          <div class="flex items-center p-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 flex-shrink-0 min-w-4">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span class="whitespace-nowrap menu-item cursor-pointer" data-pathname="${pathname}">${title}</span>
+          </div>
+        </li>
+      `;
+    }
+
+    html += "</ul>";
+    return html;
   }
 
   // Process tree data into hierarchical structure
@@ -436,6 +503,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     html += children + "</div></div>";
     return html;
+  }
+
+  // Helper function to format token counts
+  function prettyTokens(count) {
+    if (typeof count !== "number") return "0";
+    if (count === 0) return "0";
+    if (count < 1000) return count.toString();
+    if (count < 1000000) return (count / 1000).toFixed(1) + "k";
+    return (count / 1000000).toFixed(1) + "M";
   }
 
   // Load the explorer content

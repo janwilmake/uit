@@ -191,7 +191,7 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     });
   }
 
-  const { domain, plugin, standardUrl, outputType, needHtml } = result;
+  const { domain, plugin, standardUrl, outputType, needHtml, menu } = result;
 
   const {
     // To load source
@@ -409,6 +409,8 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
   const isTokensCapped = false;
 
   const data = {
+    menu,
+    domain,
     isPaymentRequired: false,
     isTokensCapped,
     tree: treeResult,
@@ -418,7 +420,6 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     balance,
     baseName,
 
-    domain,
     primarySourceSegment,
     pluginId,
     ext,
@@ -650,16 +651,6 @@ const pipeResponse = async (context: {
   if (sourceAuthorization) {
     headers["x-source-authorization"] = sourceAuthorization;
   }
-
-  console.log({
-    ingestUrl,
-    searchUrl,
-    shadowTransformUrl,
-    outputUrl,
-    sourceAuthorization,
-    fullUrl,
-    standardUrl: context.standardUrl,
-  });
 
   // Make a single request to the nested URL
   const response = await fetch(fullUrl, { headers });

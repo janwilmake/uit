@@ -43,6 +43,7 @@ export const router = async (
   status: number;
   error?: string;
   result?: {
+    menu: { [route: string]: string };
     standardUrl: StandardURL;
     domain: string;
     plugin?: Plugin;
@@ -129,9 +130,19 @@ export const router = async (
 
   const realPlugin = plugin && !plugin.disabled ? plugin : undefined;
 
+  const entries = Object.entries(standardUrl.navigation || {}).map(
+    ([key, value]) => [
+      "/" + (isDomain || key === "" ? domain + "/" : "") + key,
+      value,
+    ],
+  );
+  console.log("navi", standardUrl.navigation, entries);
+  const menu = Object.fromEntries(entries);
+
   return {
     status: 200,
     result: {
+      menu,
       standardUrl,
       domain,
       needHtml,
