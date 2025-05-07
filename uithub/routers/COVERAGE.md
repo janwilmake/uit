@@ -59,3 +59,7 @@ TODO
 | Notifications                 | uithub.com/x.com/notifications           | ❌               | ❌                  | ❌     |
 | Explore                       | uithub.com/x.com/explore                 | ❌               | ❌                  | ❌     |
 | Search                        | uithub.com/x.com/search?q=[search_terms] | ❌               | ❌                  | ❌     |
+
+# openapisearch.com
+
+OpenAPISearch will provide crawled openapis in converted formats as a agent-supervised dataset. This is high prio and will be coming soon. Reach out if you have specific needs to an openapi dataset.

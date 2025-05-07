@@ -36,7 +36,7 @@ The following is an example for GitHub, which is also the standard router used w
 
 The uit routing system applies the following rules when a domain does not have its own specified router API. This convention is experimental and will have breaking changes. Feedback much appreciated, let's come up with the best convention together!
 
-1. look for `/archive.zip` at the domain root. If found, this is used as source.
+1. look for `/archive.zip` at the domain root. If found, this is used as source. We can also conventionalise "backracking" support, which would search for archive.zip for any path and go back he pathname until found.
 2. use the `reader.llmtext.com/{domain.tld}/{basePath}` router if not found, which will crawl the website (WIP)
 
 # Creating a router
