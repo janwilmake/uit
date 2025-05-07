@@ -1,12 +1,4 @@
-/**
-News.ycombinator.com router:
-- `/news`, `/front` - redirect to `/tree/items`
-- `/ask`, `/show`, `/jobs`, `/submit`, `/user`, `/newcomments`, `/threads`, `/newest`: - redirect to `/tree` without suffix
-- `/item?id=number` - redirect to `/tree/items/{id}.json`
-- `/{pluginIdAndExt}/{basePath}` - Respond with sql source https://crawler.gcombinator.com. the structure of the response should come from the pathname and is /{pluginIdAndExt}/{...basePath}. that can sometimes be /tree/basePath, then pluginIdAndExt is 'tree' but can be anything else. 
-*/
-
-import { StandardURL } from "./router.js";
+import { StandardURL } from "./types.js";
 
 export default {
   fetch: async (request: Request): Promise<Response> => {
@@ -14,96 +6,177 @@ export default {
     const pathname = url.pathname;
     const searchParams = url.searchParams;
 
-    // Handle item?id=number pattern
-    if (pathname === "/item" && searchParams.has("id")) {
-      const itemId = searchParams.get("id");
-      if (itemId && /^\d+$/.test(itemId)) {
-        return new Response("{}", {
-          status: 307,
-          headers: { Location: `/tree/items/${itemId}.json` },
-        });
+    // Split path into segments
+    const pathSegments = pathname.split("/").filter(Boolean);
+
+    // Check if this is a plugin-prefixed path or a direct HN path
+    let pluginIdAndExt = "tree";
+    let ext: string | undefined;
+    let hnPathSegments: string[] = [...pathSegments];
+    let basePath: string | undefined;
+
+    // Known Hacker News routes that should be preserved as routes
+    const knownHnRoutes = [
+      "news",
+      "newest",
+      "front",
+      "ask",
+      "show",
+      "jobs",
+      "submit",
+      "user",
+      "item",
+      "newcomments",
+      "threads",
+    ];
+
+    // If the first segment isn't a known HN route, treat it as a pluginId
+    if (pathSegments.length > 0 && !knownHnRoutes.includes(pathSegments[0])) {
+      [pluginIdAndExt, ...hnPathSegments] = pathSegments;
+      const parts = pluginIdAndExt.split(".");
+      if (parts.length > 1) {
+        [pluginIdAndExt, ext] = parts;
       }
     }
 
-    // Handle redirects for specific paths
-    if (["/news", "/front"].includes(pathname)) {
-      return new Response("{}", {
-        status: 307,
-        headers: { Location: `/tree/items` },
-      });
-    }
+    // Parse query parameters for item?id= pattern
+    let secondarySourceSegment = "";
+    let sqlQuery = "";
+    let title = "Hacker News";
+    let description = "Hacker News content and discussions";
 
-    // Handle redirects for section paths
+    // Handle different HN routes
     if (
-      [
-        "/ask",
-        "/show",
-        "/jobs",
-        "/submit",
-        "/user",
-        "/newcomments",
-        "/threads",
-        "/newest",
-      ].includes(pathname)
+      hnPathSegments.length === 0 ||
+      hnPathSegments[0] === "news" ||
+      hnPathSegments[0] === "front"
     ) {
-      return new Response("{}", {
-        status: 307,
-        headers: { Location: `/tree` },
-      });
-    }
+      // Front page
+      secondarySourceSegment = "front";
+      title = "Hacker News Front Page";
+      description = "Top stories from Hacker News";
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE type = 'story' AND NOT deleted AND NOT dead ORDER BY score DESC LIMIT 30`,
+      );
+    } else if (hnPathSegments[0] === "newest") {
+      // Newest stories
+      secondarySourceSegment = "newest";
+      title = "Newest Submissions";
+      description = "Most recent submissions to Hacker News";
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE type = 'story' AND NOT deleted AND NOT dead ORDER BY time DESC LIMIT 30`,
+      );
+    } else if (hnPathSegments[0] === "ask") {
+      // Ask HN
+      secondarySourceSegment = "ask";
+      title = "Ask Hacker News";
+      description = "Questions and discussions from the Hacker News community";
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE title LIKE 'Ask HN%' AND type = 'story' AND NOT deleted AND NOT dead ORDER BY score DESC LIMIT 30`,
+      );
+    } else if (hnPathSegments[0] === "show") {
+      // Show HN
+      secondarySourceSegment = "show";
+      title = "Show Hacker News";
+      description = "Projects and creations from the Hacker News community";
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE title LIKE 'Show HN%' AND type = 'story' AND NOT deleted AND NOT dead ORDER BY score DESC LIMIT 30`,
+      );
+    } else if (hnPathSegments[0] === "jobs") {
+      // Jobs
+      secondarySourceSegment = "jobs";
+      title = "Hacker News Jobs";
+      description = "Job listings posted to Hacker News";
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE type = 'job' AND NOT deleted AND NOT dead ORDER BY time DESC LIMIT 30`,
+      );
+    } else if (hnPathSegments[0] === "user" && hnPathSegments.length > 1) {
+      // User profile
+      const username = hnPathSegments[1];
+      secondarySourceSegment = `user/${username}`;
+      title = `Hacker News User: ${username}`;
+      description = `Profile and submissions by ${username}`;
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE by = '${username}' AND NOT deleted AND NOT dead ORDER BY time DESC LIMIT 30`,
+      );
+    } else if (hnPathSegments[0] === "item") {
+      // Item details - from either path or query parameter
+      let itemId: string | null = null;
 
-    // Handle standard plugin pattern: /{pluginIdAndExt}/{basePath}
-    const pathParts = pathname.split("/").filter(Boolean);
-
-    if (pathParts.length > 0) {
-      const [pluginIdAndExt, ...basePathParts] = pathParts;
-      const [pluginId, ext] = (pluginIdAndExt || "").split(".");
-      const basePath = basePathParts.join("/");
-
-      // Create title and description based on the path
-      let title = "Hacker News";
-      let description = "Hacker News content";
-
-      if (basePath.startsWith("items")) {
-        title = "Hacker News Items";
-        description = "Stories and comments from Hacker News";
-      } else if (basePath) {
-        title = `Hacker News ${
-          basePath.charAt(0).toUpperCase() + basePath.slice(1)
-        }`;
-        description = `${
-          basePath.charAt(0).toUpperCase() + basePath.slice(1)
-        } section from Hacker News`;
+      // Check if id is in the path segments
+      if (hnPathSegments.length > 1) {
+        itemId = hnPathSegments[1];
+      }
+      // Otherwise check query parameter
+      else if (searchParams.has("id")) {
+        itemId = searchParams.get("id");
       }
 
-      const json: StandardURL = {
-        pluginId,
-        ext,
-        basePath,
-        primarySourceSegment: "",
-        title,
-        description,
-        sourceType: "sql",
-        omitFirstSegment: false,
-        sourceUrl: `https://crawler.gcombinator.com`,
-      };
-
-      return new Response(JSON.stringify(json, undefined, 2), {
-        headers: { "content-type": "application/json" },
-      });
+      if (itemId && /^\d+$/.test(itemId)) {
+        secondarySourceSegment = `item/${itemId}`;
+        title = `Hacker News Item #${itemId}`;
+        description = `Discussion and details for item #${itemId}`;
+        sqlQuery = encodeURIComponent(
+          `SELECT * FROM items WHERE id = ${itemId}`,
+        );
+      } else {
+        return new Response(
+          JSON.stringify({
+            error: "Invalid Item ID",
+            message: "The item ID is missing or invalid",
+          }),
+          {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          },
+        );
+      }
+    } else if (hnPathSegments[0] === "newcomments") {
+      // New comments
+      secondarySourceSegment = "newcomments";
+      title = "New Comments";
+      description = "Recent comments on Hacker News";
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE has_comments = TRUE AND NOT deleted AND NOT dead ORDER BY time DESC LIMIT 30`,
+      );
+    } else if (hnPathSegments[0] === "threads" && hnPathSegments.length > 1) {
+      // User threads
+      const username = hnPathSegments[1];
+      secondarySourceSegment = `threads/${username}`;
+      title = `${username}'s Threads`;
+      description = `Comment threads by ${username}`;
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE by = '${username}' AND has_comments = TRUE AND NOT deleted AND NOT dead ORDER BY time DESC LIMIT 30`,
+      );
+    } else {
+      // If we get here, we might have a custom path or an unsupported route
+      // Set the segments after the potential plugin as the basePath
+      basePath = hnPathSegments.join("/");
+      secondarySourceSegment = "custom";
+      title = "Hacker News Custom View";
+      description = "Custom view of Hacker News content";
+      sqlQuery = encodeURIComponent(
+        `SELECT * FROM items WHERE NOT deleted AND NOT dead ORDER BY time DESC LIMIT 30`,
+      );
     }
 
-    // Default response for the root path
+    // Handle any additional query parameters from the original request
+
+    // Construct the source URL with the DORM spec
+    const sourceUrl = `https://crawler.gcombinator.com/api/db/query/raw/${sqlQuery}?itemTemplate={type}-{id}-by-{by}-at-{time}.json`;
+
+    // Create the StandardURL response
     const json: StandardURL = {
-      pluginId: "tree",
-      ext: undefined,
-      basePath: undefined,
-      primarySourceSegment: "",
-      title: "Hacker News Front Page",
-      description: "Top stories from Hacker News",
+      pluginId: pluginIdAndExt,
+      ext,
+      basePath,
+      primarySourceSegment: "news.ycombinator.com",
+      secondarySourceSegment,
+      title,
+      description,
       sourceType: "sql",
       omitFirstSegment: false,
-      sourceUrl: "https://crawler.gcombinator.com",
+      sourceUrl,
     };
 
     return new Response(JSON.stringify(json, undefined, 2), {

@@ -14,10 +14,11 @@ import viewHtml from "./static/vscode.html";
 import html404 from "./static/404.html";
 import html429 from "./static/429.html";
 import { RatelimitDO } from "./ratelimiter.js";
-import { OutputType, Plugin, router, StandardURL } from "./routers/router.js";
+import { router } from "./routers/router.js";
 import { escapeHTML, updateIndex } from "./homepage.js";
 import { buildTree, TreeObject } from "./buildTree.js";
 import { uithubMiddleware } from "./uithubMiddleware.js";
+import { StandardURL, OutputType, Plugin } from "./routers/types.js";
 export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
 

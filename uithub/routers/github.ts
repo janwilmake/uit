@@ -1,4 +1,4 @@
-import { StandardURL } from "./standard-url.js";
+import { StandardURL } from "./types.js";
 
 // Helper function to get zip URL for a repo
 function getRepoZipUrl(

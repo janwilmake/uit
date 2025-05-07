@@ -1,30 +1,13 @@
 import github from "./github.js";
 import npmjs from "./npmjs.js";
 import x from "./github.js";
+import defaultFetcher from "./github.js";
+import ycombinatorNews from "./ycombinator.news.js";
 
 import plugins from "../static/plugins.json" assert { type: "json" };
 import domains from "../static/domains.json" assert { type: "json" };
 import { getAuthorization } from "sponsorflare";
-import { StandardURL } from "./standard-url.js";
-
-// todo: to be generated from plugin.schema.json
-export type Plugin = {
-  disabled?: boolean;
-  title: string;
-  domain: string;
-  type: [
-    "ingest",
-    "transform-file",
-    "transform-formdata",
-    "output",
-    "storage",
-    "workflow",
-    "scope",
-  ][number];
-  description: string;
-  endpoint: string;
-  source: string;
-};
+import { OutputType, Plugin, StandardURL } from "./types.js";
 
 const getCrawler = (userAgent: string | null) => {
   const crawlers = [
@@ -45,8 +28,6 @@ const getCrawler = (userAgent: string | null) => {
 
   return crawler;
 };
-
-export type OutputType = "zip" | "txt" | "json" | "yaml" | "md" | "git";
 
 /**
  * Router that takes a request and parses it to determine the URL structure
@@ -79,32 +60,28 @@ export const router = async (
     : url.pathname;
   const userAgent = request.headers.get("user-agent");
   const isGit = userAgent?.startsWith("git/");
-  const item = domains[domain as keyof typeof domains];
 
-  if (!item) {
-    return { status: 404, error: "This domain isn't available yet" };
-  }
-
-  const { mirrorBasePath } = item;
+  // NB: later, routers can be made fully decoupled and come from a centralised file for external proxies
+  const item: { mirrorBasePath: string } | undefined =
+    domains[domain as keyof typeof domains];
 
   const fetcher =
     domain === "github.com"
       ? github.fetch
       : domain === "npmjs.com"
       ? npmjs.fetch
+      : domain === "news.ycombinator.com"
+      ? ycombinatorNews.fetch
       : domain === "x.com"
       ? x.fetch
-      : undefined;
-
-  if (!fetcher) {
-    // TODO: Add default fetch to try `/archive.zip` if a domain is given that isn't proxied
-
-    return { status: 404, error: "This domain isn't available yet" };
-  }
+      : defaultFetcher.fetch;
 
   const response = await fetcher(
-    new Request(mirrorBasePath + pathname, {
-      headers: { "X-IS-AUTHENTICATED": String(!!access_token) },
+    new Request(`https://${domain}` + pathname, {
+      headers: {
+        "X-IS-AUTHENTICATED": String(!!access_token),
+        "X-DOMAIN": domain,
+      },
     }),
   );
 

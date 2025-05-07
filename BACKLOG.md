@@ -4,7 +4,7 @@
 
 - Add ability to omit filtered files out of the tree when it makes sense (see https://x.com/janwilmake/status/1916841093162831924). Goal would be to get the tree that makes most sense under 10k tokens for any repo, even for bun.
 
-# creating sha-cached basePath-based inferences (big on performance)
+# Creating sha-cached basePath-based inferences (big on performance)
 
 Figure out how I can nicely benchmark speeds in different ways of the different plugins and the time for estabilishing the connection between the different workers. Do another deepdive on how to make this as fast as the original uithub on vercel.
 
@@ -22,7 +22,7 @@ Only do the above for public repos with permissive lisence allowing commercial r
 > [!WARNING]
 > Caching introduces legal risk
 
-# X plugin
+# X Plugin
 
 1. give context of x threads found in the data
 2. determine the key keyword or keywords that identify this repo
@@ -120,7 +120,7 @@ Two strategies are possible to figure out the zip url and raw url:
 
 It's best to create a function to do this trial and error. This would most likely just be ratelimited by 5000 req/hour/ip. Additionally we could cache the tagnames and branchnames - but not the shas they're tied to. However, I don't think this is worth the additional complexity as the amount of trials before a hit is likely between 2-3 on average (assuming we start with 2 in parallel).
 
-# uit cli
+# UIT cli
 
 Installs context from url into standard location `.rules`
 

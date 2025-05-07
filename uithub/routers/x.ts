@@ -8,7 +8,7 @@
 // 1. check the url structure on X for username. is it really just the username/status/{id} and username/{page} or is there more to it?
 // 2. if its really just that, either decide to have the plugin BEFORE the username, or after the username.
 
-import { StandardURL } from "./router.js";
+import { StandardURL } from "./types.js";
 
 export default {
   fetch: async (request: Request): Promise<Response> => {
