@@ -140,8 +140,11 @@ function isAuthenticated(request: Request, credentials: string): boolean {
   const authHeader = request.headers.get("Authorization");
   if (!authHeader) return false;
 
+  console.log({ credentials, authHeader });
+
   if (authHeader.startsWith("Basic ")) {
     const base64Credentials = authHeader.slice(6);
+
     return base64Credentials === btoa(credentials);
   }
 

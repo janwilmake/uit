@@ -183,16 +183,6 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     });
   }
 
-  const headers: Record<string, string> = {
-    Authorization: `Basic ${btoa(env.CREDENTIALS)}`,
-  };
-
-  if (access_token) {
-    // as sponsorflare uses a github access token 1:1
-    // it can be used directly as github authorization when accessing the source
-    headers["x-source-authorization"] = `token ${access_token}`;
-  }
-
   const { error, status, result } = await router(request);
 
   if (!result || error) {
@@ -213,6 +203,8 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     description,
     ogImageUrl,
 
+    baseLink,
+    moreToolsLink,
     // URL BUILDUP
     primarySourceSegment,
     pluginId,
@@ -220,8 +212,19 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     secondarySourceSegment,
     basePath,
   } = standardUrl;
+
   if (!sourceType || !sourceUrl) {
     return new Response("Source not found", { status: 404 });
+  }
+
+  const headers: Record<string, string> = {
+    Authorization: `Basic ${btoa(env.CREDENTIALS)}`,
+  };
+
+  if (access_token) {
+    // as sponsorflare uses a github access token 1:1
+    // it can be used directly as github authorization when accessing the source
+    headers["x-source-authorization"] = `token ${access_token}`;
   }
 
   //   const treeUrl = `https://ziptree.uithub.com/tree/${sourceUrl}?type=token-tree&omitFirstSegment=true`;
@@ -271,6 +274,13 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     searchParams.append("basePath", basePath);
   }
 
+  const sourceAuthorization =
+    domain === "news.ycombinator.com"
+      ? `Bearer ${env.CREDENTIALS}`
+      : access_token
+      ? `token ${access_token}`
+      : undefined;
+
   const {
     response,
     outputUrl,
@@ -281,11 +291,12 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     standardUrl,
     outputType,
     CREDENTIALS: env.CREDENTIALS,
-    sourceAuthorization: access_token ? `token ${access_token}` : undefined,
+    sourceAuthorization,
 
     // whether or not to immediately include piping output
     pipeOutput: outputType === "zip" || !needHtml,
   });
+
   const contentType = response.headers.get("content-type");
   if (!response.ok || !response.body || !contentType) {
     const message = access_token
@@ -359,20 +370,38 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     return new Response("Tree error: Tree not provided", { status: 500 });
   }
 
-  console.log({ treeResult });
   // Gather the data
 
-  const currentTokens = Math.round(contextString.length / 500) * 100;
+  const prettyTokens = (count: number) => {
+    if (count < 100) {
+      return count;
+    }
+    if (count < 1000) {
+      return Math.round(count / 100) * 100;
+    }
+    if (count < 10000) {
+      return String(Math.round((count / 1000) * 10) / 10) + "k";
+    }
+    if (count < 1000000) {
+      return String(Math.round(count / 1000)) + "k";
+    }
+    return String(Math.round(count / 100000) / 10) + "M";
+  };
+
+  const currentTokens = prettyTokens(contextString.length / 5);
+  const baseTokens = prettyTokens(treeResult["/"]?.tokens);
+
+  const baseName = [primarySourceSegment, secondarySourceSegment]
+    .filter((x) => !!x)
+    .join("/");
 
   // keys that will be replaced in html looking for {{varname}}
   const template = {
     currentTokens,
-    baseLink: `https://${domain}/${primarySourceSegment}`,
-    baseName: primarySourceSegment,
-    baseTokens: treeResult["/"]?.tokens,
-    moreToolsLink: domain
-      ? "#"
-      : `https://forgithub.com/${primarySourceSegment}`,
+    baseLink: baseLink || "#",
+    baseName,
+    baseTokens,
+    moreToolsLink: moreToolsLink || "#",
     contextString: escapeHTML(contextString),
   };
 
@@ -387,7 +416,9 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     owner_login,
     avatar_url,
     balance,
+    baseName,
 
+    domain,
     primarySourceSegment,
     pluginId,
     ext,
@@ -539,6 +570,8 @@ const pipeResponse = async (context: {
       ? `https://ingesttar.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
       : sourceType === "json"
       ? `https://ingestjson.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      : sourceType === "sql"
+      ? `https://ingestsql.uithub.com/${sourceUrl}`
       : undefined;
   if (!plugin) {
     // no plugin. good

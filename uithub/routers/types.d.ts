@@ -11,6 +11,8 @@ export type StandardURL = {
   title?: string;
   description?: string;
   rawUrlPrefix?: string;
+  baseLink: string;
+  moreToolsLink?: string;
 };
 
 /** Ingestplugin is used */

@@ -4,32 +4,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Track file visibility state - using localStorage
   let showFiles = localStorage.getItem("showFiles") === "true";
 
-  const prettyTokens = (count) => {
-    if (count < 100) {
-      return count;
-    }
-    if (count < 1000) {
-      return Math.round(count / 100) * 100;
-    }
-    if (count < 10000) {
-      return String(Math.round((count / 1000) * 10) / 10) + "k";
-    }
-    if (count < 1000000) {
-      return String(Math.round(count / 1000)) + "k";
-    }
-    return String(Math.round(count / 100000) / 10) + "M";
-  };
-
   // Get the current base path from window.data
   function getCurrentBasePath() {
     return window.data.basePath || "";
-  }
-
-  // Get the root folder name
-  function getRootFolderName() {
-    return `${
-      window.data.primarySourceSegment
-    }${window.data.secondarySourceSegment ? `/${window.data.secondarySourceSegment}` : ""}`;
   }
 
   // Calculate default expansion level based on current path
@@ -376,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="flex items-center p-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded ${folderClass}">
             ${folderIcon}
             <span class="whitespace-nowrap folder-item cursor-pointer ${folderClass}" data-path="${path}">${
-      name === "project-root" ? getRootFolderName() : name
+      name === "project-root" ? window.data.baseName : name
     }</span>
             ${
               tree.__size === 0

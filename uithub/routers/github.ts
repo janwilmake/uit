@@ -23,7 +23,8 @@ export default {
     const pathname = new URL(request.url).pathname;
     const isAuthenticated =
       request.headers.get("X-IS-AUTHENTICATED") === "true";
-
+    const baseLink = `https://github.com${pathname}`;
+    const moreToolsLink = `https://forgithub.com${pathname}`;
     // Parse GitHub path components
     let [owner, repo, pageAndExt, branch, ...pathParts] = pathname
       .split("/")
@@ -38,6 +39,8 @@ export default {
       let description = `Popular repos on GitHub`;
 
       const json: StandardURL = {
+        baseLink,
+        moreToolsLink,
         pluginId,
         ext,
         basePath: basePathParts.join("/"),
@@ -67,6 +70,8 @@ export default {
       const basePath = subpage ? [subpage].concat(basePathParts).join("/") : "";
 
       const json: StandardURL = {
+        baseLink,
+        moreToolsLink,
         pluginId,
         ext,
         basePath,
@@ -93,6 +98,8 @@ export default {
       const basePath = basePathParts.join("/");
       const [pluginId, ext] = (pluginIdAndExt || "").split(".");
       const json: StandardURL = {
+        baseLink,
+        moreToolsLink,
         // no branch
         basePath,
         primarySourceSegment: owner + "/-",
@@ -125,6 +132,8 @@ export default {
       const primarySourceSegment = pathname.split("/").slice(1, 4).join("/");
 
       const json: StandardURL = {
+        baseLink,
+        moreToolsLink,
         pluginId,
         ext,
         basePath,
@@ -155,8 +164,10 @@ export default {
 
     // Handle GitHub source types
     switch (page) {
-      case "wiki":
+      case "wiki": {
         const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
           pluginId: branch || "tree",
           ext,
           basePath,
@@ -170,8 +181,8 @@ export default {
         return new Response(JSON.stringify(json, undefined, 2), {
           headers: { "content-type": "application/json" },
         });
-
-      case "compare":
+      }
+      case "compare": {
         // For compare, we expect format: /owner/repo/compare/base...head
         const compareParams = branch; // branch holds "base...head"
         if (compareParams && compareParams.includes("...")) {
@@ -186,6 +197,8 @@ export default {
           );
 
           const json: StandardURL = {
+            baseLink,
+            moreToolsLink,
             pluginId: page,
             ext,
             basePath,
@@ -203,163 +216,151 @@ export default {
           });
         }
         break;
-
-      case "issues":
-        return new Response(
-          JSON.stringify(
-            {
-              pluginId: page,
-              ext,
-              basePath,
-              primarySourceSegment,
-              secondarySourceSegment: "issues",
-              title: `GitHub ${primarySourceSegment} Issues`,
-              description: `LLM context for issues in ${primarySourceSegment}`,
-              sourceType: "json",
-              omitFirstSegment: false,
-              sourceUrl: `https://cache.forgithub.com/${primarySourceSegment}/issues`,
-            },
-            undefined,
-            2,
-          ),
-          { headers: { "content-type": "application/json" } },
-        );
+      }
+      case "issues": {
+        const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
+          pluginId: page,
+          ext,
+          basePath,
+          primarySourceSegment,
+          secondarySourceSegment: "issues",
+          title: `GitHub ${primarySourceSegment} Issues`,
+          description: `LLM context for issues in ${primarySourceSegment}`,
+          sourceType: "json",
+          omitFirstSegment: false,
+          sourceUrl: `https://cache.forgithub.com/${primarySourceSegment}/issues`,
+        };
+        return new Response(JSON.stringify(json, undefined, 2), {
+          headers: { "content-type": "application/json" },
+        });
+      }
 
       case "pull":
-      case "pulls":
-        return new Response(
-          JSON.stringify(
-            {
-              pluginId: page,
-              ext,
-              basePath,
-              primarySourceSegment,
-              secondarySourceSegment: "pulls",
-              title: `GitHub ${primarySourceSegment} Pull Requests`,
-              description: `LLM context for pull requests in ${primarySourceSegment}`,
-              sourceType: "json",
-              omitFirstSegment: false,
-              sourceUrl: `https://cache.forgithub.com/${primarySourceSegment}/pulls`,
-            },
-            undefined,
-            2,
-          ),
-          { headers: { "content-type": "application/json" } },
-        );
+      case "pulls": {
+        const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
+          pluginId: page,
+          ext,
+          basePath,
+          primarySourceSegment,
+          secondarySourceSegment: "pulls",
+          title: `GitHub ${primarySourceSegment} Pull Requests`,
+          description: `LLM context for pull requests in ${primarySourceSegment}`,
+          sourceType: "json",
+          omitFirstSegment: false,
+          sourceUrl: `https://cache.forgithub.com/${primarySourceSegment}/pulls`,
+        };
+        return new Response(JSON.stringify(json, undefined, 2), {
+          headers: { "content-type": "application/json" },
+        });
+      }
 
-      case "discussions":
-        return new Response(
-          JSON.stringify(
-            {
-              pluginId: page,
-              ext,
-              basePath,
-              primarySourceSegment,
-              secondarySourceSegment: "discussions",
-              title: `GitHub ${primarySourceSegment} Discussions`,
-              description: `LLM context for discussions in ${primarySourceSegment}`,
-              sourceType: "json",
-              omitFirstSegment: false,
-              sourceUrl: `https://cache.forgithub.com/${primarySourceSegment}/discussions`,
-            },
-            undefined,
-            2,
-          ),
-          {
-            headers: { "content-type": "application/json" },
-          },
-        );
+      case "discussions": {
+        const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
+          pluginId: page,
+          ext,
+          basePath,
+          primarySourceSegment,
+          secondarySourceSegment: "discussions",
+          title: `GitHub ${primarySourceSegment} Discussions`,
+          description: `LLM context for discussions in ${primarySourceSegment}`,
+          sourceType: "json",
+          omitFirstSegment: false,
+          sourceUrl: `https://cache.forgithub.com/${primarySourceSegment}/discussions`,
+        };
+        return new Response(JSON.stringify(json, undefined, 2), {
+          headers: { "content-type": "application/json" },
+        });
+      }
+      case "branches": {
+        const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
 
-      case "branches":
-        return new Response(
-          JSON.stringify(
-            {
-              pluginId: page,
-              ext,
-              basePath,
-              primarySourceSegment,
-              secondarySourceSegment: "branches",
-              title: `GitHub ${primarySourceSegment} Branches`,
-              description: `Branch information and last commits for ${primarySourceSegment}`,
-              sourceType: "json",
-              omitFirstSegment: false,
-              sourceUrl: `https://log.forgithub.com/${primarySourceSegment}/branches`,
-            },
-            undefined,
-            2,
-          ),
-          { headers: { "content-type": "application/json" } },
-        );
+          pluginId: page,
+          ext,
+          basePath,
+          primarySourceSegment,
+          secondarySourceSegment: "branches",
+          title: `GitHub ${primarySourceSegment} Branches`,
+          description: `Branch information and last commits for ${primarySourceSegment}`,
+          sourceType: "json",
+          omitFirstSegment: false,
+          sourceUrl: `https://log.forgithub.com/${primarySourceSegment}/branches`,
+        };
+        return new Response(JSON.stringify(json, undefined, 2), {
+          headers: { "content-type": "application/json" },
+        });
+      }
 
       case "commits":
-      case "commit":
-        return new Response(
-          JSON.stringify(
-            {
-              pluginId: page,
-              ext,
-              basePath,
-              primarySourceSegment,
-              secondarySourceSegment: "commits",
-              title: `GitHub ${primarySourceSegment} Commits`,
-              description: `Commit history and contributor info for ${primarySourceSegment}`,
-              sourceType: "json",
-              omitFirstSegment: false,
-              sourceUrl: `https://log.forgithub.com/${primarySourceSegment}/commits`,
-            },
-            undefined,
-            2,
-          ),
-          {
-            headers: { "content-type": "application/json" },
-          },
-        );
+      case "commit": {
+        const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
+          pluginId: page,
+          ext,
+          basePath,
+          primarySourceSegment,
+          secondarySourceSegment: "commits",
+          title: `GitHub ${primarySourceSegment} Commits`,
+          description: `Commit history and contributor info for ${primarySourceSegment}`,
+          sourceType: "json",
+          omitFirstSegment: false,
+          sourceUrl: `https://log.forgithub.com/${primarySourceSegment}/commits`,
+        };
 
-      case "releases":
-        return new Response(
-          JSON.stringify(
-            {
-              pluginId: page,
-              ext,
-              basePath,
-              primarySourceSegment,
-              secondarySourceSegment: "releases",
-              title: `GitHub ${primarySourceSegment} Releases`,
-              description: `Release information for ${primarySourceSegment}`,
-              sourceType: "json",
-              omitFirstSegment: false,
-              sourceUrl: `https://log.forgithub.com/${primarySourceSegment}/releases`,
-            },
-            undefined,
-            2,
-          ),
-          {
-            headers: { "content-type": "application/json" },
-          },
-        );
+        return new Response(JSON.stringify(json, undefined, 2), {
+          headers: { "content-type": "application/json" },
+        });
+      }
 
-      case "actions":
-        return new Response(
-          JSON.stringify(
-            {
-              pluginId: page,
-              ext,
-              basePath,
-              primarySourceSegment,
-              secondarySourceSegment: "actions",
-              title: `GitHub ${primarySourceSegment} Actions`,
-              description: `GitHub Actions workflows for ${primarySourceSegment}`,
-              sourceType: "json",
-              omitFirstSegment: false,
-              sourceUrl: `https://actions.forgithub.com/${primarySourceSegment}`,
-            },
-            undefined,
-            2,
-          ),
-          {
-            headers: { "content-type": "application/json" },
-          },
-        );
+      case "releases": {
+        const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
+
+          pluginId: page,
+          ext,
+          basePath,
+          primarySourceSegment,
+          secondarySourceSegment: "releases",
+          title: `GitHub ${primarySourceSegment} Releases`,
+          description: `Release information for ${primarySourceSegment}`,
+          sourceType: "json",
+          omitFirstSegment: false,
+          sourceUrl: `https://log.forgithub.com/${primarySourceSegment}/releases`,
+        };
+        return new Response(JSON.stringify(json, undefined, 2), {
+          headers: { "content-type": "application/json" },
+        });
+      }
+      case "actions": {
+        const json: StandardURL = {
+          baseLink,
+          moreToolsLink,
+
+          pluginId: page,
+          ext,
+          basePath,
+          primarySourceSegment,
+          secondarySourceSegment: "actions",
+          title: `GitHub ${primarySourceSegment} Actions`,
+          description: `GitHub Actions workflows for ${primarySourceSegment}`,
+          sourceType: "json",
+          omitFirstSegment: false,
+          sourceUrl: `https://actions.forgithub.com/${primarySourceSegment}`,
+        };
+
+        return new Response(JSON.stringify(json, undefined, 2), {
+          headers: { "content-type": "application/json" },
+        });
+      }
     }
 
     // Default repository/file handling
@@ -372,6 +373,8 @@ export default {
       : `refs/heads/${branch || "main"}`;
     const rawUrlPrefix = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}`;
     const json: StandardURL = {
+      baseLink,
+      moreToolsLink,
       pluginId: page,
       ext,
       basePath,

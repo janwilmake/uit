@@ -22,6 +22,22 @@
     <title></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+
+        const prettyTokens = (count) => {
+            if (count < 100) {
+                return count;
+            }
+            if (count < 1000) {
+                return Math.round(count / 100) * 100;
+            }
+            if (count < 10000) {
+                return String(Math.round((count / 1000) * 10) / 10) + "k";
+            }
+            if (count < 1000000) {
+                return String(Math.round(count / 1000)) + "k";
+            }
+            return String(Math.round(count / 100000) / 10) + "M";
+        };
         // Get current path from window.location
         const currentPath = window.location.pathname;
         const searchParams = new URLSearchParams(window.location.search);
@@ -290,7 +306,7 @@
                 {{baseName}} <span class="pl-1.5 text-[10px] text-gray-400">{{baseTokens}} tokens</span>
             </a>
 
-            <a href="{{moreToolsLink}}"
+            <a id="more-tools-button" href="{{moreToolsLink}}"
                 class="text-xs bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md flex items-center hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
@@ -459,6 +475,11 @@
         window.addEventListener('DOMContentLoaded', () => {
             initFormatSelector();
 
+            const moreToolsButton = document.getElementById("more-tools-button");
+
+            if (moreToolsButton.href.endsWith("#")) {
+                moreToolsButton.remove()
+            }
             // Check if there is an active panel saved
             if (activePanelId) {
                 // Activate the corresponding panel

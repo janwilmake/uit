@@ -24,10 +24,8 @@ All in all, I think this is a better intermediate layer, where ultimately, the r
 
 # TODO
 
-- Specify how a domain router should work
-- Try it with hackernews by tying its router to this instead, so I can has something similar to the actual hackernews routing.
-- Make the hackernews router fully remote in `gcombinator.router`
-- If that works, already make that accessible via `uuithub.com/news.ycombinator.com/*`
-- Solve the plugin problem where that doesn't fit via a logical redirect (first segment becoming a plugin) if the path follows original HN. No redirect needed per se, as long as it has `pluginId` and `secondaryPageThing` while primary is empty. This way, navigation should work as desired.
-
-HUGE HUGE HUGE. Once this works, I got the frontend for the DB, basically. Now improve https://github.com/janwilmake/hackernews-crawler to get the data near-perfect. Huge story! The next step would be coming up with 1000 keywords based on frequent tech searches leading to YCombinator. Each article should have 10 hot keywords assigned in 10 indexed columns. A search should yield the top 10 keywords, a weighted scoring will be back wihtin a second. I now have google-grade hackernews search. Now do the same for repos on github and people on X.
+- ✅ Specify how a domain router should work
+- ✅ Try it with hackernews by tying its router to this instead, so I can has something similar to the actual hackernews routing.
+- ✅ If that works, already make that accessible via `uuithub.com/news.ycombinator.com/*`
+- ✅ Solve the plugin problem where that doesn't fit via a logical redirect (first segment becoming a plugin) if the path follows original HN. No redirect needed per se, as long as it has `pluginId` and `secondaryPageThing` while primary is empty. This way, navigation should work as desired.
+- 🔥 HUGE HUGE HUGE. Once this works, I got the frontend for the DB, basically.

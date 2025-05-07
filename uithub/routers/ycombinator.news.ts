@@ -5,9 +5,10 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const searchParams = url.searchParams;
-
+    console.log({ pathname });
     // Split path into segments
     const pathSegments = pathname.split("/").filter(Boolean);
+    const baseLink = "https://news.ycombinator.com" + pathname;
 
     // Check if this is a plugin-prefixed path or a direct HN path
     let pluginIdAndExt = "tree";
@@ -90,9 +91,15 @@ export default {
       sqlQuery = encodeURIComponent(
         `SELECT * FROM items WHERE type = 'job' AND NOT deleted AND NOT dead ORDER BY time DESC LIMIT 30`,
       );
-    } else if (hnPathSegments[0] === "user" && hnPathSegments.length > 1) {
-      // User profile
-      const username = hnPathSegments[1];
+    } else if (hnPathSegments[0] === "user") {
+      const username =
+        hnPathSegments.length > 1
+          ? hnPathSegments[1]
+          : searchParams.has("id")
+          ? searchParams.get("id")
+          : //default
+            "pg";
+
       secondarySourceSegment = `user/${username}`;
       title = `Hacker News User: ${username}`;
       description = `Profile and submissions by ${username}`;
@@ -163,14 +170,15 @@ export default {
     // Handle any additional query parameters from the original request
 
     // Construct the source URL with the DORM spec
-    const sourceUrl = `https://crawler.gcombinator.com/api/db/query/raw/${sqlQuery}?itemTemplate={type}-{id}-by-{by}-at-{time}.json`;
+    const sourceUrl = `https://crawler.gcombinator.com/api/db/query/raw/${sqlQuery}?itemTemplate={id}.json`;
 
     // Create the StandardURL response
     const json: StandardURL = {
+      baseLink,
       pluginId: pluginIdAndExt,
       ext,
       basePath,
-      primarySourceSegment: "news.ycombinator.com",
+      primarySourceSegment: "",
       secondarySourceSegment,
       title,
       description,
