@@ -1,3 +1,5 @@
+`&basePath=`
+
 # TODO
 
 1. ✅ make it usable and gather early feedback (silently open source it) (TARGET: april 8, 2025)

@@ -1,4 +1,4 @@
-import { StandardURL } from "./router.js";
+import { StandardURL } from "./StandardURL";
 
 /**
  * This is the domain-specific router that determines the domain-specific decomposition
@@ -107,6 +107,8 @@ export default {
       title,
       omitFirstSegment: true,
       sourceType: "tar",
+      baseLink: "https://npmjs.com" + pathname,
+
       sourceUrl: tarballUrl,
       rawUrlPrefix,
     };

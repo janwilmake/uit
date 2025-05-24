@@ -1,4 +1,4 @@
-import { StandardURL } from "./types.js";
+import { StandardURL } from "./StandardURL";
 
 // Helper function to get zip URL for a repo
 function getRepoZipUrl(
@@ -50,9 +50,9 @@ export default {
         primarySourceSegment: `-`,
         title,
         description,
-        sourceType: "json",
         omitFirstSegment: false,
         sourceUrl: `https://popular.forgithub.com/index.json`,
+        sourceType: "json",
       };
 
       return new Response(JSON.stringify(json, undefined, 2), {

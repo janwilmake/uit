@@ -1,4 +1,4 @@
-import { StandardURL } from "./types.js";
+import { StandardURL } from "./StandardURL.js";
 
 export default {
   fetch: async (request: Request): Promise<Response> => {
@@ -170,7 +170,7 @@ export default {
     // Handle any additional query parameters from the original request
 
     // Construct the source URL with the DORM spec
-    const sourceUrl = `https://crawler.gcombinator.com/api/db/query/raw/${sqlQuery}?itemTemplate={id}.json`;
+    const sourceUrl = `https://ingestsql.uithub.com/https://crawler.gcombinator.com/api/db/query/raw/${sqlQuery}?itemTemplate={id}.json`;
 
     // Create the StandardURL response
     const json: StandardURL = {
@@ -182,7 +182,7 @@ export default {
       secondarySourceSegment,
       title,
       description,
-      sourceType: "sql",
+      sourceType: "formdata",
       omitFirstSegment: false,
       sourceUrl,
     };

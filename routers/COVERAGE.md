@@ -1,7 +1,3 @@
-# Implemented routers (so far)
-
-The following routers are partly implemented. This document serves as the central source of progress for the implemented routers, showing which URLs are implemented and functional.
-
 ## github.com (default router)
 
 | Resource Type                          | URL Pattern                                                       | Routing Complete | Implementation Done | Stable |
@@ -40,10 +36,6 @@ The following routers are partly implemented. This document serves as the centra
 | Package version        | uithub.com/npmjs.com/package/[package_name]/v/[version]          | ✅               | ✅                  | ✅     |
 | Scoped package version | uithub.com/npmjs.com/package/@[scope]/[package_name]/v/[version] | ✅               | ✅                  | ✅     |
 
-## news.ycombinator.com
-
-TODO
-
 ## x.com
 
 | Resource Type                 | URL Pattern                              | Routing Complete | Implementation Done | Stable |
@@ -63,3 +55,13 @@ TODO
 # openapisearch.com
 
 OpenAPISearch will provide crawled openapis in converted formats as a agent-supervised dataset. This is high prio and will be coming soon. Reach out if you have specific needs to an openapi dataset.
+
+Here we wanna find a url structure as well that works nicely for domains as well as for github repos. the simplest way is probably:
+
+- decode url
+- remove protocol `https?://` (redirect)
+- remove `.com` (redirect)
+- remove suffix `/openapi.json` (redirect)
+- keep a harcoded list of storage domains such as github, npm, etc, that allow alternative name:
+  - openapisearch.com/https://github.com/janwilmake/openapisearch/tree/main/openapi.json -> openapisearch/janwilmake_openapisearch.githus
+  - openapisearch/janwilmake_openapisearch.githus/handmade/brandwatch.json

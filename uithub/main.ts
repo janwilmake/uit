@@ -14,11 +14,13 @@ import viewHtml from "./static/vscode.html";
 import html404 from "./static/404.html";
 import html429 from "./static/429.html";
 import { RatelimitDO } from "./ratelimiter.js";
-import { router } from "./routers/router.js";
+import { StandardURL } from "../routers/StandardURL.js";
 import { escapeHTML, updateIndex } from "./homepage.js";
 import { buildTree, TreeObject } from "./buildTree.js";
-import { uithubMiddleware } from "./uithubMiddleware.js";
-import { StandardURL, OutputType, Plugin } from "./routers/types.js";
+import { OutputType, Plugin } from "./types.js";
+import plugins from "./static/plugins.json" assert { type: "json" };
+import { getAuthorization } from "sponsorflare";
+
 export { SponsorDO } from "sponsorflare";
 export { RatelimitDO } from "./ratelimiter.js";
 
@@ -40,19 +42,6 @@ const fillTemplate = (html: string, template: { [key: string]: any }) => {
 const requestHandler = async (request: Request, env: Env, context: any) => {
   const url = new URL(request.url);
   const userAgent = request.headers.get("user-agent") || "";
-
-  const uithubResponse = await uithubMiddleware(
-    request,
-    (request) => requestHandler(request, env, context),
-    // where the root of this domain is found
-    "/janwilmake/uit/tree/main/uithub",
-    env.CREDENTIALS,
-  );
-
-  if (uithubResponse) {
-    return uithubResponse;
-  }
-
   // More specific regex that tries to exclude larger tablets
   const mobileRegex =
     /Android(?!.*Tablet)|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
@@ -194,10 +183,6 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
   const { domain, plugin, standardUrl, outputType, needHtml, menu } = result;
 
   const {
-    // To load source
-    sourceUrl,
-    sourceType,
-
     // FOR HTML
     title,
     description,
@@ -212,10 +197,6 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     secondarySourceSegment,
     basePath,
   } = standardUrl;
-
-  if (!sourceType || !sourceUrl) {
-    return new Response("Source not found", { status: 404 });
-  }
 
   const headers: Record<string, string> = {
     Authorization: `Basic ${btoa(env.CREDENTIALS)}`,
@@ -292,7 +273,6 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
     outputType,
     CREDENTIALS: env.CREDENTIALS,
     sourceAuthorization,
-
     // whether or not to immediately include piping output
     pipeOutput: outputType === "zip" || !needHtml,
   });
@@ -428,11 +408,11 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
   };
 
   // this is it
-  const pathname = `/${primarySourceSegment}/${pluginId || "tree"}${
-    ext ? `.${ext}` : ""
-  }${secondarySourceSegment ? `/${secondarySourceSegment}` : ""}${
-    basePath ? `/${basePath}` : ""
-  }`;
+  // const pathname = `/${primarySourceSegment}/${pluginId || "tree"}${
+  //   ext ? `.${ext}` : ""
+  // }${secondarySourceSegment ? `/${secondarySourceSegment}` : ""}${
+  //   basePath ? `/${basePath}` : ""
+  // }`;
 
   const replacedHtml = viewHtml
     .replace(
@@ -481,6 +461,168 @@ const requestHandler = async (request: Request, env: Env, context: any) => {
       //    "default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none'; form-action 'self'; base-uri 'self';",
     },
   });
+};
+
+const getCrawler = (userAgent: string | null) => {
+  const crawlers = [
+    { name: "Facebook", userAgentRegex: /facebookexternalhit|Facebot/ },
+    { name: "Twitter", userAgentRegex: /Twitterbot/ },
+    { name: "LinkedIn", userAgentRegex: /LinkedInBot/ },
+    { name: "Slack", userAgentRegex: /Slackbot-LinkExpanding/ },
+    { name: "Discord", userAgentRegex: /Discordbot/ },
+    { name: "WhatsApp", userAgentRegex: /WhatsApp/ },
+    { name: "Telegram", userAgentRegex: /TelegramBot/ },
+    { name: "Pinterest", userAgentRegex: /Pinterest/ },
+    { name: "Google", userAgentRegex: /Googlebot/ },
+    { name: "Bing", userAgentRegex: /bingbot/ },
+  ];
+  const crawler = crawlers.find((item) =>
+    item.userAgentRegex.test(userAgent || ""),
+  )?.name;
+
+  return crawler;
+};
+
+/** fetcher that is passed env and then fetches */
+const fetcher = (
+  env: Env,
+  input: RequestInfo | URL,
+  init?: RequestInit<RequestInitCfProperties>,
+) => {
+  const fetcher =
+    domain === "github.com"
+      ? github.fetch
+      : domain === "npmjs.com"
+      ? npmjs.fetch
+      : domain === "news.ycombinator.com"
+      ? ycombinatorNews.fetch
+      : domain === "x.com"
+      ? x.fetch
+      : defaultFetcher.fetch;
+};
+/**
+ * Router that takes a request and parses it to determine the URL structure
+ *
+ * The goal is to have a domain-specific router for every domain where the path is mapped to:
+ * - a source file (zip, json, or other)
+ * - a plugin
+ * - a base path
+ */
+export const router = async (
+  request: Request,
+): Promise<{
+  status: number;
+  error?: string;
+  result?: {
+    ingestUrl: string;
+    menu: { [route: string]: string };
+    standardUrl: StandardURL;
+    domain: string;
+    plugin?: Plugin;
+    outputType: OutputType;
+    needHtml: boolean;
+  };
+}> => {
+  const { access_token } = getAuthorization(request);
+  const url = new URL(request.url);
+  const ownerOrDomain = url.pathname.split("/")[1];
+  const isDomain = ownerOrDomain.includes(".");
+  const domain = isDomain ? ownerOrDomain : "github.com";
+  const pathname = isDomain
+    ? url.pathname.split("/").slice(1).join("/")
+    : url.pathname;
+  const userAgent = request.headers.get("user-agent");
+  const isGit = userAgent?.startsWith("git/");
+
+  // move to other place
+  let ingestUrl: string | undefined =
+    sourceType === "zip"
+      ? `https://ingestzip.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      : sourceType === "tar"
+      ? `https://ingesttar.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      : sourceType === "json"
+      ? `https://ingestjson.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
+      : sourceType === "sql"
+      ? `https://ingestsql.uithub.com/${sourceUrl}`
+      : undefined;
+
+  const routerUrl = `https://${domain}` + pathname;
+  const response = await fetcher(
+    new Request(routerUrl, {
+      headers: {
+        "X-IS-AUTHENTICATED": String(!!access_token),
+        "X-DOMAIN": domain,
+      },
+    }),
+  );
+
+  if (!response.ok) {
+    return { status: response.status, error: await response.text() };
+  }
+
+  const standardUrl: StandardURL = await response.json();
+
+  const acceptQuery = url.searchParams.get("accept");
+
+  const acceptHeader = request.headers.get("Accept");
+  const accept = acceptQuery || acceptHeader || undefined;
+  const crawler = getCrawler(userAgent);
+  const isCrawler = !!crawler;
+  const isBrowser = acceptHeader?.includes("text/html");
+
+  const isZip = standardUrl.ext === "zip" || accept === "application/zip";
+  const isFormData =
+    standardUrl.ext === "txt" || accept === "multipart/form-data";
+  const isJson = standardUrl.ext === "json" || accept === "application/json";
+  const isYaml = standardUrl.ext === "yaml" || accept === "text/yaml";
+  const isMd = standardUrl.ext === "md" || accept === "text/markdown";
+
+  const outputType = isGit
+    ? "git"
+    : isZip
+    ? "zip"
+    : isJson
+    ? "json"
+    : isYaml
+    ? "yaml"
+    : isFormData
+    ? "txt"
+    : isMd
+    ? "md"
+    : // default md
+      "md";
+
+  const needHtml = (isBrowser || isCrawler) && !isZip;
+
+  const plugin = plugins.plugins[
+    standardUrl.pluginId as keyof typeof plugins.plugins
+  ] as Plugin | undefined;
+
+  const realPlugin = plugin && !plugin.disabled ? plugin : undefined;
+
+  const entries = Object.entries(standardUrl.navigation || {}).map(
+    ([key, value]) => [
+      "/" + (isDomain || key === "" ? domain + "/" : "") + key,
+      value,
+    ],
+  );
+  console.log("navi", standardUrl.navigation, entries);
+  const menu = Object.fromEntries(entries);
+
+  const ingestUrl = standardUrl.ingestUrl || routerUrl;
+
+  return {
+    status: 200,
+    result: {
+      ingestUrl,
+      menu,
+      standardUrl,
+      domain,
+      needHtml,
+      outputType,
+      plugin: realPlugin,
+    },
+  };
 };
 
 /**
@@ -546,10 +688,10 @@ const pipeResponse = async (context: {
       primarySourceSegment,
       basePath,
       ext,
-      pluginId,
-      secondarySourceSegment,
       sourceType,
       sourceUrl,
+      pluginId,
+      secondarySourceSegment,
       rawUrlPrefix,
     },
   } = context;
@@ -564,16 +706,8 @@ const pipeResponse = async (context: {
     omitFirstSegment ? "true" : "false"
   }`;
 
-  let ingestUrl: string | undefined =
-    sourceType === "zip"
-      ? `https://ingestzip.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
-      : sourceType === "tar"
-      ? `https://ingesttar.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
-      : sourceType === "json"
-      ? `https://ingestjson.uithub.com/${sourceUrl}${omitFirstSegmentPart}${genignorePart}${rawUrlPrefixPart}${omitBinaryPart}`
-      : sourceType === "sql"
-      ? `https://ingestsql.uithub.com/${sourceUrl}`
-      : undefined;
+  let ingestUrl: string | undefined = undefined;
+
   if (!plugin) {
     // no plugin. good
   } else if (plugin?.type === "ingest") {
@@ -594,7 +728,7 @@ const pipeResponse = async (context: {
 
   if (!ingestUrl) {
     const response = new Response(
-      `Could not find ingest url of source type ${sourceType}!`,
+      `Could not find ingest url of source ${sourceType}!`,
       { status: 400 },
     );
     return { response };

@@ -1,6 +1,6 @@
 import picomatch from "picomatch";
-import map from "./public/ext-to-mime.json";
 import binaryExtensions from "binary-extensions";
+import map from "./public/ext-to-mime.json";
 import {
   Env,
   FilterOptions,

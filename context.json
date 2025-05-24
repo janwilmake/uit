@@ -1,4 +1,9 @@
 {
-  "$schema": "https://uuithub.com/context.schema.json",
-  "rules": [{}]
+  "$schema": "https://contextjson.com/schema",
+  "context": {
+    "example": {
+      "summary": "This is an example context. Change it into yours",
+      "pathPatterns": []
+    }
+  }
 }
