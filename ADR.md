@@ -176,3 +176,21 @@ Also add button to unlock for entire organisation/owner (contact me)
 Actionschema was json-based and because of it, it got the side effects of state at arbitrary public urls. this protocol potentially removes this problem using the formdata standard, while also making things stream through more easily, by design. They're two different beasts that solve the problem in different ways.
 
 Let's lay them against each other and figure out how they measure up and how we can get the best of both worlds, in one.
+
+# Ability to get access to organisations.
+
+Tried repo scope access with a new oauth client:
+
+https://github.com/login/oauth/authorize?client_id=Ov23lipC8pwTAzCrbOGH&scope=repo&redirect_uri=https://janwilmake.com/callback
+
+But for shapleyai, I get:
+`Until access is granted by an owner, the application cannot access the organization’s private data or modify its public data.`
+When I click "Request", it says:
+
+```
+Send request for approval?
+Owners will receive an email regarding your request.
+By requesting this approval, you are asking owners of the shapleyai organization to allow this application to access private organization data and modify public organization data.
+```
+
+This means many organisations have this problem. Users should first request it and be allowed.
